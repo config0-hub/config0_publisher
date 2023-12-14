@@ -1,0 +1,1 @@
+config0_publisher
