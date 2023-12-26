@@ -150,12 +150,15 @@ class OnDiskTmpDir(object):
     def __init__(self,**kwargs):
 
         self.tmpdir = kwargs.get("tmpdir")
-        if not self.tmpdir: self.tmpdir = "/tmp"
+
+        if not self.tmpdir:
+            self.tmpdir = "/tmp"
 
         self.subdir = kwargs.get("subdir","ondisktmp")
 
         if self.subdir:
-            self.basedir = "{}/{}".format(self.tmpdir,self.subdir)
+            self.basedir = "{}/{}".format(self.tmpdir,
+                                          self.subdir)
         else:
             self.basedir = self.tmpdir
 
@@ -164,7 +167,14 @@ class OnDiskTmpDir(object):
         mkdir("/tmp/ondisktmpdir/log")
 
         self.logger = Config0Logger(self.classname)
-        if kwargs.get("init",True): self.set_dir(**kwargs)
+
+        # testtest456
+        self.logger.debug("i1"*32)
+        if kwargs.get("init",True):
+            self.logger.debug("j1" * 32)
+            self.set_dir(**kwargs)
+            self.logger.debug("j2" * 32)
+        self.logger.debug("i2"*32)
 
     def set_dir(self,**kwargs):
 
@@ -211,6 +221,10 @@ def generate_random_path(basedir,folder_depth=1,folder_length=16,createdir=False
 
         cwd = cwd+"/"+random_dir
 
-    if createdir: mkdir(cwd)
+    if createdir:
+        # testtest456
+        self.logger.debug("m1"*32)
+        mkdir(cwd)
+    self.logger.debug("m2"*32)
 
     return cwd,random_dir
