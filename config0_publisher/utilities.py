@@ -82,10 +82,15 @@ def convert_str2json(_object,exit_error=None):
     return _object
 
 def to_list(_object,split_char=None,exit_error=None):
-    return convert_str2list(_object,split_char=split_char,exit_error=exit_error)
+
+    return convert_str2list(_object,
+                            split_char=split_char,
+                            exit_error=exit_error)
 
 def to_json(_object,exit_error=None):
-    return convert_str2json(_object,exit_error=exit_error)
+
+    return convert_str2json(_object,
+                            exit_error=exit_error)
 
 def shellout_hash(string):
 
@@ -168,13 +173,8 @@ class OnDiskTmpDir(object):
 
         self.logger = Config0Logger(self.classname)
 
-        # testtest456
-        self.logger.debug("i1"*32)
         if kwargs.get("init",True):
-            self.logger.debug("j1" * 32)
             self.set_dir(**kwargs)
-            self.logger.debug("j2" * 32)
-        self.logger.debug("i2"*32)
 
     def set_dir(self,**kwargs):
 
@@ -215,16 +215,14 @@ def generate_random_path(basedir,folder_depth=1,folder_length=16,createdir=False
     for _ in range(folder_depth):
 
         if string_only:
-            random_dir = id_generator(folder_length,chars=string.ascii_lowercase)
+            random_dir = id_generator(folder_length,
+                                      chars=string.ascii_lowercase)
         else:
             random_dir = id_generator(folder_length)
 
         cwd = cwd+"/"+random_dir
 
     if createdir:
-        # testtest456
-        self.logger.debug("m1"*32)
         mkdir(cwd)
-    self.logger.debug("m2"*32)
 
     return cwd,random_dir
