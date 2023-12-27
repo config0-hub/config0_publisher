@@ -410,7 +410,7 @@ class ResourceCmdHelper:
 
         # this can be overided by inherited class
         if not self.shelloutconfig:
-            self.shelloutconfig = "elasticdev:::{}::resource_wrapper".format(self.app_name)
+            self.shelloutconfig = "config0-publish:::{}::resource_wrapper".format(self.app_name)
 
     def _set_exec_dir(self):
 
