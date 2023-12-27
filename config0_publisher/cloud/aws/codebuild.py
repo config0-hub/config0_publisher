@@ -247,6 +247,8 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         build_id_suffix = self.build_id.split(":")[1]
 
+        results = {"status":None}
+
         while True:
 
             _time_elapsed = int(time()) - t0
@@ -255,15 +257,21 @@ class CodebuildResourceHelper(SetClassVarsHelper):
                 self.logger.debug("time expired to retrieved log {} seconds".format(str(_time_elapsed)))
                 return False
 
-            if self._get_log(build_id_suffix):
-                break
+            results = self._get_log(build_id_suffix)
+
+            if results.get("status") == True
+                return True
 
             sleep(2)
+
+        if results.get("status") is False and results.get("failed_message"):
+            self.logger.warn(results["failed_message"])
+            return False
 
     def _get_log(self,build_id_suffix):
 
         if self.output:
-            return True
+            return {"status":True}
 
         if self.logarn:
             _log_elements = self.logarn.split("/codebuild/logs/")
@@ -283,10 +291,11 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             _read = obj.get()['Body'].read()
         except:
             msg = traceback.format_exc()
-            self.logger.warn("FAIL: retrieving log: s3://{}/{}\n\n{}".format(_log_bucket,
-                                                                             _logname,
-                                                                             msg))
-            return
+            failed_message = "failed to get log: s3://{}/{}\n\nstacktrace:\n\n{}".format(_log_bucket,
+                                                                                         _logname,
+                                                                                         msg)
+            return {"status":False,
+                    "failed_message":failed_message}
 
         self.logger.debug("retrieved log: s3://{}/{}".format(_log_bucket,
                                                              _logname))
@@ -297,7 +306,7 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         self.output = log
 
-        return True
+        return {"status":True}
 
     def _set_build_summary(self):
 
