@@ -148,26 +148,31 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             return True
 
         if buildStatus == 'FAILED':
+            self.results["failed_message"] = self.results["build_status"]
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
         if buildStatus == 'FAULT':
+            self.results["failed_message"] = self.results["build_status"]
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
         if buildStatus == 'STOPPED':
+            self.results["failed_message"] = self.results["build_status"]
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
         if buildStatus == 'TIMED_OUT':
+            self.results["failed_message"] = self.results["build_status"]
             self.results["status_code"] = "timed_out"
             self.results["status"] = False
             return True
 
         if buildStatus == 'FAILED_WITH_ABORT':
+            self.results["failed_message"] = self.results["build_status"]
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
@@ -177,7 +182,9 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         # if run time exceed 5 minutes, then it
         # will be considered failed
         if _time_elapsed > 300:
-            self.logger.error("build should match one of the build status: after 300 seconds")
+            failed_message = "build should match one of the build status: after 300 seconds"
+            self.logger.error(failed_message)
+            self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return False
@@ -199,7 +206,10 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             _time_elapsed = _t1 - self.run_t0
 
             if _time_elapsed > self.build_timeout:
-                self.logger.warn("run max time exceeded {}".format(self.build_timeout))
+                failed_message = "run max time exceeded {}".format(self.build_timeout)
+                self.results["failed_message"] = failed_message
+                self.results["status"] = False
+                self.logger.warn(failed_message)
                 status = False
                 break
 
@@ -207,7 +217,9 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             if _t1 > self.build_expire:
                 self.results["status_code"] = "timed_out"
                 self.results["status"] = False
-                self.logger.warn("build timed out: after {} seconds.".format(str(self.build_timeout)))
+                failed_message = "build timed out: after {} seconds.".format(str(self.build_timeout))
+                self.results["failed_message"] = failed_message
+                self.logger.warn(failed_message)
                 status = False
                 break
 
@@ -590,5 +602,10 @@ phases:
             self.results["output"] = self.output
 
         self.print_output()
+
+        if self.results.get("failed_message"):
+            self.logger.error(self.results["failed_message"])
+            # testtest456
+            raise Exception(self.results.get("failed_message"))
 
         return self.results
