@@ -140,39 +140,41 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         if buildStatus == 'IN_PROGRESS':
             return
 
-        self.logger.debug("codebuild status {}".format(buildStatus))
+        self.logger.debug(f"codebuild status: {buildStatus}"
 
         if buildStatus == 'SUCCEEDED':
             self.results["status_code"] = "successful"
             self.results["status"] = True
             return True
 
+        failed_message = f"codebuld failed with build status {buildStatus}"
+
         if buildStatus == 'FAILED':
-            self.results["failed_message"] = self.results["build_status"]
+            self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
         if buildStatus == 'FAULT':
-            self.results["failed_message"] = self.results["build_status"]
+            self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
         if buildStatus == 'STOPPED':
-            self.results["failed_message"] = self.results["build_status"]
+            self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
         if buildStatus == 'TIMED_OUT':
-            self.results["failed_message"] = self.results["build_status"]
+            self.results["failed_message"] = failed_message
             self.results["status_code"] = "timed_out"
             self.results["status"] = False
             return True
 
         if buildStatus == 'FAILED_WITH_ABORT':
-            self.results["failed_message"] = self.results["build_status"]
+            self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
@@ -476,6 +478,7 @@ phases:
             if self.buildspec:
                 inputargs["buildspecOverride"] = self.buildspec
 
+            # testtest456
             # sourceTypeOverride='CODECOMMIT'|'CODEPIPELINE'|'GITHUB'|'S3'|'BITBUCKET'|'GITHUB_ENTERPRISE'|'NO_SOURCE',
             # sourceLocationOverride='string',
             #inputargs["buildspecOverride"] = self._test_get_with_buildspec()
@@ -605,7 +608,6 @@ phases:
 
         if self.results.get("failed_message"):
             self.logger.error(self.results["failed_message"])
-            # testtest456
             raise Exception(self.results.get("failed_message"))
 
         return self.results
