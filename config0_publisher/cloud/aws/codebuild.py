@@ -140,7 +140,7 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         if buildStatus == 'IN_PROGRESS':
             return
 
-        self.logger.debug(f"codebuild status: {buildStatus}"
+        self.logger.debug(f"codebuild status: {buildStatus}")
 
         if buildStatus == 'SUCCEEDED':
             self.results["status_code"] = "successful"
