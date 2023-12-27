@@ -259,7 +259,7 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
             results = self._get_log(build_id_suffix)
 
-            if results.get("status") == True
+            if results.get("status") == True:
                 return True
 
             sleep(2)
