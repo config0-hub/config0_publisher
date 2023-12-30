@@ -87,14 +87,14 @@ def eval_status_exit(status,caller=None):
     if status is False:
 
         if caller == "cli":
-            sys.exit(1)
+            exit(1)
 
         return False
 
     else:
 
         if caller == "cli":
-            sys.exit(0)
+            exit(0)
 
         return True
 
