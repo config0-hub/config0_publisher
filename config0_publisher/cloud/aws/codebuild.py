@@ -105,15 +105,9 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             set_env_vars = self.default_set_env_vars
 
         try:
-            self.build_timeout = int(int(kwargs.get("build_timeout",1800))/60)
+            self.build_timeout = int(kwargs.get("build_timeout",1800))
         except:
             self.build_timeout = 30
-
-        print(kwargs.get("build_timeout"))
-        print(kwargs.get("build_timeout"))
-        print(kwargs.get("build_timeout"))
-        print(kwargs.get("build_timeout"))
-        raise Exception(self.build_timeout)
 
         SetClassVarsHelper.__init__(self,
                                     set_env_vars=set_env_vars,
@@ -516,13 +510,24 @@ phases:
         if not projects:
             raise Exception("could not find a codebuild project that has availability capacity")
 
+        try:
+            timeout = int(self.build_timeout/60)
+        except:
+            timeout = 60
+
+        print(timeout)
+        print(timeout)
+        print(timeout)
+        print(timeout)
+        raise
+
         for project_name in projects:
 
             self.logger.debug_highlight(f"running job on codebuild project {project_name}")
 
             inputargs = {"projectName":project_name,
                          "environmentVariablesOverride":self._env_vars_to_codebuild_format(),
-                         "timeoutInMinutesOverride":self.build_timeout,
+                         "timeoutInMinutesOverride":timeout,
                          "imageOverride": self.build_image,
                          "computeTypeOverride": self.compute_type,
                          "environmentTypeOverride":self.image_type}
