@@ -513,7 +513,7 @@ phases:
         try:
             timeout = int(self.build_timeout/60)
         except:
-            timeout = 60
+            timeout = 37
 
         print(timeout)
         print(timeout)
