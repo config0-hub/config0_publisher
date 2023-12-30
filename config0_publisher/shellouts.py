@@ -18,6 +18,8 @@ import string
 import os
 import random
 import subprocess
+import sys
+
 from config0_publisher.loggerly import Config0Logger as set_log
 
 def ensure_str(obj,strip=True):
@@ -79,6 +81,22 @@ def rm_rf(location):
         except:
             print("problems with removing %s" % location)
             return False
+
+def eval_status_exit(status,caller=None):
+
+    if status is False:
+
+        if caller == "cli":
+            sys.exit(1)
+
+        return False
+
+    else:
+
+        if caller == "cli":
+            sys.exit(0)
+
+        return True
 
 def execute3(cmd, **kwargs):
 
