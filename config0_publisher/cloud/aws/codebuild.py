@@ -119,7 +119,6 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         results = {}
 
-        #results = self.codebuild_client.batch_get_builds(ids=build_ids)['builds'][0]['buildStatus']
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
@@ -133,47 +132,47 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         if not self.results["status"]:
             _build = self._get_build_status([self.build_id])[self.build_id]
-            buildStatus = _build["status"]
+            build_status = _build["status"]
             self.logarn = _build["logarn"]
-            self.results["build_status"] = buildStatus
+            self.results["build_status"] = build_status
 
-        if buildStatus == 'IN_PROGRESS':
+        if build_status == 'IN_PROGRESS':
             return
 
-        self.logger.debug(f"codebuild status: {buildStatus}")
+        self.logger.debug(f"codebuild status: {build_status}")
 
-        if buildStatus == 'SUCCEEDED':
+        if build_status == 'SUCCEEDED':
             self.results["status_code"] = "successful"
             self.results["status"] = True
             return True
 
-        failed_message = f"codebuld failed with build status {buildStatus}"
+        failed_message = f"codebuld failed with build status {build_status}"
 
-        if buildStatus == 'FAILED':
+        if build_status == 'FAILED':
             self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
-        if buildStatus == 'FAULT':
+        if build_status == 'FAULT':
             self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
-        if buildStatus == 'STOPPED':
+        if build_status == 'STOPPED':
             self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
             return True
 
-        if buildStatus == 'TIMED_OUT':
+        if build_status == 'TIMED_OUT':
             self.results["failed_message"] = failed_message
             self.results["status_code"] = "timed_out"
             self.results["status"] = False
             return True
 
-        if buildStatus == 'FAILED_WITH_ABORT':
+        if build_status == 'FAILED_WITH_ABORT':
             self.results["failed_message"] = failed_message
             self.results["status_code"] = "failed"
             self.results["status"] = False
