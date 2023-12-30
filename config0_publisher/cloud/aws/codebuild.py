@@ -513,13 +513,7 @@ phases:
         try:
             timeout = int(self.build_timeout/60)
         except:
-            timeout = 37
-
-        print(timeout)
-        print(timeout)
-        print(timeout)
-        print(timeout)
-        raise
+            timeout = 60
 
         for project_name in projects:
 
