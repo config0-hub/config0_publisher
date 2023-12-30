@@ -56,8 +56,8 @@ class CodebuildResourceHelper(SetClassVarsHelper):
                                   "output":None,
                                   "logs":[],
                                   "inputs":{
-                                     "env_vars":None,
-                                     "inputargs":None}
+                                     "env_vars":{},
+                                     "inputargs":{}}
                                   }
                             }
         else:
