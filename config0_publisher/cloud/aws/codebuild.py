@@ -47,6 +47,7 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         if not results:
             self.results = {"status":None,
                             "status_code":None,
+                            "project_name":None,
                             "build_id":None,
                             "build_status":None,
                             "state_machine":
@@ -523,11 +524,6 @@ phases:
             if self.buildspec:
                 inputargs["buildspecOverride"] = self.buildspec
 
-            # testtest456
-            # sourceTypeOverride='CODECOMMIT'|'CODEPIPELINE'|'GITHUB'|'S3'|'BITBUCKET'|'GITHUB_ENTERPRISE'|'NO_SOURCE',
-            # sourceLocationOverride='string',
-            #inputargs["buildspecOverride"] = self._test_get_with_buildspec()
-
             try:
                 new_build = self.codebuild_client.start_build(**inputargs)
             except:
@@ -537,11 +533,13 @@ phases:
 
             break
 
+        self.project_name = project_name
         self.build_id = new_build['build']['id']
         self.build_expire_at = int(time()) + int(self.build_timeout)
 
         _log = f"trigger run on codebuild project: {project_name}, build_id: {self.build_id}, build_expire_at: {self.build_expire_at}"
         self.logger.debug(_log)
+        self.results["project_name"] = project_name
         self.results["state_machine"]["log"].append(_log)
 
         return new_build
@@ -600,15 +598,20 @@ phases:
                      output_to_json=False,
                      exit_error=True)
 
-        results = self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
-                                                                    self.stateful_id)
+
+        try:
+            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
+                                                           self.stateful_id)
+            status = True
+        except:
+            status = False
 
         if os.environ.get("DEBUG_STATEFUL"):
             self.logger.debug(f"tarfile file {self.tarfile}.tar.gz")
         else:
             self._rm_tarfile()
 
-        if results.get("status") is False:
+        if status is False:
             _log = f"tar file failed to upload to {self.upload_bucket}/{self.stateful_id}"
             self.logger.error(_log)
             raise Exception(_log)
@@ -617,7 +620,7 @@ phases:
             self.logger.debug_highlight(_log)
             self.results["state_machine"]["log"].append(_log)
 
-        return results
+        return status
 
     def execute(self,cmd,**kwargs):
 
