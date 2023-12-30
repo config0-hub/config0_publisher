@@ -109,6 +109,11 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         except:
             self.build_timeout = 30
 
+        print(self.build_timeout)
+        print(self.build_timeout)
+        print(self.build_timeout)
+        raise Exception(self.build_timeout)
+
         SetClassVarsHelper.__init__(self,
                                     set_env_vars=set_env_vars,
                                     kwargs=kwargs,
