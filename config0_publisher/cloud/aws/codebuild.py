@@ -540,7 +540,7 @@ phases:
         _log = f"trigger run on codebuild project: {project_name}, build_id: {self.build_id}, build_expire_at: {self.build_expire_at}"
         self.logger.debug(_log)
         self.results["project_name"] = project_name
-        self.results["state_machine"]["log"].append(_log)
+        self.results["state_machine"]["logs"].append(_log)
 
         return new_build
 
@@ -618,7 +618,7 @@ phases:
         else:
             _log = f"tar file uploaded to {self.upload_bucket}/{self.stateful_id}"
             self.logger.debug_highlight(_log)
-            self.results["state_machine"]["log"].append(_log)
+            self.results["state_machine"]["logs"].append(_log)
 
         return status
 
