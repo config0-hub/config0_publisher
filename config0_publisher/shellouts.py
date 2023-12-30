@@ -82,22 +82,6 @@ def rm_rf(location):
             print("problems with removing %s" % location)
             return False
 
-def eval_status_exit(status,caller=None):
-
-    if status is False:
-
-        if caller == "cli":
-            exit(1)
-
-        return False
-
-    else:
-
-        if caller == "cli":
-            exit(0)
-
-        return True
-
 def execute3(cmd, **kwargs):
 
     shellout_exe = ShellOutExecute(cmd,
