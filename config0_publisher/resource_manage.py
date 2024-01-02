@@ -21,6 +21,7 @@ import boto3
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 from config0_publisher.utilities import to_json
+from config0_publisher.utilities import get_values_frm_json
 from config0_publisher.utilities import get_hash
 from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
@@ -141,8 +142,11 @@ class ResourceCmdHelper:
         self.syncvars.set(init=None)
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
 
-        self.resource_json = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
-        self.logger.debug('u4324: CONFIG0_RESOURCE_JSON_FILE "{}"'.format(self.resource_json))
+        self.config0_resource_json = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
+        self.logger.debug('u4324: CONFIG0_RESOURCE_JSON_FILE "{}"'.format(self.config0_resource_json))
+
+        self.config0_phases_json = os.environ.get("CONFIG0_PHASES_JSON_FILE")
+        self.logger.debug('u4324: CONFIG0_PHASES_JSON_FILE "{}"'.format(self.config0_phases_json))
 
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             try:
@@ -1086,18 +1090,51 @@ class ResourceCmdHelper:
         else:
             print(output)
 
+    # testtest456
+    def write_phases_to_json_file(self,phases):
+
+        if not hasattr(self,"config0_phases_json"):
+            self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
+            return
+
+        if not self.config0_phases_json:
+            return
+
+        phases_info = get_values_frm_json(json_file=self.config0_phases_json)
+
+        if not phases_info:
+            phases_info = phases
+        else:
+            phases_info.update(phases)
+
+        self.logger.debug("u4324: inserting retrieved data into {}".format(self.config0_phases_json))
+
+        to_jsonfile(phases,
+                    self.config0_phases_json)
     def write_resource_to_json_file(self,resource):
 
-        if not hasattr(self,"resource_json"):
-            self.logger.debug("write_resource_to_json_file - resource_json not set")
+        if not hasattr(self,"config0_resource_json"):
+            self.logger.debug("write_resource_to_json_file - config0_resource_json not set")
             return
 
-        if not self.resource_json:
+        if not self.config0_resource_json:
             return
 
-        self.logger.debug("u4324: inserting retrieved data into {}".format(self.resource_json))
+        self.logger.debug("u4324: inserting retrieved data into {}".format(self.config0_resource_json))
 
-        to_jsonfile(resource, self.resource_json)
+        to_jsonfile(resource,
+                    self.config0_resource_json)
+
+
+
+
+
+
+
+
+
+
+
 
     def successful_output(self,**kwargs):
         self.print_output(**kwargs)

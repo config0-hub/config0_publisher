@@ -226,3 +226,23 @@ def generate_random_path(basedir,folder_depth=1,folder_length=16,createdir=False
         mkdir(cwd)
 
     return cwd,random_dir
+
+# dup 34523532452t33t
+def get_values_frm_json(json_file=None):
+
+    if not json_file:
+        return
+
+    if not os.path.exists(json_file):
+        print("WARN: json {} does not exists".format(json_file))
+        return
+
+    try:
+        with open(json_file) as json_file:
+            values = json.load(json_file)
+        print("retrieved values from {}".format(json_file))
+    except:
+        values = None
+        print("ERROR: could not retrieved from json file {}".format(json_file))
+
+    return values
