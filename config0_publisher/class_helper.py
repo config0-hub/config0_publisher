@@ -29,6 +29,9 @@ class SetClassVarsHelper:
 
         self.set_default_null = set_default_null
 
+        # track the class vars set with this
+        self._vars_set = {}
+
     def set_class_vars_srcs(self):
 
         if not self.set_env_vars:
@@ -37,11 +40,13 @@ class SetClassVarsHelper:
         for env_var,must_exists in self.set_env_vars.items():
 
             if env_var in self.kwargs:
+                self._vars_set[env_var] = self.kwargs[env_var]
                 exec('self.{}="{}"'.format(env_var,
                                          self.kwargs[env_var]))
                 continue
 
             if env_var.upper() in self.env_vars:
+                self._vars_set[env_var] = self.env_vars[env_var.upper()]
                 exec('self.{}="{}"'.format(env_var,
                                            self.env_vars[env_var.upper()]))
                 continue
@@ -50,5 +55,6 @@ class SetClassVarsHelper:
                 raise Exception("variable {} needs to be set".format(env_var))
 
             if self.set_default_null:
-                self.logger.debug("set None for variable {}".format(env_var))
+                self._vars_set[env_var] = None
+                print("set None for variable {}".format(env_var))
                 exec('self.{}=None'.format(env_var))

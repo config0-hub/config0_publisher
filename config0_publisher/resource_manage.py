@@ -18,6 +18,8 @@ import glob
 import json
 import boto3
 
+from time import sleep
+
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 from config0_publisher.utilities import to_json
@@ -28,6 +30,7 @@ from config0_publisher.shellouts import execute3
 #from config0_publisher.shellouts import execute3a
 
 from config0_publisher.serialization import b64_decode
+from config0_publisher.serialization import b64_encode
 from config0_publisher.variables import SyncClassVarsHelper
 from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
@@ -116,6 +119,33 @@ class ResourceCmdHelper:
         self.app_name = kwargs.get("app_name")
         self.app_dir = kwargs.get("app_dir")
 
+        self.phases_params_hash = None
+        self.phases_params = None
+        self.phases_info = None
+        self.phase = None  # can be "run" since will only one phase
+        self.current_phase = None
+
+        ###############################################
+        # testtest456
+        ###############################################
+        self.phases_params = [
+                  {
+                      "name": "submit",
+                      "timewait": None,
+                  },
+                  {
+                      "name": "retrieve",
+                      "timewait": 30,
+                      "inputargs": {
+                          "interval": 10,
+                          "retries": 12
+                      }
+                  }
+        ]
+
+        self.phases_params_hash = b64_encode(self.phases_params)
+        ###############################################
+
         # set specified env variables
         self._set_env_vars(**kwargs)
         self._set_os_env_prefix(**kwargs)
@@ -124,6 +154,33 @@ class ResourceCmdHelper:
         self._init_syncvars(**kwargs)
         self._set_class_vars()
         self._finalize_set_vars()
+
+    def _init_phase_run(self):
+
+        if not self.current_phase:
+            return
+
+        try:
+            timewait = int(self.current_phase["timewait"])
+        except:
+            timewait = None
+
+        if not timewait:
+            return
+
+        sleep(timewait)
+
+    def get_phase_inputargs(self):
+
+        if not self.current_phase:
+            return
+
+        try:
+            inputargs = self.current_phase["inputargs"]
+        except:
+            inputargs = {}
+
+        return inputargs
 
     def _finalize_set_vars(self):
 
@@ -276,12 +333,9 @@ class ResourceCmdHelper:
             return
 
         for _k,_v in set_env_vars.items():
-
             if _v is None:
                 continue
-
             os.environ[_k] = str(_v)
-
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                print(f"{_k} -> {_v}")
 
@@ -1090,8 +1144,7 @@ class ResourceCmdHelper:
         else:
             print(output)
 
-    # testtest456
-    def write_phases_to_json_file(self,phases):
+    def jsonfile_to_phases_info(self):
 
         if not hasattr(self,"config0_phases_json"):
             self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
@@ -1100,42 +1153,41 @@ class ResourceCmdHelper:
         if not self.config0_phases_json:
             return
 
-        phases_info = get_values_frm_json(json_file=self.config0_phases_json)
+        if not os.path.exists(self.config0_phases_json):
+            return
 
-        if not phases_info:
-            phases_info = phases
-        else:
-            phases_info.update(phases)
+        self.phases_info = self.get_values_frm_json(json_file=self.config0_phases_json)
+
+    # testtest456
+    def write_phases_to_json_file(self,content_json):
+
+        if not hasattr(self,"config0_phases_json"):
+            self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
+            return
+
+        if not self.config0_phases_json:
+            return
 
         self.logger.debug("u4324: inserting retrieved data into {}".format(self.config0_phases_json))
 
-        to_jsonfile(phases,
+        to_jsonfile(content_json,
                     self.config0_phases_json)
-    def write_resource_to_json_file(self,resource):
 
-        if not hasattr(self,"config0_resource_json"):
-            self.logger.debug("write_resource_to_json_file - config0_resource_json not set")
-            return
+    def write_resource_to_json_file(self,resource,must_exist=None):
 
-        if not self.config0_resource_json:
+        msg = "config0_resource_json needs to be set"
+
+        if not hasattr(self,"config0_resource_json") or not self.config0_resource_json:
+            if must_exist:
+                raise Exception(msg)
+            else:
+                self.logger.debug(msg)
             return
 
         self.logger.debug("u4324: inserting retrieved data into {}".format(self.config0_resource_json))
 
         to_jsonfile(resource,
                     self.config0_resource_json)
-
-
-
-
-
-
-
-
-
-
-
-
     def successful_output(self,**kwargs):
         self.print_output(**kwargs)
         exit(0)
@@ -1234,11 +1286,11 @@ class ResourceCmdHelper:
                               "RUN_ID",
                               "RESOURCE_TYPE",
                               "RESOURCE_TAGS",
-                              "METHOD" ]
+                              "METHOD",
+                              "PHASE" ]
 
         _inputargs = self.parse_set_env_vars(standard_env_vars)
         self._add_to_inputargs(_inputargs)
-
         self._set_inputargs_to_false()
 
     # This can be replaced by the inheriting class
@@ -1327,3 +1379,64 @@ class ResourceCmdHelper:
 
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
+
+    #######################################################################
+    # testtest456 - move to resource_wrapper after testing
+    #######################################################################
+
+    def _get_next_phase(self,**json_info):
+
+        results = json_info["results"]
+        phases_params = json_info["phases_params"]
+
+        phase_names = [phase["name"] for phase in phases_params]
+
+        completed = []
+
+        for phase_info in results["phases"]["phases_info"]:
+            if phase_info.get("status"):
+                completed.append(phase_info["name"])
+
+        for phase_param in phases_params:
+            if phase_param["name"] in completed:
+                continue
+
+            self.logger.debug(f'Next {phase_param["name"]} to run')
+            return phase_param
+
+        raise Exception(f"No next phase to run")
+
+    def set_cur_phase(self):
+
+        '''
+        self.phases_params_hash = None
+        self.phases_params = None
+        self.phases_info = None
+        self.phase = None  # can be "run" since will only one phase
+        self.current_phase None
+        '''
+
+        self.jsonfile_to_phases_info()
+
+        if self.phases_info:
+            self.phases_params = self.phases_info["phases_params"]
+        else:
+            self.phases_params_hash = os.environ.get("PHASES_PARAMS_HASH")
+
+        if not self.phases_info and not self.phases_params_hash:
+            self.logger.debug("Phase are not implemented")
+            return
+
+        if not self.phases_params_hash and self.phases_params:
+            self.phases_params_hash = b64_encode(self.phases_params)
+        elif not self.phases_params and self.phases_params_hash:
+            self.phases_params = b64_decode(self.phases_params_hash)
+
+        if self.phases_info:
+            self.current_phase = self._get_next_phase(**self.phases_info)
+        elif self.phases_params_hash:
+            self.current_phase = self.phases_params[0]  # first phase
+
+        self.phase = self.current_phase["name"]
+    #######################################################################
+    #######################################################################

@@ -18,6 +18,15 @@ from config0_publisher.serialization import b64_decode
 from config0_publisher.shellouts import execute3
 from config0_publisher.utilities import id_generator
 
+def new_phase(name):
+
+    return  { "name":name,
+              "status":None,
+              "executed":[],
+              "output":None,
+              "logs":[]
+              }
+
 class CodebuildResourceHelper(SetClassVarsHelper):
 
     def __init__(self,**kwargs):
@@ -34,50 +43,45 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         logging.getLogger('s3transfer.tasks').setLevel(logging.WARNING)
         logging.getLogger('s3transfer.futures').setLevel(logging.WARNING)
 
-        session = boto3.Session(region_name='us-east-1')
-        self.codebuild_client = session.client('codebuild')
+        # need these initial variables
+        self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
+        self.codebuild_region = kwargs.get("codebuild_region","us-east-1")
 
+        session = boto3.Session(region_name=self.codebuild_region)
+        self.codebuild_client = session.client('codebuild')
         self.s3 = boto3.resource('s3')
 
+        self.cwd = os.getcwd()
         self.build_id = None
+        self.project_name = None
 
         # this is used for continuing via the state machine
-        results = kwargs.get("results")
+        self.results = kwargs.get("results")
+        #self.phases_params = kwargs.get("phases_params")
 
-        if not results:
-            self.results = {"status":None,
-                            "status_code":None,
-                            "project_name":None,
-                            "build_id":None,
-                            "build_status":None,
-                            "state_machine":
-                                { "status":None,
-                                  "phases":[],
-                                  "output":None,
-                                  "logs":[],
-                                  "inputs":{
-                                     "env_vars":{},
-                                     "inputargs":{}}
-                                  }
-                            }
+        if self.results:
+            self._set_class_vars_frm_results()
         else:
-            self.results = results
-            self.build_id = self.results.get("build_id")
+            self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
+            self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
+            self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
 
-        self.results["state_machine"]["status"] = None
-
-        self.default_set_env_vars = { "tmp_bucket":True,
-                                      "log_bucket":True,
-                                      "app_dir":None,
-                                      "stateful_id":None,
-                                      "remote_stateful_bucket":None,
-                                      "upload_bucket":None,
-                                      "run_share_dir":None,
-                                      "share_dir":None }
+            self.results = {
+                "build_method":"codebuild",
+                "status":None,
+                "status_code":None,
+                "build_status":None,
+                "run_t0": int(time()),
+                "phases_info": [],
+                "inputargs":{
+                    "build_image":self.build_image,
+                    "image_type":self.image_type,
+                    "compute_type":self.compute_type,
+                },
+                "env_vars":{},
+            }
 
         self.output = None
-        self.cwd = os.getcwd()
-        self.run_t0 = int(time())
 
         self.tarfile = None
         self.share_dir = None
@@ -86,28 +90,44 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         self.logarn = None
         self.remote_stateful_bucket = None
 
-        self._get_buildspec_params(**kwargs)
+        self._set_buildspec_params(**kwargs)
 
-        self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
-        self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
-        self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
+    def _set_class_vars_frm_results(self):
 
-    def _get_buildspec_params(self,**kwargs):
+        for k,v in self.results["inputargs"].items():
+            if v is None:
+                exec('self.{}=None'.format(k))
+            else:
+                exec('self.{}="{}"'.format(k,v))
+
+    def _set_buildspec_params(self,**kwargs):
+
+        default_set_env_vars = {
+            "tmp_bucket":True,
+            "log_bucket":True,
+            "app_dir":None,
+            "stateful_id":None,
+            "remote_stateful_bucket":None,
+            "upload_bucket":None,
+            "run_share_dir":None,
+            "share_dir":None
+        }
 
         self.buildspec = kwargs.get("buildspec")
         self.method = kwargs.get("method")
         self.build_env_vars = kwargs.get("build_env_vars")
-        self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
 
         if "set_env_vars" in kwargs:
             set_env_vars = kwargs.get("set_env_vars")
         else:
-            set_env_vars = self.default_set_env_vars
+            set_env_vars = default_set_env_vars
 
         try:
             self.build_timeout = int(kwargs.get("build_timeout",1800))
         except:
             self.build_timeout = 30
+
+        self.build_expire_at = int(time()) + int(self.build_timeout)
 
         SetClassVarsHelper.__init__(self,
                                     set_env_vars=set_env_vars,
@@ -135,6 +155,19 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         self.tarfile = os.path.join("/tmp",
                                     self.stateful_id)
 
+        # record these variables
+        self.results["inputargs"].update(self._vars_set)
+        self.results["inputargs"]["method"] = self.method
+        self.results["inputargs"]["codebuild_basename"] = self.codebuild_basename
+        self.results["inputargs"]["codebuild_region"] = self.codebuild_region
+        self.results["inputargs"]["build_timeout"] = self.build_timeout
+        self.results["inputargs"]["build_expire_at"] = self.build_expire_at
+        self.results["inputargs"]["upload_bucket"] = self.upload_bucket
+        self.results["inputargs"]["stateful_id"] = self.stateful_id
+        self.results["inputargs"]["share_dir"] = self.share_dir
+        self.results["inputargs"]["run_share_dir"] = self.run_share_dir
+        self.results["inputargs"]["tarfile"] = self.tarfile
+
     def _get_build_status(self,build_ids):
 
         results = {}
@@ -151,16 +184,17 @@ class CodebuildResourceHelper(SetClassVarsHelper):
     def _set_current_build(self):
 
         _build = self._get_build_status([self.build_id])[self.build_id]
-        build_status = _build["status"]
         self.logarn = _build["logarn"]
-        self.results["build_status"] = build_status
+
+        self.results["build_status"] = _build["status"]
+        self.results["inputargs"]["logarn"] = self.logarn
 
     def _check_build_status(self):
 
-        _build = self._get_build_status(
-                     [self.build_id])[self.build_id]
+        _build = self._get_build_status([self.build_id])[self.build_id]
 
         build_status = _build["status"]
+        self.results["build_status"] = build_status
 
         self.logger.debug(f"codebuild status: {build_status}")
 
@@ -177,7 +211,9 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         if build_status in done:
             return build_status
 
-    def _set_build_status(self,build_status):
+    def _set_build_status_codes(self):
+
+        build_status = self.results["build_status"]
 
         if build_status == 'SUCCEEDED':
             self.results["status_code"] = "successful"
@@ -216,7 +252,7 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             self.results["status"] = False
             return True
 
-        _time_elapsed = int(time()) - self.run_t0
+        _time_elapsed = int(time()) - self.results["run_t0"]
 
         # if run time exceed 5 minutes, then it
         # will be considered failed
@@ -241,11 +277,15 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
             sleep(5)
 
-            _time_elapsed = _t1 - self.run_t0
+            if self._check_build_status() and self._set_build_status_codes():
+                status = True
+                break
+
+            _time_elapsed = _t1 - self.results["run_t0"]
 
             if _time_elapsed > self.build_timeout:
                 failed_message = "run max time exceeded {}".format(self.build_timeout)
-                self.results["state_machine"]["logs"].append(failed_message)
+                self.phase_result["logs"].append(failed_message)
                 self.results["failed_message"] = failed_message
                 self.results["status"] = False
                 self.logger.warn(failed_message)
@@ -257,23 +297,17 @@ class CodebuildResourceHelper(SetClassVarsHelper):
                 self.results["status_code"] = "timed_out"
                 self.results["status"] = False
                 failed_message = "build timed out: after {} seconds.".format(str(self.build_timeout))
-                self.results["state_machine"]["logs"].append(failed_message)
+                self.phase_result["logs"].append(failed_message)
                 self.results["failed_message"] = failed_message
                 self.logger.warn(failed_message)
                 status = False
                 break
 
-            build_status = self._check_build_status()
-            if build_status and self._set_build_status(build_status):
-                status = True
-                break
-
         self.wait_for_log()
-        self.results["time_elapsed"] = int(time()) - self.run_t0
+        self.results["time_elapsed"] = int(time()) - self.results["run_t0"]
 
         if not self.output:
             self.output = 'Could not get log build_id "{}"'.format(self.build_id)
-            self.results["state_machine"]["logs"].append(self.output)
 
         return status
 
@@ -540,12 +574,13 @@ phases:
 
         self.project_name = project_name
         self.build_id = new_build['build']['id']
-        self.build_expire_at = int(time()) + int(self.build_timeout)
+
+        self.results["inputargs"]["build_id"] = self.build_id
+        self.results["inputargs"]["project_name"] = project_name
 
         _log = f"trigger run on codebuild project: {project_name}, build_id: {self.build_id}, build_expire_at: {self.build_expire_at}"
         self.logger.debug(_log)
-        self.results["project_name"] = project_name
-        self.results["state_machine"]["logs"].append(_log)
+        self.phase_result["logs"].append(_log)
 
         return new_build
 
@@ -623,7 +658,7 @@ phases:
         else:
             _log = f"tar file uploaded to {self.upload_bucket}/{self.stateful_id}"
             self.logger.debug_highlight(_log)
-            self.results["state_machine"]["logs"].append(_log)
+            self.phase_result["logs"].append(_log)
 
         return status
 
@@ -650,48 +685,57 @@ phases:
         self.output = clean_lines
 
     def print_output(self):
-
         self.clean_output()
-
         for line in self.output:
             print(line)
 
-
     def submit(self):
 
+        self.phase_result = new_phase("submit")
+
         self._upload_to_s3_stateful()
-        self.results["state_machine"]["phases"].append("upload_to_s3")
+        self.phase_result["executed"].append("upload_to_s3")
 
         self._trigger_build()
-        self.results["state_machine"]["phases"].append("trigger_codebuild")
+        self.phase_result["executed"].append("trigger_codebuild")
+        self.phase_result["status"] = True
 
-        self.results["state_machine"]["inputs"]["inputargs"]["build_id"] = self.build_id
-        self.results["state_machine"]["inputs"]["inputargs"]["build_expire_at"] = self.build_expire_at
-        self.results["state_machine"]["status"] = True
+        self.results["phases_info"].append(self.phase_result)
 
         return self.results
+
     def check(self,wait_int=10,retries=12):
 
         self._set_current_build()
 
         for retry in range(retries):
-            if not self._check_build_status():
-                sleep(wait_int)
-                continue
-
-            self.results["state_machine"]["phases"].append("checked")
-            self.results["state_machine"]["status"] = True
-            break
-
-        return self.results
+            if self._check_build_status():
+                return True
+            sleep(wait_int)
+        return
 
     def retrieve(self):
 
+        '''
+        retrieve is the same as _retrieve except
+        there is a check of the build status
+        where the check itself times out
+        '''
+
+        self.phase_result = new_phase("retrieve")
+
+        if not self.check(wait_int=10,retries=12):
+            return
+
+        return self._retrieve()
+
+    def _retrieve(self):
+
         self._eval_build()
-        self.results["state_machine"]["phases"].append("eval_build")
+        self.phase_result["executed"].append("eval_build")
 
         self._s3_stateful_to_share_dir()
-        self.results["state_machine"]["phases"].append("s3_share_dir")
+        self.phase_result["executed"].append("s3_share_dir")
 
         self.clean_output()
 
@@ -704,14 +748,16 @@ phases:
             self.logger.error(self.results["failed_message"])
             raise Exception(self.results.get("failed_message"))
 
-        self.results["state_machine"]["status"] = True
+        self.phase_result["status"] = True
+        self.results["phases_info"].append(self.phase_result)
 
         return self.results
 
+    # this is a single run and not in phases
+    # we use _retrieve instead of retrieve method
     def run(self):
 
         self.submit()
-        self.check()
-        self.retrieve()
+        self._retrieve()
 
         return self.results
