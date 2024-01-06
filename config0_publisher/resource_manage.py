@@ -1427,6 +1427,11 @@ class ResourceCmdHelper:
 
         self.jsonfile_to_phases_info()
 
+        # testtest456
+        self.logger.debug("k1"*32)
+        self.logger.json(self.phases_info)
+        self.logger.debug("k2"*32)
+
         if self.phases_info:
             self.phases_params = self.phases_info["phases_params"]
         else:
