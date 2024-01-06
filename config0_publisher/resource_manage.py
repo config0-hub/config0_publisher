@@ -1403,26 +1403,13 @@ class ResourceCmdHelper:
         completed = []
 
         for phase_info in results["phases_info"]:
-
-            # testtest456
-            self.logger.debug("e1"*32)
-            self.logger.json(phase_info)
-            self.logger.debug("e1"*32)
-
             if phase_info.get("status"):
                 completed.append(phase_info["name"])
-
 
         for phase_param in phases_params:
             if phase_param["name"] in completed:
                 continue
             self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
-            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
-            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
-            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
-            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
-            # testtest456
-            raise Exception("jo")
             return phase_param
 
         raise Exception(f"No next phase to run")
@@ -1474,9 +1461,6 @@ class ResourceCmdHelper:
         self.logger.debug(self.phase)
         self.logger.debug("d"*32)
         self.logger.json(self.current_phase)
-        self.logger.debug("e"*32)
-        self.logger.debug("e"*32)
-        self.logger.debug("e"*32)
         self.logger.debug("e"*32)
 
     #######################################################################
