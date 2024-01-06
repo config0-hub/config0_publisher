@@ -1423,6 +1423,12 @@ class ResourceCmdHelper:
         else:
             self.phases_params_hash = os.environ.get("PHASES_PARAMS_HASH")
 
+        # testtest456
+        self.logger.debug("a"*32)
+        self.logger.debug(self.phases_params_hash)
+        self.logger.debug("b"*32)
+        raise Exception('yoyo')
+
         if not self.phases_info and not self.phases_params_hash:
             self.logger.debug("Phase are not implemented")
             return
