@@ -52,15 +52,15 @@ def to_jsonfile(values,filename,exec_dir=None):
                              filename)
 
     if not os.path.exists(file_dir):
-        os.system("mkdir -p {}".format(file_dir))
+        os.system(f"mkdir -p {file_dir}")
 
     try:
         with open(file_path,"w") as f:
             f.write(json.dumps(values))
         status = True
-        print("Successfully wrote contents to {}".format(file_path))
+        print(f"Successfully wrote contents to {file_path}")
     except:
-        print("Failed to write contents to {}".format(file_path))
+        print(f"Failed to write contents to {file_path}")
         status = False
 
     return status
@@ -209,10 +209,10 @@ class ResourceCmdHelper:
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
 
         self.config0_resource_json = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
-        self.logger.debug('u4324: CONFIG0_RESOURCE_JSON_FILE "{}"'.format(self.config0_resource_json))
+        self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json}"')
 
         self.config0_phases_json = os.environ.get("CONFIG0_PHASES_JSON_FILE")
-        self.logger.debug('u4324: CONFIG0_PHASES_JSON_FILE "{}"'.format(self.config0_phases_json))
+        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json}"')
 
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             try:
@@ -224,9 +224,9 @@ class ResourceCmdHelper:
 
         for _k,_v in self.syncvars.class_vars.items():
             try:
-                self.logger.debug("{} -> {}".format(_k,_v))
+                self.logger.debug(f"{_k} -> {_v}")
             except:
-                self.logger.warn("could not print class vars {}".format(_k))
+                self.logger.warn(f"could not print class vars {_k}")
 
     def _set_special_keywords_classvars(self):
 
@@ -249,7 +249,7 @@ class ResourceCmdHelper:
             if not run_share_dir:
                 self.logger.warn(f"could not set {key} run_share_dir")
                 self.syncvars.class_vars[key] = None
-                exp = 'self.{}=None'.format(key)
+                exp = f'self.{key}=None'
                 exec(exp)
             else:
                 self.syncvars.class_vars[key] = run_share_dir
@@ -324,13 +324,13 @@ class ResourceCmdHelper:
 
         for _k,_v in self.syncvars.class_vars.items():
             if _v is None:
-                exp = "self.{}=None".format(_k)
+                exp = f"self.{_k}=None"
             elif _v is False:
-                exp = "self.{}=False".format(_k)
+                exp = f"self.{_k}=False"
             elif _v is True:
-                exp = "self.{}=True".format(_k)
+                exp = f"self.{_k}=True"
             else:
-                exp = 'self.{}="{}"'.format(_k,_v)
+                exp = f'self.{_k}="{_v}"'
 
             exec(exp)
 
@@ -1177,7 +1177,7 @@ class ResourceCmdHelper:
         if not self.config0_phases_json:
             return
 
-        self.logger.debug("u4324: inserting retrieved data into {}".format(self.config0_phases_json))
+        self.logger.debug(f"u4324: inserting retrieved data into {self.config0_phases_json}")
 
         to_jsonfile(content_json,
                     self.config0_phases_json)
@@ -1193,7 +1193,7 @@ class ResourceCmdHelper:
                 self.logger.debug(msg)
             return
 
-        self.logger.debug("u4324: inserting retrieved data into {}".format(self.config0_resource_json))
+        self.logger.debug(f"u4324: inserting retrieved data into {self.config0_resource_json}")
 
         to_jsonfile(resource,
                     self.config0_resource_json)
@@ -1345,7 +1345,7 @@ class ResourceCmdHelper:
 
         for key in required_keys:
 
-            self.logger.aggmsg("\tkeys found include: {}".format(self.inputargs.keys()))
+            self.logger.aggmsg(f"\tkeys found include: {self.inputargs.keys()}")
 
             if self.os_env_prefix:
                 self.logger.aggmsg("\t{} or Environmental Variable {}/{}_{}".format(key,
