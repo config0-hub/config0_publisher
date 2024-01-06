@@ -161,15 +161,12 @@ class ResourceCmdHelper:
         self._finalize_set_vars()
 
     def _init_phase_run(self):
-
-
         # testtest456
         self.logger.debug("0"*32)
         self.logger.debug(self.phase)
         self.logger.debug("1"*32)
         self.logger.json(self.current_phase)
         self.logger.debug("2"*32)
-        raise Exception("3"*32)
 
         if not self.current_phase:
             return
