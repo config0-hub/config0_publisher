@@ -1416,7 +1416,11 @@ class ResourceCmdHelper:
         for phase_param in phases_params:
             if phase_param["name"] in completed:
                 continue
-            self.logger.debug(f'Next {phase_param["name"]} to run')
+            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
+            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
+            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
+            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
+            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
             # testtest456
             raise Exception("jo")
             return phase_param
