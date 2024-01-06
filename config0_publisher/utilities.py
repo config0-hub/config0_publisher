@@ -241,14 +241,6 @@ def get_values_frm_json(json_file=None):
         with open(json_file) as json_file:
             values = json.load(json_file)
         print("retrieved values from {}".format(json_file))
-        print("")
-        print("")
-        print("values type {}".format(type(values)))
-        print("")
-        print("")
-        print("values")
-        print("")
-        print("")
     except:
         values = None
         print("ERROR: could not retrieved from json file {}".format(json_file))
