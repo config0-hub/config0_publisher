@@ -1396,7 +1396,7 @@ class ResourceCmdHelper:
     def _get_next_phase(self,**json_info):
 
         results = json_info["results"]
-        phases_params = json_info["phases_params"]
+        phases_params = b64_decode(json_info["phases_params_hash"])
 
         phase_names = [phase["name"] for phase in phases_params]
 
