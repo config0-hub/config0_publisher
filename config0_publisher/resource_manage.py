@@ -125,6 +125,11 @@ class ResourceCmdHelper:
         self.phase = None  # can be "run" since will only one phase
         self.current_phase = None
 
+        ############################################################
+        # testtest456
+        os.environ["USE_CODEBUILD"] = True  # longer than 900 seconds
+        ############################################################
+
         ###############################################
         # testtest456
         ###############################################
