@@ -1165,7 +1165,7 @@ class ResourceCmdHelper:
         if not os.path.exists(self.config0_phases_json):
             return
 
-        self.phases_info = self.get_values_frm_json(json_file=self.config0_phases_json)
+        self.phases_info = get_values_frm_json(json_file=self.config0_phases_json)
 
     # testtest456
     def write_phases_to_json_file(self,content_json):
