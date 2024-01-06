@@ -1432,11 +1432,10 @@ class ResourceCmdHelper:
         self.logger.json(self.phases_info)
         self.logger.debug("k2"*32)
 
-        if self.phases_info:
-            self.phases_params = self.phases_info["phases_params"]
+        if self.phases_info and self.phases_info.get("phases_params_hash"):
+            self.phases_params_hash = self.phases_info["phases_params_hash"]
         else:
             self.phases_params_hash = os.environ.get("PHASES_PARAMS_HASH")
-
 
         if not self.phases_info and not self.phases_params_hash:
             self.logger.debug("Phase are not implemented")
