@@ -751,6 +751,11 @@ phases:
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
 
+        # testtest456
+        self.logger.debug("j1"*32)
+        self.logger.json(self.results)
+        self.logger.debug("j2"*32)
+
         return self.results
 
     # this is a single run and not in phases

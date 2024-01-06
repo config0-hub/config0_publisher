@@ -125,14 +125,12 @@ class ResourceCmdHelper:
         self.phase = None  # can be "run" since will only one phase
         self.current_phase = None
 
-        ############################################################
+        ###############################################
         # testtest456
-        os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
-        ############################################################
+        ###############################################
 
-        ###############################################
-        # testtest456
-        ###############################################
+        os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
+
         self.phases_params = [
                   {
                       "name": "submit",
@@ -160,7 +158,7 @@ class ResourceCmdHelper:
         self._set_class_vars()
         self._finalize_set_vars()
 
-    def _init_phase_run(self):
+    def init_phase_run(self):
         # testtest456
         self.logger.debug("0"*32)
         self.logger.debug(self.phase)
