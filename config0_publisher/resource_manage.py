@@ -127,7 +127,7 @@ class ResourceCmdHelper:
 
         ############################################################
         # testtest456
-        os.environ["USE_CODEBUILD"] = True  # longer than 900 seconds
+        os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
         ############################################################
 
         ###############################################
