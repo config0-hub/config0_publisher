@@ -1403,17 +1403,22 @@ class ResourceCmdHelper:
         completed = []
 
         for phase_info in results["phases_info"]:
+
+            # testtest456
+            self.logger.debug("e1"*32)
             self.logger.json(phase_info)
+            self.logger.debug("e1"*32)
+
             if phase_info.get("status"):
                 completed.append(phase_info["name"])
 
-        raise Exception("jo")
 
         for phase_param in phases_params:
             if phase_param["name"] in completed:
                 continue
-
             self.logger.debug(f'Next {phase_param["name"]} to run')
+            # testtest456
+            raise Exception("jo")
             return phase_param
 
         raise Exception(f"No next phase to run")
