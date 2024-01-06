@@ -160,6 +160,7 @@ class ResourceCmdHelper:
         self._finalize_set_vars()
 
     def init_phase_run(self):
+
         # testtest456
         self.logger.debug("0"*32)
         self.logger.debug(self.phase)
@@ -1452,6 +1453,8 @@ class ResourceCmdHelper:
         else:
             failed_message = "exec tf apply/destroy failed"
 
+        # this should also be removed further upstream
+        # but included to be explicit
         self.delete_phases_to_json_file()
 
         self.logger.error(failed_message)
