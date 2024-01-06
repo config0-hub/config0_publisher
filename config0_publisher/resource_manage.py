@@ -139,7 +139,7 @@ class ResourceCmdHelper:
                   },
                   {
                       "name": "retrieve",
-                      "timewait": 30,
+                      "timewait": 3,
                       "inputargs": {
                           "interval": 10,
                           "retries": 12
