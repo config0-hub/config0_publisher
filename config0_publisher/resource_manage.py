@@ -1433,19 +1433,25 @@ class ResourceCmdHelper:
         elif not self.phases_params and self.phases_params_hash:
             self.phases_params = b64_decode(self.phases_params_hash)
 
-        # testtest456
-        self.logger.debug("a"*32)
-        self.logger.debug(self.phases_params_hash)
-        self.logger.debug("b"*32)
-        self.logger.debug(self.phases_params)
-        self.logger.debug("c"*32)
-        raise Exception('yoyo')
-
         if self.phases_info:
             self.current_phase = self._get_next_phase(**self.phases_info)
         elif self.phases_params_hash:
             self.current_phase = self.phases_params[0]  # first phase
 
         self.phase = self.current_phase["name"]
+
+        # testtest456
+        self.logger.debug("a"*32)
+        self.logger.debug(self.phases_params_hash)
+        self.logger.debug("b"*32)
+        self.logger.debug(self.phases_params)
+        self.logger.debug("c"*32)
+        self.logger.debug(self.phase)
+        self.logger.debug("d"*32)
+        self.logger.json(self.current_phase)
+        self.logger.debug("e"*32)
+        raise Exception('yoyo')
+
+
     #######################################################################
     #######################################################################
