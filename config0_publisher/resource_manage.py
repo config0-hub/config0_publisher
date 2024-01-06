@@ -1402,9 +1402,12 @@ class ResourceCmdHelper:
 
         completed = []
 
-        for phase_info in results["phases"]["phases_info"]:
+        for phase_info in results["phases_info"]:
+            self.logger.json(phase_info)
             if phase_info.get("status"):
                 completed.append(phase_info["name"])
+
+        raise Exception("jo")
 
         for phase_param in phases_params:
             if phase_param["name"] in completed:
