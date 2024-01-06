@@ -34,6 +34,7 @@ from config0_publisher.serialization import b64_encode
 from config0_publisher.variables import SyncClassVarsHelper
 from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
+from config0_publisher.shellouts import rm_rf
 
 #import sys
 #reload(sys)
@@ -1167,6 +1168,20 @@ class ResourceCmdHelper:
 
         self.phases_info = get_values_frm_json(json_file=self.config0_phases_json)
 
+    def delete_phases_to_json_file(self):
+
+        if not hasattr(self,"config0_phases_json"):
+            self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
+            return
+
+        if not self.config0_phases_json:
+            return
+
+        if not os.path.exists(self.config0_phases_json):
+            return
+
+        rm_rf(self.config0_phases_json)
+
     # testtest456
     def write_phases_to_json_file(self,content_json):
 
@@ -1391,7 +1406,58 @@ class ResourceCmdHelper:
 
     #######################################################################
     # testtest456 - move to resource_wrapper after testing
+    # insert 45245
     #######################################################################
+
+    def _eval_post_tf(self,method):
+
+        # this is implemented in phases
+        if self.tf_results.get("status") is None and (self.phases_params_hash or self.phases_params):
+
+            if self.phases_params_hash:
+                self.write_phases_to_json_file(
+                    {
+                        "results":self.tf_results,
+                        "phases_params_hash":self.phases_params_hash
+                    }
+                )
+            elif self.phases_params:
+                self.write_phases_to_json_file(
+                    {
+                        "results":self.tf_results,
+                        "phases_params_hash":b64_encode(self.phases_params),
+                    }
+                )
+
+            self.logger.debug("eval_post_tf: phases enabled - return True")
+
+            return
+
+        if self.tf_results.get("status") is False:
+            self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
+
+        # evaluate whether it failed
+        self._eval_failure()
+
+        return True
+
+    def _eval_failure(self):
+
+        if self.tf_results.get("status") not in [ False, "False" ]:
+            return
+
+        # failed at this point
+        if self.tf_results.get("failed_message"):
+            failed_message = self.tf_results.get("failed_message")
+        else:
+            failed_message = "exec tf apply/destroy failed"
+
+        self.delete_phases_to_json_file()
+
+        self.logger.error(failed_message)
+        raise Exception(failed_message)
+
+        return
 
     def _get_next_phase(self,**json_info):
 
