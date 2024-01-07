@@ -98,9 +98,6 @@ class CodebuildResourceHelper(SetClassVarsHelper):
             else:
                 exp = f'self.{k}="{v}"'
 
-            # testtest456
-            self.logger.debug(f"## Setting {exp}")
-
             exec(exp)
 
     def _set_buildspec_params(self,**kwargs):
@@ -712,6 +709,10 @@ phases:
         self._set_current_build()
 
         for retry in range(retries):
+            # testtest456
+            self.logger.debug("d1"*32)
+            self.logger.debug(f"check: retry {retry} of {retries}")
+            self.logger.debug("d2"*32)
             if self._check_build_status():
                 return True
             sleep(wait_int)
@@ -753,11 +754,6 @@ phases:
 
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
-
-        # testtest456
-        self.logger.debug("j1"*32)
-        self.logger.json(self.results)
-        self.logger.debug("j2"*32)
 
         return self.results
 
