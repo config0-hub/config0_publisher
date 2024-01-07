@@ -651,7 +651,7 @@ phases:
         except:
             status = False
 
-        sleep(500)
+        sleep(30)
 
         #cmd = f"aws s3 cp {self.tarfile}.tar.gz s3://{self.upload_bucket}/{self.stateful_id}"
 
