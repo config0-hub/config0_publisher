@@ -618,7 +618,9 @@ phases:
 
         self._reset_share_dir()
 
-        cmd = f"tar xfz {self.tarfile} -C {self.run_share_dir}/{self.app_dir}"
+        # ref 452345235
+        #cmd = f"tar xfz {self.tarfile} -C {self.run_share_dir}/{self.app_dir}"
+        cmd = f"tar xfz {self.tarfile} -C {self.run_share_dir}"
 
         self.execute(cmd,
                      output_to_json=False,
@@ -631,33 +633,21 @@ phases:
 
         self._rm_tarfile()
 
-        # testtest456
-        self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
-        cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz ."
-        cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfz /tmp/yo7.tar.gz ."
+        # ref 452345235
+        # we keep the app_dir
+        #cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz ."
+        cmd = f"cd {self.run_share_dir} && tar cfz {self.tarfile}.tar.gz ."
 
         self.execute(cmd,
                      output_to_json=False,
                      exit_error=True)
 
-        #sleep(300)
-
         try:
-            #self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
-            #                                               self.stateful_id)
-            self.s3.Bucket(self.upload_bucket).upload_file("/tmp/yo7.tar.gz",
+            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
                                                            self.stateful_id)
             status = True
         except:
             status = False
-
-        sleep(30)
-
-        #cmd = f"aws s3 cp {self.tarfile}.tar.gz s3://{self.upload_bucket}/{self.stateful_id}"
-
-        #status = self.execute(cmd,
-        #                      output_to_json=False,
-        #                      exit_error=True).get("status")
 
         if os.environ.get("DEBUG_STATEFUL"):
             self.logger.debug(f"tarfile file {self.tarfile}.tar.gz")
