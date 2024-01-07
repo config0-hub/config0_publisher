@@ -515,7 +515,7 @@ phases:
     commands:
       - aws s3 cp s3://app-env.tmp.williaumwu.eee71/meelsrivavqqdkzy /tmp/meelsrivavqqdkzy.tar.gz --quiet
       - mkdir -p /var/tmp/share/meelsrivavqqdkzy
-      - tar xfz /tmp/meelsrivavqqdkzy.tar.gz -C /var/tmp/share/meelsrivavqqdkzy/
+      - tar xfvz /tmp/meelsrivavqqdkzy.tar.gz -C /var/tmp/share/meelsrivavqqdkzy/
       - rm -rf /tmp/meelsrivavqqdkzy.tar.gz
       - echo "Creating a virtual environment..."
       - cd /var/tmp/share/meelsrivavqqdkzy && python3 -m venv venv
