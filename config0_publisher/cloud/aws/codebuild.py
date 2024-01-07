@@ -709,10 +709,7 @@ phases:
         self._set_current_build()
 
         for retry in range(retries):
-            # testtest456
-            self.logger.debug("d1"*32)
-            self.logger.debug(f"check: retry {retry} of {retries}")
-            self.logger.debug("d2"*32)
+            self.logger.debug(f'check: codebuild_project_name "{self.project_name}" codebuild_id "{self.build_id}" retry {retry}/{retries} {wait_int} seconds')
             if self._check_build_status():
                 return True
             sleep(wait_int)
