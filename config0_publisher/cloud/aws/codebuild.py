@@ -59,14 +59,15 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         self.results = kwargs.get("results")
         #self.phases_params = kwargs.get("phases_params")
 
+        self.output = None
+        self.logarn = None
+        self.remote_stateful_bucket = None
+
         if not self.results:
-            self.output = None
             self.tarfile = None
             self.share_dir = None
             self.run_share_dir = None
             self.stateful_id = None
-            self.logarn = None
-            self.remote_stateful_bucket = None
             self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
             self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
             self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
