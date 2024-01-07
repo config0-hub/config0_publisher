@@ -637,6 +637,11 @@ phases:
                               self.app_dir))
 
         self.logger.debug_highlight(f"{self.tarfile}.tar.gz")
+        self.logger.debug_highlight(f"{self.tarfile}.tar.gz")
+        self.logger.debug_highlight(f"{self.tarfile}.tar.gz")
+        self.logger.debug_highlight(f"{self.tarfile}.tar.gz")
+        self.logger.debug_highlight(f"{self.tarfile}.tar.gz")
+        raise Exception
         cmd = "tar cfvz {self.tarfile}.tar.gz ."
 
         self.execute(cmd,
