@@ -57,21 +57,16 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         # this is used for continuing via the state machine
         self.results = kwargs.get("results")
-
-        # testtest
-        self.logger.debug("s0"*32)
-        self.logger.json(kwargs)
-        self.logger.debug("s1"*32)
-        self.logger.json(self.results)
-        self.logger.debug("s2"*32)
-        self.logger.debug("s2"*32)
-        sleep(5)
-
         #self.phases_params = kwargs.get("phases_params")
 
-        if self.results:
-            self._set_class_vars_frm_results()
-        else:
+        if not self.results:
+            self.output = None
+            self.tarfile = None
+            self.share_dir = None
+            self.run_share_dir = None
+            self.stateful_id = None
+            self.logarn = None
+            self.remote_stateful_bucket = None
             self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
             self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
             self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
@@ -90,17 +85,9 @@ class CodebuildResourceHelper(SetClassVarsHelper):
                 },
                 "env_vars":{},
             }
-
-        self.output = None
-
-        self.tarfile = None
-        self.share_dir = None
-        self.run_share_dir = None
-        self.stateful_id = None
-        self.logarn = None
-        self.remote_stateful_bucket = None
-
-        self._set_buildspec_params(**kwargs)
+            self._set_buildspec_params(**kwargs)
+        else:
+            self._set_class_vars_frm_results()
 
     def _set_class_vars_frm_results(self):
 
