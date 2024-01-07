@@ -1503,7 +1503,7 @@ class ResourceCmdHelper:
         self.logger.json(self.phases_info)
         self.logger.debug("k2"*32)
 
-        if self.phases_info and self.phases_info.get("inputargs")
+        if self.phases_info and self.phases_info.get("inputargs"):
             self.set_class_vars(self.phases_info["inputargs"])
 
         if self.phases_info and self.phases_info.get("phases_params_hash"):
