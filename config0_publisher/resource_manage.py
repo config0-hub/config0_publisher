@@ -156,7 +156,7 @@ class ResourceCmdHelper:
         self._set_app_params(**kwargs)
         
         self._init_syncvars(**kwargs)
-        self._set_class_vars()
+        self.set_class_vars()
         self._finalize_set_vars()
 
     def init_phase_run(self):
@@ -205,7 +205,7 @@ class ResourceCmdHelper:
         # special keywords for chrootfiles_dest_dir 
         self._set_special_keywords_classvars()
 
-        self._set_class_vars()  # execute it final time to synchronize class vars set
+        self.set_class_vars()  # execute it final time to synchronize class vars set
 
         self.syncvars.set(init=None)
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
@@ -322,9 +322,12 @@ class ResourceCmdHelper:
 
         self.syncvars.set(init=True)
 
-    def _set_class_vars(self):
+    def set_class_vars(self,class_vars=None):
 
-        for _k,_v in self.syncvars.class_vars.items():
+        if not class_vars:
+            class_vars = self.syncvars.class_vars
+
+        for _k,_v in class_vars.items():
             if _v is None:
                 exp = f"self.{_k}=None"
             elif _v is False:
@@ -1499,6 +1502,9 @@ class ResourceCmdHelper:
         self.logger.debug("k1"*32)
         self.logger.json(self.phases_info)
         self.logger.debug("k2"*32)
+
+        if self.phases_info and self.phases_info.get("inputargs")
+            self.set_class_vars(self.phases_info["inputargs"])
 
         if self.phases_info and self.phases_info.get("phases_params_hash"):
             self.phases_params_hash = self.phases_info["phases_params_hash"]
