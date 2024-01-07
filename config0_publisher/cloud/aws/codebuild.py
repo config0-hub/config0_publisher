@@ -106,9 +106,14 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         for k,v in self.results["inputargs"].items():
             if v is None:
-                exec('self.{}=None'.format(k))
+                exp = f'self.{k}=None'
             else:
-                exec('self.{}="{}"'.format(k,v))
+                exp = f'self.{k}="{v}"'
+
+            # testtest456
+            self.logger.debug(f"## Setting {exp}")
+
+            exec(exp)
 
     def _set_buildspec_params(self,**kwargs):
 
