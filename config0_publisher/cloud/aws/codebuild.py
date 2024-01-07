@@ -636,7 +636,8 @@ phases:
         cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
         cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
         cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
-        cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz ."
+        cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
+        cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfvz {self.tarfile}.tar.gz ."
 
         self.execute(cmd,
                      output_to_json=False,
