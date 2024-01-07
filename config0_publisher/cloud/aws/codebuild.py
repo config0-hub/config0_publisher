@@ -636,10 +636,9 @@ phases:
         os.chdir(os.path.join(self.run_share_dir,
                               self.app_dir))
 
-        self.logger.debug_highlight(f"{self.tarfile}.tar.gz")
-
-        #cmd = "tar cfvz {self.tarfile}.tar.gz ."
-        cmd = f"tar cfvz /tmp/temp.tar.gz . && mv /tmp/temp.tar.gz {self.tarfile}.tar.gz"
+        self.logger.debug(f"local tar zip file: {self.tarfile}.tar.gz")
+        #cmd = f"tar cfvz /tmp/temp.tar.gz . && mv /tmp/temp.tar.gz {self.tarfile}.tar.gz"
+        cmd = f"tar cfvz {self.tarfile}.tar.gz ."
 
         self.execute(cmd,
                      output_to_json=False,
