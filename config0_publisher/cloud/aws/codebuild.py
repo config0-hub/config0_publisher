@@ -57,6 +57,15 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         # this is used for continuing via the state machine
         self.results = kwargs.get("results")
+
+        # testtest
+        self.logger.debug("s0"*32)
+        self.logger.json(kwargs)
+        self.logger.debug("s1"*32)
+        self.logger.json(self.results)
+        self.logger.debug("s2"*32)
+        raise Exception(f"CodebuildResourceHelper: yo")
+
         #self.phases_params = kwargs.get("phases_params")
 
         if self.results:
