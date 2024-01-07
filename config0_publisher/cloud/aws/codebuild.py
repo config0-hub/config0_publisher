@@ -631,18 +631,16 @@ phases:
 
         self._rm_tarfile()
 
-        # os.chdir(self.run_share_dir)
         # testtest456
-        cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
-        cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
-        cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
-        cmd = self.logger.debug(f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz .")
-        cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfvz {self.tarfile}.tar.gz ."
+        curdir = os.getcwd()
+        os.chdir(os.path.join(self.run_share_dir,self.app_dir))
+        cmd = "tar cfvz {self.tarfile}.tar.gz ."
 
         self.execute(cmd,
                      output_to_json=False,
                      exit_error=True)
 
+        os.chdir(curdir)
 
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
