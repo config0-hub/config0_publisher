@@ -64,7 +64,8 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         self.logger.debug("s1"*32)
         self.logger.json(self.results)
         self.logger.debug("s2"*32)
-        raise Exception(f"CodebuildResourceHelper: yo")
+        self.logger.debug("s2"*32)
+        sleep(5)
 
         #self.phases_params = kwargs.get("phases_params")
 
