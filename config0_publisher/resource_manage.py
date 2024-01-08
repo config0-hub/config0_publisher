@@ -1418,12 +1418,13 @@ class ResourceCmdHelper:
     def _eval_post_tf(self,method):
 
         # this is implemented in phases
-        if self.tf_results.get("status") is None and (self.phases_params_hash or self.phases_params):
-
+        #if self.tf_results.get("status") is None and (self.phases_params_hash or self.phases_params):
+        if self.phases_params_hash or self.phases_params:
             if self.phases_params_hash:
                 self.write_phases_to_json_file(
                     {
                         "results":self.tf_results,
+                        "status":self.tf_results.get("status"),
                         "phases_params_hash":self.phases_params_hash
                     }
                 )
@@ -1431,13 +1432,10 @@ class ResourceCmdHelper:
                 self.write_phases_to_json_file(
                     {
                         "results":self.tf_results,
+                        "status":self.tf_results.get("status"),
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
                 )
-
-            self.logger.debug("eval_post_tf: phases enabled - return True")
-
-            return
 
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
