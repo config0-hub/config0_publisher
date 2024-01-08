@@ -1437,6 +1437,9 @@ class ResourceCmdHelper:
                     }
                 )
 
+            # testtest456
+            return
+
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
 
