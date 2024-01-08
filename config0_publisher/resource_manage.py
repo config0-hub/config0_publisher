@@ -19,6 +19,7 @@ import json
 import boto3
 
 from time import sleep
+from time import time
 
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
@@ -132,7 +133,22 @@ class ResourceCmdHelper:
 
         os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
 
-        self.phases_params = [
+        self.phases_params = {
+            "create": [
+                {
+                    "name": "submit",
+                    "timewait": None,
+                },
+                {
+                    "name": "retrieve",
+                    "timewait": 3,
+                    "inputargs": {
+                        "interval": 10,
+                        "retries": 12
+                    }
+                }
+            ],
+            "destroy": [
                   {
                       "name": "submit",
                       "timewait": None,
@@ -145,7 +161,8 @@ class ResourceCmdHelper:
                           "retries": 12
                       }
                   }
-        ]
+            ]
+        }
 
         self.phases_params_hash = b64_encode(self.phases_params)
         ###############################################
@@ -1417,25 +1434,33 @@ class ResourceCmdHelper:
 
     def _eval_post_tf(self,method):
 
+        # add feature
+        # can add failure count in the future
+
+        try:
+            build_expire_at = self.tf_results["inputargs"]["build_expire_at"]
+        except:
+            build_expire_at = None
+
         # this is implemented in phases
-        #if self.tf_results.get("status") is None and (self.phases_params_hash or self.phases_params):
         if self.phases_params_hash or self.phases_params:
             if self.phases_params_hash:
-                self.write_phases_to_json_file(
-                    {
+                json_values = {
                         "results":self.tf_results,
                         "status":self.tf_results.get("status"),
                         "phases_params_hash":self.phases_params_hash
                     }
-                )
             elif self.phases_params:
-                self.write_phases_to_json_file(
-                    {
+                json_values = {
                         "results":self.tf_results,
                         "status":self.tf_results.get("status"),
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
-                )
+
+        if build_expire_at:
+            json_values["build_expire_at"] = build_expire_at
+
+        self.write_phases_to_json_file(json_values)
 
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
@@ -1468,12 +1493,10 @@ class ResourceCmdHelper:
 
         return
 
-    def _get_next_phase(self,**json_info):
+    def _get_next_phase(self,method="create",**json_info):
 
         results = json_info["results"]
-        phases_params = b64_decode(json_info["phases_params_hash"])
-
-        phase_names = [phase["name"] for phase in phases_params]
+        method_phases_params = b64_decode(json_info["phases_params_hash"])[method]
 
         completed = []
 
@@ -1481,7 +1504,7 @@ class ResourceCmdHelper:
             if phase_info.get("status"):
                 completed.append(phase_info["name"])
 
-        for phase_param in phases_params:
+        for phase_param in method_phases_params:
             if phase_param["name"] in completed:
                 continue
             self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
@@ -1524,7 +1547,8 @@ class ResourceCmdHelper:
             self.phases_params = b64_decode(self.phases_params_hash)
 
         if self.phases_info:
-            self.current_phase = self._get_next_phase(**self.phases_info)
+            self.current_phase = self._get_next_phase(self.method,
+                                                      **self.phases_info)
         elif self.phases_params_hash:
             self.current_phase = self.phases_params[0]  # first phase
 
