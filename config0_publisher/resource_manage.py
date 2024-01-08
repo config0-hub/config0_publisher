@@ -1550,6 +1550,7 @@ class ResourceCmdHelper:
             self.current_phase = self._get_next_phase(self.method,
                                                       **self.phases_info)
         elif self.phases_params_hash:
+            self.logger.json(self.phases_params)
             self.current_phase = self.phases_params[0]  # first phase
 
         self.phase = self.current_phase["name"]
