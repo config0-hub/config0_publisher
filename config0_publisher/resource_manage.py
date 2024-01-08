@@ -1163,7 +1163,7 @@ class ResourceCmdHelper:
     def jsonfile_to_phases_info(self):
 
         if not hasattr(self,"config0_phases_json"):
-            self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
+            self.logger.debug("jsonfile_to_phases_info - config0_phases_json not set")
             return
 
         if not self.config0_phases_json:
@@ -1177,7 +1177,7 @@ class ResourceCmdHelper:
     def delete_phases_to_json_file(self):
 
         if not hasattr(self,"config0_phases_json"):
-            self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
+            self.logger.debug("delete_phases_to_json_file - config0_phases_json not set")
             return
 
         if not self.config0_phases_json:
@@ -1439,6 +1439,9 @@ class ResourceCmdHelper:
 
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
+
+        if self.tf_results.get("status") is None:
+            return
 
         # evaluate whether it failed
         self._eval_failure()
