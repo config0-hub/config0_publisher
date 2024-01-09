@@ -165,6 +165,9 @@ class ResourceCmdHelper:
         }
 
         self.phases_params_hash = b64_encode(self.phases_params)
+
+        self.logger.debug(self.phases_params_hash)
+        raise Exception("9999")
         ###############################################
 
         # set specified env variables
