@@ -87,6 +87,41 @@ def _to_json(output):
 
     return output
 
+def get_default_phases_params():
+
+    phases_params = {
+           "create": [
+            {
+                "name": "submit",
+                "timewait": None,
+            },
+            {
+                "name": "retrieve",
+                "timewait": 3,
+                "inputargs": {
+                    "interval": 10,
+                    "retries": 12
+                }
+            }
+        ],
+        "destroy": [
+            {
+                "name": "submit",
+                "timewait": None,
+            },
+            {
+                "name": "retrieve",
+                "timewait": 3,
+                "inputargs": {
+                    "interval": 10,
+                    "retries": 12
+                }
+            }
+        ]
+    }
+
+    return b64_encode(phases_params)
+
 class MissingEnvironmentVariable(Exception):
     pass
 
@@ -121,8 +156,9 @@ class ResourceCmdHelper:
         self.app_name = kwargs.get("app_name")
         self.app_dir = kwargs.get("app_dir")
 
-        self.phases_params_hash = None
-        self.phases_params = None
+        self.phases_params_hash = kwargs.get("phases_params_hash")
+        self.phases_params = kwargs.get("phases_params")
+
         self.phases_info = None
         self.phase = None  # can be "run" since will only one phase
         self.current_phase = None
@@ -132,41 +168,10 @@ class ResourceCmdHelper:
         ###############################################
 
         os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
+        self._set_phases_params()
 
-        self.phases_params = {
-            "create": [
-                {
-                    "name": "submit",
-                    "timewait": None,
-                },
-                {
-                    "name": "retrieve",
-                    "timewait": 3,
-                    "inputargs": {
-                        "interval": 10,
-                        "retries": 12
-                    }
-                }
-            ],
-            "destroy": [
-                  {
-                      "name": "submit",
-                      "timewait": None,
-                  },
-                  {
-                      "name": "retrieve",
-                      "timewait": 3,
-                      "inputargs": {
-                          "interval": 10,
-                          "retries": 12
-                      }
-                  }
-            ]
-        }
-
-        self.phases_params_hash = b64_encode(self.phases_params)
-
-        self.logger.debug(self.phases_params_hash)
+        # testtest456
+        self.logger.json(self.phases_params_hash)
         raise Exception("9999")
         ###############################################
 
@@ -178,6 +183,19 @@ class ResourceCmdHelper:
         self._init_syncvars(**kwargs)
         self.set_class_vars()
         self._finalize_set_vars()
+
+    def _set_phases_params(self):
+
+        if self.phases_params_hash:
+            return
+
+        if self.phases_params:
+            self.phases_params_hash = b64_encode(self.phases_params)
+            return
+
+        if os.environ.get("PHASES_PARAMS_HASH"):
+            self.phases_params_hash = os.environ.get("PHASES_PARAMS_HASH")
+            return
 
     def init_phase_run(self):
 
