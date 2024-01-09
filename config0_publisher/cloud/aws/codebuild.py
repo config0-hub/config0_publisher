@@ -718,9 +718,18 @@ phases:
             sleep(wait_int)
         return
 
-    def retrieve(self):
+    def retrieve(self,**kwargs):
 
         '''
+        {
+          "inputargs": {
+              "interval": 10,
+              "retries": 12
+          },
+              "name": "retrieve",
+              "timewait": 3
+        }
+
         retrieve is the same as _retrieve except
         there is a check of the build status
         where the check itself times out
@@ -728,7 +737,11 @@ phases:
 
         self.phase_result = new_phase("retrieve")
 
-        if not self.check(wait_int=10,retries=12):
+        wait_int = kwargs.get("interval",10)
+        retries = kwargs.get("retries",12)
+
+        if not self.check(wait_int=wait_int,
+                          retries=retries):
             return
 
         return self._retrieve()
