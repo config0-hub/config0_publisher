@@ -163,16 +163,14 @@ class ResourceCmdHelper:
         self.phase = None  # can be "run" since will only one phase
         self.current_phase = None
 
+        self._set_phases_params()
+
         ###############################################
         # testtest456
         ###############################################
 
         os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
-        self._set_phases_params()
-
-        # testtest456
         self.logger.json(self.phases_params_hash)
-        raise Exception("9999")
         ###############################################
 
         # set specified env variables
