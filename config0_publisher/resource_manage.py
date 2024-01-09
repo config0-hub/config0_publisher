@@ -1506,7 +1506,7 @@ class ResourceCmdHelper:
 
         for phase_param in method_phases_params:
             if phase_param["name"] in completed:
-                self.logger.debug(f'phase {} completed"{phase_param["name"]}"')
+                self.logger.debug(f'phase "{phase_param["name"]}" completed')
                 continue
             self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
             return phase_param
