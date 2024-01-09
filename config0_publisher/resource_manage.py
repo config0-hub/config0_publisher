@@ -373,8 +373,7 @@ class ResourceCmdHelper:
             else:
                 exp = f'self.{_k}="{_v}"'
 
-            # testtest456
-            self.logger.debug(f" ## variable set: {_k} -> {_v}")
+            #self.logger.debug(f" ## variable set: {_k} -> {_v}")
             exec(exp)
 
     def _set_env_vars(self,**kwargs):
@@ -1224,7 +1223,6 @@ class ResourceCmdHelper:
 
         rm_rf(self.config0_phases_json)
 
-    # testtest456
     def write_phases_to_json_file(self,content_json):
 
         if not hasattr(self,"config0_phases_json"):
@@ -1585,6 +1583,56 @@ class ResourceCmdHelper:
         self.logger.debug("d"*32)
         self.logger.json(self.current_phase)
         self.logger.debug("e"*32)
+
+    def _exec_tf(self,method):
+
+        if self.build_method == "codebuild":
+            self.tf_results = self._exec_codebuild(method=method)
+        elif self.build_method == "lambda":
+            self.tf_results = self._exec_lambda(method=method)
+        else:  # execute locally
+            self._create_docker_env_file()
+            self.tf_results = self._exec_docker_local(method=method)
+
+        return self.tf_results
+
+    # testtest456
+    # insert 45245
+
+
+    def _exec_tf_destroy(self):
+
+        self._get_runtime_env_vars(method="destroy")
+        self._set_build_method()
+        self._exec_tf(method="destroy")
+
+        return self.tf_results
+
+    def destroy(self):
+
+        self.init_phase_run()
+
+        if self.phase == "submit":
+            self._exec_tf_destroy()
+        elif self.phase == "retrieve":
+            self._exec_tf_destroy()
+
+        status = self._eval_post_tf("destroy") # see if phases
+
+        try:
+            os.chdir(self.cwd)
+        except:
+            os.chdir("/tmp")
+
+        self.print_output(output=self.tf_results.get("output"))
+
+        return status
+
+
+
+
+
+
 
     #######################################################################
     #######################################################################
