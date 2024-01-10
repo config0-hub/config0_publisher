@@ -256,10 +256,10 @@ class ResourceCmdHelper:
 
     def _set_json_files(self):
 
-        if not self.config0_resource_json_file:
+        if not hasattr(self,"config0_resource_json_file") or not self.config0_resource_json_file:
             self.config0_resource_json_file = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
 
-        if not self.config0_phases_json_file:
+        if not hasattr(self,"config0_phases_json_file") or not self.config0_phases_json_file:
             self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
 
         if not self.config0_resource_json_file:
