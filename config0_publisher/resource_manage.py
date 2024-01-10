@@ -246,17 +246,36 @@ class ResourceCmdHelper:
         self.syncvars.set(init=None)
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
 
-        self.config0_resource_json = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
-        self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json}"')
-
-        self.config0_phases_json = os.environ.get("CONFIG0_PHASES_JSON_FILE")
-        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json}"')
+        self._set_json_files()
 
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             try:
                 self._print_out_key_class_vars()
             except:
                 self.logger.debug("could not print out debug class vars")
+
+    def _set_json_files(self):
+
+        self.config0_resource_json = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
+        self.config0_phases_json = os.environ.get("CONFIG0_PHASES_JSON_FILE")
+
+        if not self.config0_resource_json:
+            try:
+                self.config0_resource_json = os.path.join(self.stateful_dir,
+                                                     f"resource-{self.stateful_id}.json")
+            except:
+                self.config0_resource_json = None
+
+        self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json}"')
+
+        if not self.config0_phases_json:
+            try:
+                self.config0_phases_json = os.path.join(self.stateful_dir,
+                                                     f"phases-{self.stateful_id}.json")
+            except:
+                self.config0_phases_json = None
+
+        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json}"')
 
     def _print_out_key_class_vars(self):
 
@@ -1485,7 +1504,7 @@ class ResourceCmdHelper:
         if build_expire_at:
             json_values["build_expire_at"] = build_expire_at
 
-        self.logger.debug(json_values)
+        self.logger.json(json_values)
         self.logger.debug("z4"*32)
         self.write_phases_to_json_file(json_values)
 
