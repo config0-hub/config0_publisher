@@ -1511,8 +1511,6 @@ class ResourceCmdHelper:
         self.logger.debug("z4"*32)
         self.write_phases_to_json_file(json_values)
 
-        raise Exception('z5'*32)
-
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
 
@@ -1580,7 +1578,7 @@ class ResourceCmdHelper:
         self.logger.debug("k1"*32)
         self.logger.json(self.phases_info)
         self.logger.debug("k2"*32)
-        raise Exception('k3'*32)
+        #raise Exception('k3'*32)
 
         if self.phases_info and self.phases_info.get("inputargs"):
             self.set_class_vars(self.phases_info["inputargs"])
