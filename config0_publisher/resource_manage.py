@@ -1465,7 +1465,7 @@ class ResourceCmdHelper:
         self.logger.debug("z1"*32)
         self.logger.json(self.phases_params)
         self.logger.debug("z2"*32)
-        raise Exception('z3''*32)
+        raise Exception('z3'*32)
 
         # this is implemented in phases
         if self.phases_params_hash or self.phases_params:
