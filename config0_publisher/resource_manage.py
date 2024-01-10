@@ -256,26 +256,29 @@ class ResourceCmdHelper:
 
     def _set_json_files(self):
 
-        self.config0_resource_json = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
-        self.config0_phases_json = os.environ.get("CONFIG0_PHASES_JSON_FILE")
+        if not self.config0_resource_json_file:
+            self.config0_resource_json_file = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
 
-        if not self.config0_resource_json:
+        if not self.config0_phases_json_file:
+            self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
+
+        if not self.config0_resource_json_file:
             try:
-                self.config0_resource_json = os.path.join(self.stateful_dir,
-                                                     f"resource-{self.stateful_id}.json")
+                self.config0_resource_json_file = os.path.join(self.stateful_dir,
+                                                          f"resource-{self.stateful_id}.json")
             except:
-                self.config0_resource_json = None
+                self.config0_resource_json_file = None
 
-        self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json}"')
+        self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json_file}"')
 
-        if not self.config0_phases_json:
+        if not self.config0_phases_json_file:
             try:
-                self.config0_phases_json = os.path.join(self.stateful_dir,
-                                                     f"phases-{self.stateful_id}.json")
+                self.config0_phases_json_file = os.path.join(self.stateful_dir,
+                                                        f"phases-{self.stateful_id}.json")
             except:
-                self.config0_phases_json = None
+                self.config0_phases_json_file = None
 
-        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json}"')
+        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json_file}"')
 
     def _print_out_key_class_vars(self):
 
@@ -1216,61 +1219,61 @@ class ResourceCmdHelper:
 
     def jsonfile_to_phases_info(self):
 
-        if not hasattr(self,"config0_phases_json"):
-            self.logger.debug("jsonfile_to_phases_info - config0_phases_json not set")
+        if not hasattr(self,"config0_phases_json_file"):
+            self.logger.debug("jsonfile_to_phases_info - config0_phases_json_file not set")
             return
 
-        if not self.config0_phases_json:
+        if not self.config0_phases_json_file:
             return
 
-        if not os.path.exists(self.config0_phases_json):
+        if not os.path.exists(self.config0_phases_json_file):
             return
 
-        self.phases_info = get_values_frm_json(json_file=self.config0_phases_json)
+        self.phases_info = get_values_frm_json(json_file=self.config0_phases_json_file)
 
     def delete_phases_to_json_file(self):
 
-        if not hasattr(self,"config0_phases_json"):
-            self.logger.debug("delete_phases_to_json_file - config0_phases_json not set")
+        if not hasattr(self,"config0_phases_json_file"):
+            self.logger.debug("delete_phases_to_json_file - config0_phases_json_file not set")
             return
 
-        if not self.config0_phases_json:
+        if not self.config0_phases_json_file:
             return
 
-        if not os.path.exists(self.config0_phases_json):
+        if not os.path.exists(self.config0_phases_json_file):
             return
 
-        rm_rf(self.config0_phases_json)
+        rm_rf(self.config0_phases_json_file)
 
     def write_phases_to_json_file(self,content_json):
 
-        if not hasattr(self,"config0_phases_json"):
-            self.logger.debug("write_phases_to_json_file - config0_phases_json not set")
+        if not hasattr(self,"config0_phases_json_file"):
+            self.logger.debug("write_phases_to_json_file - config0_phases_json_file not set")
             return
 
-        if not self.config0_phases_json:
+        if not self.config0_phases_json_file:
             return
 
-        self.logger.debug(f"u4324: inserting retrieved data into {self.config0_phases_json}")
+        self.logger.debug(f"u4324: inserting retrieved data into {self.config0_phases_json_file}")
 
         to_jsonfile(content_json,
-                    self.config0_phases_json)
+                    self.config0_phases_json_file)
 
     def write_resource_to_json_file(self,resource,must_exist=None):
 
-        msg = "config0_resource_json needs to be set"
+        msg = "config0_resource_json_file needs to be set"
 
-        if not hasattr(self,"config0_resource_json") or not self.config0_resource_json:
+        if not hasattr(self,"config0_resource_json_file") or not self.config0_resource_json_file:
             if must_exist:
                 raise Exception(msg)
             else:
                 self.logger.debug(msg)
             return
 
-        self.logger.debug(f"u4324: inserting retrieved data into {self.config0_resource_json}")
+        self.logger.debug(f"u4324: inserting retrieved data into {self.config0_resource_json_file}")
 
         to_jsonfile(resource,
-                    self.config0_resource_json)
+                    self.config0_resource_json_file)
     def successful_output(self,**kwargs):
         self.print_output(**kwargs)
         exit(0)
