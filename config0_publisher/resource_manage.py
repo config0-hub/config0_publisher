@@ -1612,12 +1612,21 @@ class ResourceCmdHelper:
 
         self.init_phase_run()
 
+        # testtest456
+        self.logger.debug("y0"*32)
+
         if self.phase == "submit":
+            self.logger.debug("y1" * 32)
             self._exec_tf_destroy()
         elif self.phase == "retrieve":
+            self.logger.debug("y2" * 32)
             self._exec_tf_destroy()
 
+        self.logger.debug("y3" * 32)
+
         status = self._eval_post_tf("destroy") # see if phases
+        self.logger.debug("y4" * 32)
+        raise Exception("y5"*32)
 
         try:
             os.chdir(self.cwd)
