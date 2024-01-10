@@ -1465,7 +1465,6 @@ class ResourceCmdHelper:
         self.logger.debug("z1"*32)
         self.logger.json(self.phases_params)
         self.logger.debug("z2"*32)
-        raise Exception('z3'*32)
 
         # this is implemented in phases
         if self.phases_params_hash or self.phases_params:
@@ -1482,10 +1481,15 @@ class ResourceCmdHelper:
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
 
+        self.logger.debug("z3"*32)
         if build_expire_at:
             json_values["build_expire_at"] = build_expire_at
 
+        self.logger.debug(json_values)
+        self.logger.debug("z4"*32)
         self.write_phases_to_json_file(json_values)
+
+        raise Exception('z5'*32)
 
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
