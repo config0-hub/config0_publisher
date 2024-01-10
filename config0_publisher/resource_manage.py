@@ -168,7 +168,6 @@ class ResourceCmdHelper:
         ###############################################
         # testtest456
         ###############################################
-
         os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
         self.logger.json(self.phases_params_hash)
         ###############################################
@@ -196,13 +195,6 @@ class ResourceCmdHelper:
             return
 
     def init_phase_run(self):
-
-        # testtest456
-        self.logger.debug("0"*32)
-        self.logger.debug(self.phase)
-        self.logger.debug("1"*32)
-        self.logger.json(self.current_phase)
-        self.logger.debug("2"*32)
 
         if not self.current_phase:
             return
@@ -719,31 +711,14 @@ class ResourceCmdHelper:
                 file.write(output)
                 file.write("#"*32)
 
-        #if append:
-            #self.logger.debug("#"*32)
-            #self.logger.debug("# append logfile")
-            #self.logger.debug(f"# {logfile}")
-            #self.logger.debug("#"*32)
-            #self.logger.debug(output)
-            #self.logger.debug("#"*32)
-        #else:
-            #self.logger.debug("#"*32)
-            #self.logger.debug("# write logfile")
-            #self.logger.debug(f"# {logfile}")
-            #self.logger.debug("#"*32)
-            #self.logger.debug(output)
-            #self.logger.debug("#"*32)
-
         return logfile
 
     def to_resource_db(self,resources):
 
-        #print('ui'*32)
         output = _to_json(resources)
         print('_config0_begin_output')
         print(output)
         print('_config0_end_output')
-        #print('ui'*32)
 
         return
 
@@ -1481,13 +1456,6 @@ class ResourceCmdHelper:
         except:
             build_expire_at = None
 
-        # testtest456
-        self.logger.debug("z0"*32)
-        self.logger.json(self.phases_params_hash)
-        self.logger.debug("z1"*32)
-        self.logger.json(self.phases_params)
-        self.logger.debug("z2"*32)
-
         # this is implemented in phases
         if self.phases_params_hash or self.phases_params:
             if self.phases_params_hash:
@@ -1503,12 +1471,9 @@ class ResourceCmdHelper:
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
 
-        self.logger.debug("z3"*32)
         if build_expire_at:
             json_values["build_expire_at"] = build_expire_at
 
-        self.logger.json(json_values)
-        self.logger.debug("z4"*32)
         self.write_phases_to_json_file(json_values)
 
         if self.tf_results.get("status") is False:
@@ -1574,12 +1539,6 @@ class ResourceCmdHelper:
 
         self.jsonfile_to_phases_info()
 
-        # testtest456
-        self.logger.debug("k1"*32)
-        self.logger.json(self.phases_info)
-        self.logger.debug("k2"*32)
-        #raise Exception('k3'*32)
-
         if self.phases_info and self.phases_info.get("inputargs"):
             self.set_class_vars(self.phases_info["inputargs"])
 
@@ -1605,17 +1564,6 @@ class ResourceCmdHelper:
             self.current_phase = self.phases_params[self.method][0]  # first phase
 
         self.phase = self.current_phase["name"]
-
-        # testtest456
-        self.logger.debug("a"*32)
-        self.logger.debug(self.phases_params_hash)
-        self.logger.debug("b"*32)
-        self.logger.debug(self.phases_params)
-        self.logger.debug("c"*32)
-        self.logger.debug(self.phase)
-        self.logger.debug("d"*32)
-        self.logger.json(self.current_phase)
-        self.logger.debug("e"*32)
 
     def _exec_tf(self,method):
 
@@ -1645,20 +1593,12 @@ class ResourceCmdHelper:
 
         self.init_phase_run()
 
-        # testtest456
-        self.logger.debug("y0"*32)
-
         if self.phase == "submit":
-            self.logger.debug("y1" * 32)
             self._exec_tf_destroy()
         elif self.phase == "retrieve":
-            self.logger.debug("y2" * 32)
             self._exec_tf_destroy()
 
-        self.logger.debug("y3" * 32)
-
         status = self._eval_post_tf("destroy") # see if phases
-        self.logger.debug("y4" * 32)
 
         try:
             os.chdir(self.cwd)
