@@ -1660,7 +1660,6 @@ class ResourceCmdHelper:
 
         status = self._eval_post_tf("destroy") # see if phases
         self.logger.debug("y4" * 32)
-        raise Exception("y5"*32)
 
         try:
             os.chdir(self.cwd)
