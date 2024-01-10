@@ -1459,6 +1459,14 @@ class ResourceCmdHelper:
         except:
             build_expire_at = None
 
+        # testtest456
+        self.logger.debug("z0"*32)
+        self.logger.json(self.phases_params_hash)
+        self.logger.debug("z1"*32)
+        self.logger.json(self.phases_params)
+        self.logger.debug("z2"*32)
+        raise Exception('z3''*32)
+
         # this is implemented in phases
         if self.phases_params_hash or self.phases_params:
             if self.phases_params_hash:
