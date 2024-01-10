@@ -1525,7 +1525,11 @@ class ResourceCmdHelper:
             self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
             return phase_param
 
-        raise Exception(f"Cannot determine next phase to run")
+        self.logger.error("Cannot determine next phase to run - resetting")
+
+        os.system(f"rm -rf {self.run_share_dir}")
+
+        raise Exception("Cannot determine next phase to run")
 
     def set_cur_phase(self):
 
