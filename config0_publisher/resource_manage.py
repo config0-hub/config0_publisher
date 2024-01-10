@@ -1580,6 +1580,7 @@ class ResourceCmdHelper:
         self.logger.debug("k1"*32)
         self.logger.json(self.phases_info)
         self.logger.debug("k2"*32)
+        raise Exception('k3'*32)
 
         if self.phases_info and self.phases_info.get("inputargs"):
             self.set_class_vars(self.phases_info["inputargs"])
