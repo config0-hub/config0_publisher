@@ -695,13 +695,10 @@ phases:
 
         self.phase_result = new_phase("submit")
 
-        print(self.method)
-        print(self.method)
-        print(self.method)
-        print(self.method)
-        raise Exception("failed")
-
-        self._upload_to_s3_stateful()
+        # we don't want to clobber the intact
+        # stateful files from creation
+        if self.method != "destroy":
+            self._upload_to_s3_stateful()
 
         self.phase_result["executed"].append("upload_to_s3")
 
