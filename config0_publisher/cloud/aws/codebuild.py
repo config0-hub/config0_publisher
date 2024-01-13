@@ -355,7 +355,6 @@ class CodebuildResourceHelper(SetClassVarsHelper):
         _dstfile = '/tmp/{}.gz'.format(build_id_suffix)
 
         try:
-
             obj = self.s3.Object(_log_bucket,
                                  _logname)
 
@@ -696,7 +695,14 @@ phases:
 
         self.phase_result = new_phase("submit")
 
+        print(self.method)
+        print(self.method)
+        print(self.method)
+        print(self.method)
+        raise Exception("failed")
+
         self._upload_to_s3_stateful()
+
         self.phase_result["executed"].append("upload_to_s3")
 
         self._trigger_build()
