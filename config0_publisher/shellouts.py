@@ -66,7 +66,10 @@ def rm_rf(location):
     '''uses the shell to forcefully and recursively remove a file/entire directory.'''
 
     if not location:
-        return False
+        return
+
+    if not os.path.exists(location):
+        return
 
     try:
         os.remove(location)
@@ -74,13 +77,18 @@ def rm_rf(location):
     except:
         status = False
 
-    if status is False and os.path.exists(location):
+    if status:
+        return True
+
+    if os.path.exists(location):
         try:
             os.system("rm -rf %s > /dev/null 2>&1" % (location))
-            return True
+            status = True
         except:
             print("problems with removing %s" % location)
-            return False
+            status = False
+
+        return status
 
 def execute3(cmd, **kwargs):
 
