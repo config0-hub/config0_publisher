@@ -87,41 +87,6 @@ def _to_json(output):
 
     return output
 
-def get_default_phases_params():
-
-    phases_params = {
-           "create": [
-            {
-                "name": "submit",
-                "timewait": None,
-            },
-            {
-                "name": "retrieve",
-                "timewait": 3,
-                "inputargs": {
-                    "interval": 10,
-                    "retries": 12
-                }
-            }
-        ],
-        "destroy": [
-            {
-                "name": "submit",
-                "timewait": None,
-            },
-            {
-                "name": "retrieve",
-                "timewait": 3,
-                "inputargs": {
-                    "interval": 10,
-                    "retries": 12
-                }
-            }
-        ]
-    }
-
-    return b64_encode(phases_params)
-
 class MissingEnvironmentVariable(Exception):
     pass
 
@@ -169,7 +134,6 @@ class ResourceCmdHelper:
         # testtest456
         ###############################################
         os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
-        self.logger.json(self.phases_params_hash)
         ###############################################
 
         # set specified env variables

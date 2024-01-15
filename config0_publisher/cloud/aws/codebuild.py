@@ -57,7 +57,6 @@ class CodebuildResourceHelper(SetClassVarsHelper):
 
         # this is used for continuing via the state machine
         self.results = kwargs.get("results")
-        #self.phases_params = kwargs.get("phases_params")
 
         self.output = None
         self.logarn = None
@@ -705,7 +704,6 @@ phases:
         self._trigger_build()
         self.phase_result["executed"].append("trigger_codebuild")
         self.phase_result["status"] = True
-
         self.results["phases_info"].append(self.phase_result)
 
         return self.results
