@@ -1440,11 +1440,12 @@ class ResourceCmdHelper:
 
             self.write_phases_to_json_file(json_values)
 
-        if self.tf_results.get("status") is False:
-            self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
+        if self.tf_results:
+            if self.tf_results.get("status") is False:
+                self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
 
-        if self.tf_results.get("status") is None:
-            return
+            if self.tf_results.get("status") is None:
+                return
 
         # evaluate whether it failed
         self._eval_failure()
@@ -1565,6 +1566,8 @@ class ResourceCmdHelper:
             self._exec_tf_destroy()
         elif self.phase == "retrieve":
             self._exec_tf_destroy()
+        else:
+            self._exec_tf_destroy()
 
         status = self._eval_post_tf("destroy") # see if phases
 
@@ -1573,7 +1576,8 @@ class ResourceCmdHelper:
         except:
             os.chdir("/tmp")
 
-        self.print_output(output=self.tf_results.get("output"))
+        if self.tf_results:
+            self.print_output(output=self.tf_results.get("output"))
 
         return status
 
