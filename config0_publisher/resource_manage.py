@@ -1435,10 +1435,10 @@ class ResourceCmdHelper:
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
 
-        if build_expire_at:
-            json_values["build_expire_at"] = build_expire_at
+            if build_expire_at:
+                json_values["build_expire_at"] = build_expire_at
 
-        self.write_phases_to_json_file(json_values)
+            self.write_phases_to_json_file(json_values)
 
         if self.tf_results.get("status") is False:
             self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
