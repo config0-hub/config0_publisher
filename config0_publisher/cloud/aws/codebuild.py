@@ -305,7 +305,6 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         sparse_keys = [ "STATEFUL_ID",
                         "REMOTE_STATEFUL_BUCKET",
-                        "TRIGGERED_BY",
                         "TMPDIR",
                         "APP_DIR" ]
 
@@ -316,9 +315,6 @@ class CodebuildResourceHelper(AWSCommonConn):
             return env_vars
 
         pattern = r"^CODEBUILD"
-
-        # testtest456
-        self.build_env_vars["TRIGGERED_BY"] = "CONFIG0"
 
         for _k,_v in self.build_env_vars.items():
 
@@ -469,11 +465,6 @@ phases:
 
             if self.buildspec:
                 inputargs["buildspecOverride"] = self.buildspec
-
-            # testtest456
-            self.logger.debug("a"*32)
-            print_json(inputargs)
-            self.logger.debug("b"*32)
 
             try:
                 new_build = self.codebuild_client.start_build(**inputargs)
