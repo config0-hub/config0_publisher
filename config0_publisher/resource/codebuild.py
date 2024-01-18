@@ -138,12 +138,6 @@ phases:
     def run(self,**inputargs):
 
         self._init_codebuild_helper()
-
-        # testtest456
-        print("n0"*32)
-        print(inputargs)
-        print("n1"*32)
-        raise Exception("n4"*32)
         self.codebuild_helper.run(**inputargs)
 
         return self.codebuild_helper.results
