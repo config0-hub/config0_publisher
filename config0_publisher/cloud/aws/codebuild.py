@@ -14,9 +14,6 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def __init__(self,**kwargs):
 
-        AWSCommonConn.__init__(self,**kwargs)
-
-        self.codebuild_client = self.session.client('codebuild')
         self.results = kwargs.get("results")
         self.buildspec = kwargs.get("buildspec")
 
@@ -24,14 +21,22 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.project_name = None
         self.logarn = None
 
+        self.tarfile = None
+        self.share_dir = None
+        self.run_share_dir = None
+        self.stateful_id = None
+
+        AWSCommonConn.__init__(self,**kwargs)
+        self.codebuild_client = self.session.client('codebuild')
+
         if not self.results:
-            self.tarfile = None
-            self.share_dir = None
-            self.run_share_dir = None
-            self.stateful_id = None
-            self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
-            self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
-            self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
+
+            if not hasattr(self, 'build_image'):
+                self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
+            if not hasattr(self, 'image_type'):
+                self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
+            if not hasattr(self, 'compute_type'):
+                self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
 
             self.results = {
                 "build_method":"codebuild",
