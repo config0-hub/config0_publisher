@@ -316,6 +316,9 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         pattern = r"^CODEBUILD"
 
+        # testtest456
+        self.build_env_vars["TRIGGERED_BY"] = "CONFIG0"
+
         for _k,_v in self.build_env_vars.items():
 
             if not _v:
