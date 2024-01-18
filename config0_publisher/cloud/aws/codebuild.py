@@ -46,6 +46,23 @@ class CodebuildResourceHelper(AWSCommonConn):
         if not self.results["inputargs"].get("codebuild_basename"):
             self.results["inputargs"]["codebuild_basename"] = self.codebuild_basename
 
+    def get_set_env_vars(self):
+
+        return {
+            "tmp_bucket":True,
+            "log_bucket":True,
+            "build_image":True,
+            "image_type":True,
+            "compute_type":True,
+            "codebuild_basename":True,
+            "app_dir":None,
+            "stateful_id":None,
+            "remote_stateful_bucket":None,
+            "upload_bucket":None,
+            "run_share_dir":None,
+            "share_dir":None
+        }
+
     def _get_build_status(self,build_ids):
 
         results = {}
