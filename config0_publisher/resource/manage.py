@@ -1535,8 +1535,10 @@ class ResourceCmdHelper:
         cinputargs = { "method":method,
                        "build_timeout":self.build_timeout,
                        "remote_stateful_bucket":self.remote_stateful_bucket,
-                       "aws_region":self.aws_region,
-                       "codebuild_basename":self.codebuild_basename }
+                       "aws_region":self.aws_region }
+
+                       # testtest456
+                       #"codebuild_basename":self.codebuild_basename }
 
         if self.build_env_vars:
             cinputargs["build_env_vars"] = self.build_env_vars
