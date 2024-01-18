@@ -1579,7 +1579,7 @@ class ResourceCmdHelper:
         if self.build_env_vars.get("STATEFUL_ID"):
             create_envfile(self.build_env_vars,
                            envfile=f"{envfile}.enc",
-                           secret=b64_encode(self.build_env_vars["STATEFUL_ID"]))
+                           secret=self.build_env_vars["STATEFUL_ID"])
         else:
             create_envfile(self.build_env_vars,
                            envfile=envfile)

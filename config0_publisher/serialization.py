@@ -203,11 +203,10 @@ def create_envfile(env_vars,envfile=None,secret=True):
     # testtest456
     #print(virtual_file.getvalue())
     #encrypted_str = b64_encode(virtual_file.getvalue())
+    #encrypted_str = encrypt_str_openssl("admin123",
 
-    # testtest456
     base64_string = b64_encode(virtual_file.getvalue())
-    #encrypted_str = encrypt_str_openssl(secret,
-    encrypted_str = encrypt_str_openssl("admin123",
+    encrypted_str = encrypt_str_openssl(secret,
                                         base64_string)
 
     print(encrypted_str)
@@ -216,5 +215,7 @@ def create_envfile(env_vars,envfile=None,secret=True):
         f.write(encrypted_str)
 
     print(f"encrypted envfile {envfile} written.")
+    print(f"secret {secret} written.")
+    raise Exception('yoyo')
 
     return encrypted_str
