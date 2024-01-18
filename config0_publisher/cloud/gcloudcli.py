@@ -18,7 +18,7 @@ from time import sleep
 
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import OnDiskTmpDir
-from config0_publisher.resource_manage import ResourceCmdHelper
+from config0_publisher.resource.manage import ResourceCmdHelper
 from config0_publisher.utilities import id_generator
 
 

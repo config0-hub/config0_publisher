@@ -21,6 +21,8 @@ import boto3
 from time import sleep
 from time import time
 
+from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
+from config0_publisher.resource.codebuild import CodebuildParams
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 from config0_publisher.utilities import to_json
@@ -28,18 +30,16 @@ from config0_publisher.utilities import get_values_frm_json
 from config0_publisher.utilities import get_hash
 from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
+from config0_publisher.resource.manage import to_jsonfile
 #from config0_publisher.shellouts import execute3a
 
+from config0_publisher.serialization import create_envfile
 from config0_publisher.serialization import b64_decode
 from config0_publisher.serialization import b64_encode
 from config0_publisher.variables import SyncClassVarsHelper
 from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
 from config0_publisher.shellouts import rm_rf
-
-#import sys
-#reload(sys)
-#sys.setdefaultencoding('utf8')
 
 # ref 34532045732
 def to_jsonfile(values,filename,exec_dir=None):
@@ -1534,6 +1534,61 @@ class ResourceCmdHelper:
 
         self.phase = self.current_phase["name"]
 
+    #################################
+
+    def _exec_codebuild(self,method="create"):
+
+        cinputargs = { "method":method,
+                       "build_timeout":self.build_timeout,
+                       "remote_stateful_bucket":self.remote_stateful_bucket,
+                       "aws_region":self.aws_region,
+                       "codebuild_basename":self.codebuild_basename }
+
+        if self.build_env_vars:
+            cinputargs["build_env_vars"] = self.build_env_vars
+
+        if self.ssm_name:
+            cinputargs["ssm_name"] = self.ssm_name
+
+        if self.phases_info:
+            cinputargs["phases_info"] = self.phases_info
+
+        # we can add other implementation of codebuild with the spec version
+        codebuild = Codebuild(**cinputargs)
+
+        if self.phase == "retrieve":
+            return codebuild.retrieve(**self.get_phase_inputargs())
+
+        # submit and run required env file
+        self.create_build_envfile()
+
+        if self.phase == "submit":
+            return codebuild.submit(**self.get_phase_inputargs())
+
+        return codebuild.run()
+
+    def create_build_envfile(self):
+        '''
+        we use stateful_id for the encrypt key
+        '''
+
+        if not self.build_env_vars:
+            return
+
+        envfile = os.path.join(self.run_share_dir,
+                               self.app_dir,
+                               "build_env_vars.env")
+
+        if self.build_env_vars.get("STATEFUL_ID"):
+            create_envfile(self.build_env_vars,
+                           envfile=f"{envfile}.enc",
+                           secret=b64_encode(self.build_env_vars["STATEFUL_ID"]))
+        else:
+            create_envfile(self.build_env_vars,
+                           envfile=envfile)
+
+        return True
+
     def _exec_tf(self,method):
 
         if self.build_method == "codebuild":
@@ -1545,10 +1600,6 @@ class ResourceCmdHelper:
             self.tf_results = self._exec_docker_local(method=method)
 
         return self.tf_results
-
-    # testtest456
-    # insert 45245
-
 
     def _exec_tf_destroy(self):
 
@@ -1580,12 +1631,3 @@ class ResourceCmdHelper:
             self.print_output(output=self.tf_results.get("output"))
 
         return status
-
-
-
-
-
-
-
-    #######################################################################
-    #######################################################################
