@@ -118,9 +118,9 @@ phases:
         self._set_inputargs()
 
         # testtest456
-        self.logger.debug("x0"*32)
-        self.logger.json(self.buildparams)
-        self.logger.debug("x1"*32)
+        print("x0"*32)
+        print(self.buildparams)
+        print("x1"*32)
         raise Exception("x2"*32)
 
         self.codebuild_helper = CodebuildResourceHelper(**self.buildparams)
@@ -146,9 +146,9 @@ phases:
         self._init_codebuild_helper()
 
         # testtest456
-        self.logger.debug("n0"*32)
-        self.logger.json(inputargs)
-        self.logger.debug("n1"*32)
+        print("n0"*32)
+        print(inputargs)
+        print("n1"*32)
         raise Exception("n4"*32)
         self.codebuild_helper.run(**inputargs)
 
