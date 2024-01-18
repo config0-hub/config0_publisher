@@ -185,6 +185,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
     def upload_to_s3_stateful(self):
 
+        # testtest456
         print("y0"*32)
 
         if not self.stateful_id:
@@ -206,6 +207,9 @@ class AWSCommonConn(SetClassVarsHelper):
                      exit_error=True)
 
         print("y5" * 32)
+        print(self.tarfile)
+        print(self.tarfile)
+        print(self.tarfile)
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
                                                            self.stateful_id)

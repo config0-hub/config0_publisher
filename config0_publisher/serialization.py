@@ -200,6 +200,10 @@ def create_envfile(env_vars,envfile=None,secret=True):
     for key,value in env_vars.items():
         virtual_file.write(f"{key}={value}\n")
 
+    # testtest456
+    print(virtual_file.getvalue())
+    raise Exception('dsfaf')
+
     base64_string = b64_encode(virtual_file.getvalue())
     encrypted_str = encrypt_str_openssl(secret,
                                         base64_string)
