@@ -50,10 +50,6 @@ class AWSCommonConn(SetClassVarsHelper):
         else:
             self.set_class_vars_frm_results()
 
-        # need these initial variables
-        if not hasattr(self, 'aws_region'):
-            self.aws_region = kwargs.get("aws_region","us-east-1")
-
         self.s3 = boto3.resource('s3')
         self.session = boto3.Session(region_name=self.aws_region)
 
@@ -131,6 +127,9 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.tarfile = os.path.join("/tmp",
                                     self.stateful_id)
+
+        if not hasattr(self, 'aws_region'):
+            self.aws_region = kwargs.get("aws_region","us-east-1")
 
         # record these variables
         self.results["inputargs"].update(self._vars_set)
