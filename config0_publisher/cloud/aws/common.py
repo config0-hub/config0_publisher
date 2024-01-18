@@ -12,7 +12,7 @@ from config0_publisher.shellouts import execute3
 
 class AWSCommonConn(SetClassVarsHelper):
 
-    def __init__(self,init_vars=None,**kwargs):
+    def __init__(self,**kwargs):
 
         self.classname = "Codebuild"
         self.logger = Config0Logger(self.classname)
@@ -37,21 +37,16 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results = kwargs.get("results")
 
         if not self.results:
-            self._set_buildparams(**kwargs)
             self.results = {
-                "build_method":"codebuild",
                 "status":None,
                 "status_code":None,
                 "build_status":None,
                 "run_t0": int(time()),
                 "phases_info": [],
-                "inputargs":{
-                    "build_image":self.build_image,
-                    "image_type":self.image_type,
-                    "compute_type":self.compute_type,
-                },
+                "inputargs":{},
                 "env_vars":{},
             }
+            self._set_buildparams(**kwargs)
         else:
             self.set_class_vars_frm_results()
 
@@ -114,6 +109,7 @@ class AWSCommonConn(SetClassVarsHelper):
                                     set_env_vars=set_env_vars,
                                     kwargs=kwargs,
                                     env_vars=self.build_env_vars,
+                                    default_values=kwargs.get("default_values"),
                                     set_default_null=True)
 
         self.set_class_vars_srcs()
@@ -147,9 +143,6 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results["inputargs"]["share_dir"] = self.share_dir
         self.results["inputargs"]["run_share_dir"] = self.run_share_dir
         self.results["inputargs"]["tarfile"] = self.tarfile
-
-        if hasattr(self,"codebuild_basename") and self.codebuild_basename:
-            self.results["inputargs"]["codebuild_basename"] = self.codebuild_basename
 
     def _reset_share_dir(self):
         if not os.path.exists(self.run_share_dir):

@@ -13,7 +13,7 @@ from config0_publisher.loggerly import Config0Logger
 
 class SetClassVarsHelper:
 
-    def __init__(self,set_env_vars=None,kwargs=None,env_vars=None,set_default_null=None):
+    def __init__(self,set_env_vars=None,kwargs=None,env_vars=None,default_values=None,set_default_null=None):
 
         if set_env_vars:
             self.set_env_vars = set_env_vars
@@ -21,11 +21,17 @@ class SetClassVarsHelper:
             self.set_env_vars = None
 
         self.kwargs = kwargs
-
         self.env_vars = env_vars
+        self.default_values = default_values
+
+        if not self.kwargs:
+            self.kwargs = {}
 
         if not self.env_vars:
             self.env_vars = {}
+
+        if not self.default_values:
+            self.default_values = {}
 
         self.set_default_null = set_default_null
 
@@ -49,6 +55,18 @@ class SetClassVarsHelper:
                 self._vars_set[env_var] = self.env_vars[env_var.upper()]
                 exec('self.{}="{}"'.format(env_var,
                                            self.env_vars[env_var.upper()]))
+                continue
+
+            if env_var.upper() in os.environ:
+                self._vars_set[env_var] = os.environ[env_var.upper()]
+                exec('self.{}="{}"'.format(env_var,
+                                           os.environ[env_var.upper()]))
+                continue
+
+            if env_var.lower() in self.default_values:
+                self._vars_set[env_var.lower()] = self.default_values[env_var.lower()]
+                exec('self.{}="{}"'.format(env_var.lower(),
+                                           self.default_values[env_var.lower()]
                 continue
 
             if must_exists:

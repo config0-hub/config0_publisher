@@ -117,8 +117,6 @@ phases:
     def _init_codebuild_helper(self):
 
         self._set_inputargs()
-
-
         self.codebuild_helper = CodebuildResourceHelper(**self.buildparams)
 
     def submit(self,**inputargs):

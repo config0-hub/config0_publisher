@@ -20,22 +20,31 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.project_name = None
         self.logarn = None
 
-        # testtest456
-        #print("x0"*32)
-        #print_json(kwargs)
-        #print("x1"*32)
+        default_values = {
+            "build_image":'aws/codebuild/standard:7.0',
+            "image_type":'LINUX_CONTAINER',
+            "compute_type":"BUILD_GENERAL1_SMALL",
+            "codebuild_basename":"config0-iac"
+        }
 
         AWSCommonConn.__init__(self,
+                               default_values=default_values,
                                **kwargs)
 
+        # codebuild specific settings and variables
         self.codebuild_client = self.session.client('codebuild')
 
-        if not hasattr(self, 'build_image'):
-            self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
-        if not hasattr(self, 'image_type'):
-            self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
-        if not hasattr(self, 'compute_type'):
-            self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
+        if not self.results["inputargs"].get("build_image"):
+            self.results["inputargs"]["build_image"] = self.build_image
+
+        if not self.results["inputargs"].get("image_type"):
+            self.results["inputargs"]["image_type"] = self.image_type
+
+        if not self.results["inputargs"].get("compute_type"):
+            self.results["inputargs"]["compute_type"] = self.compute_type
+
+        if not self.results["inputargs"].get("codebuild_basename"):
+            self.results["inputargs"]["codebuild_basename"] = self.codebuild_basename
 
     def _get_build_status(self,build_ids):
 
