@@ -211,10 +211,6 @@ def create_envfile(env_vars,envfile=None,secret=True):
                                         base64_string)
 
     print(encrypted_str)
-    print(encrypted_str)
-    print(encrypted_str)
-    print(encrypted_str)
-    raise Exception('test test')
 
     with open(envfile, 'w') as f:
         f.write(encrypted_str)
