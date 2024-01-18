@@ -298,10 +298,12 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return summary_msg
 
-    def _env_vars_to_codebuild_format(self):
+    def _env_vars_to_codebuild_format(self,sparse=True):
 
         skip_keys = [ "AWS_ACCESS_KEY_ID",
                       "AWS_SECRET_ACCESS_KEY" ]
+
+        sparse_keys = [ "STATEFUL_ID"]
 
         env_vars = []
         _added = []
@@ -319,6 +321,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             if _k in skip_keys:
                 continue
+
+            if sparse:
+                if _k not in sparse:
+                    continue
 
             if re.search(pattern, _k):
                 continue
@@ -460,9 +466,8 @@ phases:
 
             # testtest456
             self.logger.debug("a"*32)
-            self.logger.debug(inputargs)
+            print_json(inputargs)
             self.logger.debug("b"*32)
-            raise Exception("c"*32)
 
             try:
                 new_build = self.codebuild_client.start_build(**inputargs)
