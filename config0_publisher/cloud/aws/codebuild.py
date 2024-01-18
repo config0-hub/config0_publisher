@@ -322,9 +322,8 @@ class CodebuildResourceHelper(AWSCommonConn):
             if _k in skip_keys:
                 continue
 
-            if sparse:
-                if _k not in sparse:
-                    continue
+            if sparse and _k not in sparse_keys:
+                continue
 
             if re.search(pattern, _k):
                 continue
