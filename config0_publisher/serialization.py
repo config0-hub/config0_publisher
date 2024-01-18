@@ -202,11 +202,13 @@ def create_envfile(env_vars,envfile=None,secret=True):
 
     # testtest456
     print(virtual_file.getvalue())
-    raise Exception('dsfaf')
 
-    base64_string = b64_encode(virtual_file.getvalue())
-    encrypted_str = encrypt_str_openssl(secret,
-                                        base64_string)
+    encrypted_str = b64_encode(virtual_file.getvalue())
+
+    # testtest456
+    #base64_string = b64_encode(virtual_file.getvalue())
+    #encrypted_str = encrypt_str_openssl(secret,
+    #                                    base64_string)
 
     with open(envfile, 'w') as f:
         f.write(encrypted_str)
