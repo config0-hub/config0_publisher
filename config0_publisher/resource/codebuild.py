@@ -118,13 +118,6 @@ phases:
 
         self._set_inputargs()
 
-        # testtest456
-        print("x0"*32)
-        print_json(self.buildparams)
-        print("x1"*32)
-        print(type(self.buildparams))
-        print("x2"*32)
-        raise Exception("x2"*32)
 
         self.codebuild_helper = CodebuildResourceHelper(**self.buildparams)
 

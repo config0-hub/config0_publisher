@@ -8,6 +8,7 @@ from io import BytesIO
 from time import sleep
 from time import time
 
+from config0_publisher.utilities import print_json
 from config0_publisher.cloud.aws.common import AWSCommonConn
 
 class CodebuildResourceHelper(AWSCommonConn):
@@ -25,6 +26,11 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.share_dir = None
         self.run_share_dir = None
         self.stateful_id = None
+
+        # testtest456
+        print("x0"*32)
+        print_json(kwargs)
+        print("x1"*32)
 
         AWSCommonConn.__init__(self,**kwargs)
         self.codebuild_client = self.session.client('codebuild')
