@@ -445,6 +445,12 @@ phases:
             if self.buildspec:
                 inputargs["buildspecOverride"] = self.buildspec
 
+            # testtest456
+            self.logger.debug("a"*32)
+            self.logger.debug(inputargs)
+            self.logger.debug("b"*32)
+            raise Exception("c"*32)
+
             try:
                 new_build = self.codebuild_client.start_build(**inputargs)
             except:
