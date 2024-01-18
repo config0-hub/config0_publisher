@@ -184,26 +184,36 @@ class AWSCommonConn(SetClassVarsHelper):
                      exit_error=True)
 
     def upload_to_s3_stateful(self):
+
+        print("y0"*32)
+
         if not self.stateful_id:
+            print("y1" * 32)
             return
+        print("y2" * 32)
 
         self._rm_tarfile()
+        print("y3" * 32)
 
         # ref 452345235
         # we keep the app_dir
         # cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz ."
         cmd = f"cd {self.run_share_dir} && tar cfz {self.tarfile}.tar.gz ."
+        print("y4" * 32)
 
         self.execute(cmd,
                      output_to_json=False,
                      exit_error=True)
 
+        print("y5" * 32)
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
                                                            self.stateful_id)
             status = True
         except:
             status = False
+
+        raise Exception('y6' * 32)
 
         if os.environ.get("DEBUG_STATEFUL"):
             self.logger.debug(f"tarfile file {self.tarfile}.tar.gz")
