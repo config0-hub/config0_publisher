@@ -303,7 +303,10 @@ class CodebuildResourceHelper(AWSCommonConn):
         skip_keys = [ "AWS_ACCESS_KEY_ID",
                       "AWS_SECRET_ACCESS_KEY" ]
 
-        sparse_keys = [ "STATEFUL_ID"]
+        sparse_keys = [ "STATEFUL_ID",
+                        "REMOTE_STATEFUL_BUCKET",
+                        "TMPDIR",
+                        "APP_DIR" ]
 
         env_vars = []
         _added = []

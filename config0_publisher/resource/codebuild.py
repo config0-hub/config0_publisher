@@ -161,6 +161,11 @@ class Codebuild(CodebuildParams):
       - mkdir -p $TMPDIR/build
       - tar xfz $TMPDIR/$STATEFUL_ID.tar.gz -C $TMPDIR/build
       - rm -rf $TMPDIR/$STATEFUL_ID.tar.gz
+      - export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc
+      - if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > /tmp/build_env_vars.env; fi
+      - if [ -f /tmp/build_env_vars.env ]; then cd /tmp; . ./build_env_vars.env ; fi 
+      - env 
+      - exit 9
 '''
         if self.ssm_name:
             ssm_params_content = '''
