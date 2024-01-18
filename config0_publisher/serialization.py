@@ -8,8 +8,8 @@ import zlib
 import gzip
 import base64
 import io
-import StringIO
 
+from StringIO import StringIO
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
