@@ -137,6 +137,12 @@ phases:
     def run(self,**inputargs):
 
         self._init_codebuild_helper()
+
+        # testtest456
+        self.logger.debug("n0"*32)
+        self.logger.json(inputargs)
+        self.logger.debug("n1"*32)
+        raise Exception("n4"*32)
         self.codebuild_helper.run(**inputargs)
 
         return self.codebuild_helper.results
