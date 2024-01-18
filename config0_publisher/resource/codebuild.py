@@ -116,6 +116,13 @@ phases:
     def _init_codebuild_helper(self):
 
         self._set_inputargs()
+
+        # testtest456
+        self.logger.debug("x0"*32)
+        self.logger.json(self.buildparams)
+        self.logger.debug("x1"*32)
+        raise Exception("x2"*32)
+
         self.codebuild_helper = CodebuildResourceHelper(**self.buildparams)
 
     def submit(self,**inputargs):
