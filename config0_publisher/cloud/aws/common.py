@@ -37,6 +37,7 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results = kwargs.get("results")
 
         if not self.results:
+            self._set_buildparams(**kwargs)
             self.results = {
                 "build_method":"codebuild",
                 "status":None,
@@ -51,7 +52,6 @@ class AWSCommonConn(SetClassVarsHelper):
                 },
                 "env_vars":{},
             }
-            self._set_buildparams(**kwargs)
         else:
             self.set_class_vars_frm_results()
 
