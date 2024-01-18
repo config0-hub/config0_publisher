@@ -58,7 +58,7 @@ class CodebuildResourceHelper(AWSCommonConn):
                 },
                 "env_vars":{},
             }
-            self.set_buildparams()
+            self.set_buildparams(**kwargs)
         else:
             self.set_class_vars_frm_results()
 
