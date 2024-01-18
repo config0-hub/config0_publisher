@@ -305,6 +305,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         sparse_keys = [ "STATEFUL_ID",
                         "REMOTE_STATEFUL_BUCKET",
+                        "TRIGGERED_BY",
                         "TMPDIR",
                         "APP_DIR" ]
 
