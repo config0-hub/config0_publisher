@@ -21,6 +21,7 @@ import boto3
 from time import sleep
 from time import time
 
+from config0_publisher.utilities import print_json
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import AWSBaseBuildParams
 
@@ -119,8 +120,10 @@ phases:
 
         # testtest456
         print("x0"*32)
-        print(self.buildparams)
+        print_json(self.buildparams)
         print("x1"*32)
+        print(type(self.buildparams))
+        print("x2"*32)
         raise Exception("x2"*32)
 
         self.codebuild_helper = CodebuildResourceHelper(**self.buildparams)
