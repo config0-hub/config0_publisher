@@ -12,33 +12,6 @@
 #Proprietary and confidential
 #Written by Gary Leong  <gary@config0.com, May 11,2022
 
-import os
-import jinja2
-import glob
-import json
-import boto3
-
-from time import sleep
-from time import time
-
-from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
-from config0_publisher.loggerly import Config0Logger
-from config0_publisher.utilities import print_json
-from config0_publisher.utilities import to_json
-from config0_publisher.utilities import get_values_frm_json
-from config0_publisher.utilities import get_hash
-from config0_publisher.shellouts import execute4
-from config0_publisher.shellouts import execute3
-from config0_publisher.resource.manage import to_jsonfile
-#from config0_publisher.shellouts import execute3a
-
-from config0_publisher.serialization import b64_decode
-from config0_publisher.serialization import b64_encode
-from config0_publisher.variables import SyncClassVarsHelper
-from config0_publisher.templating import list_template_files
-from config0_publisher.output import convert_config0_output_to_values
-from config0_publisher.shellouts import rm_rf
-
 class AWSBaseBuildParams(object):
 
     def __init__(self,**kwargs):
