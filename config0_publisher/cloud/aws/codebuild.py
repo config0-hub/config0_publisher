@@ -15,52 +15,27 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def __init__(self,**kwargs):
 
-        self.results = kwargs.get("results")
         self.buildspec = kwargs.get("buildspec")
-
         self.build_id = None
         self.project_name = None
         self.logarn = None
 
-        self.tarfile = None
-        self.share_dir = None
-        self.run_share_dir = None
-        self.stateful_id = None
-
         # testtest456
-        print("x0"*32)
-        print_json(kwargs)
-        print("x1"*32)
+        #print("x0"*32)
+        #print_json(kwargs)
+        #print("x1"*32)
 
-        AWSCommonConn.__init__(self,**kwargs)
+        AWSCommonConn.__init__(self,
+                               **kwargs)
+
         self.codebuild_client = self.session.client('codebuild')
 
-        if not self.results:
-
-            if not hasattr(self, 'build_image'):
-                self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
-            if not hasattr(self, 'image_type'):
-                self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
-            if not hasattr(self, 'compute_type'):
-                self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
-
-            self.results = {
-                "build_method":"codebuild",
-                "status":None,
-                "status_code":None,
-                "build_status":None,
-                "run_t0": int(time()),
-                "phases_info": [],
-                "inputargs":{
-                    "build_image":self.build_image,
-                    "image_type":self.image_type,
-                    "compute_type":self.compute_type,
-                },
-                "env_vars":{},
-            }
-            self.set_buildparams(**kwargs)
-        else:
-            self.set_class_vars_frm_results()
+        if not hasattr(self, 'build_image'):
+            self.build_image = kwargs.get("build_image",'aws/codebuild/standard:7.0')
+        if not hasattr(self, 'image_type'):
+            self.image_type = kwargs.get("image_type",'LINUX_CONTAINER')
+        if not hasattr(self, 'compute_type'):
+            self.compute_type = kwargs.get("compute_type","BUILD_GENERAL1_SMALL")
 
     def _get_build_status(self,build_ids):
 

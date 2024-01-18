@@ -12,7 +12,7 @@ from config0_publisher.shellouts import execute3
 
 class AWSCommonConn(SetClassVarsHelper):
 
-    def __init__(self,**kwargs):
+    def __init__(self,init_vars=None,**kwargs):
 
         self.classname = "Codebuild"
         self.logger = Config0Logger(self.classname)
@@ -26,14 +26,41 @@ class AWSCommonConn(SetClassVarsHelper):
         logging.getLogger('s3transfer.tasks').setLevel(logging.WARNING)
         logging.getLogger('s3transfer.futures').setLevel(logging.WARNING)
 
-        # need these initial variables
-        self.aws_region = kwargs.get("aws_region","us-east-1")
-        self.s3 = boto3.resource('s3')
-        self.session = boto3.Session(region_name=self.aws_region)
-
+        self.tarfile = None
+        self.share_dir = None
+        self.run_share_dir = None
+        self.stateful_id = None
         self.remote_stateful_bucket = None
         self.output = None
         self.cwd = os.getcwd()
+
+        self.results = kwargs.get("results")
+
+        if not self.results:
+            self.results = {
+                "build_method":"codebuild",
+                "status":None,
+                "status_code":None,
+                "build_status":None,
+                "run_t0": int(time()),
+                "phases_info": [],
+                "inputargs":{
+                    "build_image":self.build_image,
+                    "image_type":self.image_type,
+                    "compute_type":self.compute_type,
+                },
+                "env_vars":{},
+            }
+            self._set_buildparams(**kwargs)
+        else:
+            self.set_class_vars_frm_results()
+
+        # need these initial variables
+        if not hasattr(self, 'aws_region'):
+            self.aws_region = kwargs.get("aws_region","us-east-1")
+
+        self.s3 = boto3.resource('s3')
+        self.session = boto3.Session(region_name=self.aws_region)
 
     def new_phase(self,name):
 
@@ -66,7 +93,7 @@ class AWSCommonConn(SetClassVarsHelper):
             "share_dir":None
         }
 
-    def set_buildparams(self,**kwargs):
+    def _set_buildparams(self,**kwargs):
 
         self.method = kwargs.get("method")
         self.build_env_vars = kwargs.get("build_env_vars")
