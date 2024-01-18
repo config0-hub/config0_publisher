@@ -110,10 +110,11 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.set_class_vars_srcs()
 
-        if self.remote_stateful_bucket:
-            self.upload_bucket = self.remote_stateful_bucket
-        else:
-            self.upload_bucket = self.tmp_bucket
+        if not self.upload_bucket:
+            if self.remote_stateful_bucket:
+                self.upload_bucket = self.remote_stateful_bucket
+            else:
+                self.upload_bucket = self.tmp_bucket
 
         if not self.share_dir:
             self.share_dir = "/var/tmp/share"
@@ -128,7 +129,7 @@ class AWSCommonConn(SetClassVarsHelper):
         self.tarfile = os.path.join("/tmp",
                                     self.stateful_id)
 
-        if not hasattr(self, 'aws_region'):
+        if not hasattr(self,'aws_region') or not self.aws_region:
             self.aws_region = kwargs.get("aws_region","us-east-1")
 
         # record these variables
