@@ -9,7 +9,7 @@ import gzip
 import base64
 import io
 
-from StringIO import StringIO
+from io import StringIO
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
