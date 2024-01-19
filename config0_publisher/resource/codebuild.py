@@ -120,8 +120,8 @@ class Codebuild(CodebuildParams):
 
         contents = '''
   build:
-     on-failure: ABORT
-     commands:
+    on-failure: ABORT
+    commands:
 '''
         if self.method == "create":
             cmds = self.tfcmds.get_tf_apply()
@@ -129,6 +129,12 @@ class Codebuild(CodebuildParams):
             cmds = self.tfcmds.get_tf_destroy()
         else:
             raise Exception("method needs to be create/destroy")
+
+        # testtest456
+        print("j3"*32)
+        print(cmds)
+        print("j4"*32)
+        raise Exception("dsfaf")
 
         for cmd in cmds:
             contents + "\n" + f'       - {cmd}'
