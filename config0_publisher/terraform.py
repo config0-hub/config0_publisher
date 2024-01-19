@@ -151,10 +151,10 @@ class TFConstructor(object):
                                           types="int")
 
         self.stack.parse.tag_key(key="docker_runtime",
-                                 tags="resource,db,execgroup_inputargs,runtime_settings")
+                                 tags="resource,db,execgroup_inputargs,tf_runtime")
 
         self.stack.parse.tag_key(key="remote_stateful_bucket",
-                                 tags="resource,db,execgroup_inputargs,runtime_settings")
+                                 tags="resource,db,execgroup_inputargs,tf_runtime")
 
         self.stack.parse.tag_key(key="cloud_tags_hash",
                                  tags="execgroup_inputargs")
@@ -172,7 +172,7 @@ class TFConstructor(object):
                                     self.stack.random_id())
 
         self.stack.parse.tag_key(key="stateful_id",
-                                 tags="resource,db,execgroup_inputargs,runtime_settings")
+                                 tags="resource,db,execgroup_inputargs,tf_runtime")
 
     def _add_to_list(self,existing_keys,keys=None):
 
@@ -238,20 +238,20 @@ class TFConstructor(object):
 
         self.add_exclude_keys(keys)
 
-    def get_resource_params(self):
+    def get_resource_configs(self):
 
-        resource_params = { "include_raw": self.include_raw }
+        resource_configs = { "include_raw": self.include_raw }
 
         if self.include_keys:
-            resource_params["include_keys"] = self.include_keys
+            resource_configs["include_keys"] = self.include_keys
 
         if self.exclude_keys:
-            resource_params["exclude_keys"] = self.exclude_keys
+            resource_configs["exclude_keys"] = self.exclude_keys
 
         if self.maps:
-            resource_params["map_keys"] = self.maps
+            resource_configs["map_keys"] = self.maps
 
-        return resource_params
+        return resource_configs
 
     def _get_resource_settings(self):
 
@@ -275,10 +275,10 @@ class TFConstructor(object):
 
         return settings
 
-    def _get_runtime_settings(self):
+    def _get_tf_runtime(self):
 
         # docker env vars during execution
-        env_vars = self.stack.get_tagged_vars(tag="runtime_settings",
+        env_vars = self.stack.get_tagged_vars(tag="tf_runtime",
                                               output="dict",
                                               uppercase=True)
 
@@ -299,10 +299,12 @@ class TFConstructor(object):
         if tf_vars:
             settings["tf_vars_hash"] = self.stack.b64_encode(tf_vars)
 
-        resource_params = self.get_resource_params()
+        # tf resource params to enter tf create resource into
+        # the Config0 resource db
+        resource_configs = self.get_resource_configs()
 
-        if resource_params:
-            settings["resource_params_hash"] = self.stack.b64_encode(resource_params)
+        if resource_configs:
+            settings["resource_configs_hash"] = self.stack.b64_encode(resource_configs)
 
         return settings
 
@@ -311,7 +313,7 @@ class TFConstructor(object):
         self.stack.verify_variables()
 
         tf_settings = self._get_tf_settings()
-        runtime_settings = self._get_runtime_settings()
+        tf_runtime = self._get_tf_runtime()
         resource_settings = self._get_resource_settings()
 
         overide_values = self.stack.get_tagged_vars(tag="execgroup_inputargs",
@@ -341,7 +343,7 @@ class TFConstructor(object):
             overide_values["stateful_id"] = self.stack.stateful_id
 
         self._add_to_dict(overide_values,tf_settings)
-        self._add_to_dict(overide_values,runtime_settings)
+        self._add_to_dict(overide_values,tf_runtime)
         self._add_to_dict(overide_values,resource_settings)
 
         inputargs = { "automation_phase": "infrastructure",
