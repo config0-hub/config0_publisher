@@ -106,7 +106,7 @@ class Codebuild(CodebuildParams):
             cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
             cmds.append('. ./exports.env')
 
-            contents = '''
+        contents = '''
   pre_build:
     on-failure: ABORT
     commands:
