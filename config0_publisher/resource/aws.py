@@ -20,7 +20,7 @@ class TFCmdOnAWS(object):
             'cd $TMPDIR',
             f'aws s3 cp {tf_bucket_path} terraform.zip --quiet || export DNE="True"',
             f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
-            'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{ver}/terraform_{ver}_linux_amd64.zip -o terraform.zip; fi',
+            f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{ver}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
             f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
             'unzip terraform.zip',
             'mv terraform $TF_PATH'
