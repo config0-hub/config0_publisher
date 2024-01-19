@@ -8,7 +8,7 @@ from io import BytesIO
 from time import sleep
 from time import time
 
-from config0_publisher.utilities import print_json
+#from config0_publisher.utilities import print_json
 from config0_publisher.cloud.aws.common import AWSCommonConn
 
 class CodebuildResourceHelper(AWSCommonConn):
@@ -405,40 +405,6 @@ class CodebuildResourceHelper(AWSCommonConn):
             sleep(sleep_int)
 
         return False
-
-    def _test_get_with_buildspec(self):
-
-        contents = '''version: 0.2
-phases:
-  install:
-    commands:
-      - echo "Installing system dependencies..."
-      - apt-get update && apt-get install -y zip
-  pre_build:
-    commands:
-      - aws s3 cp s3://app-env.tmp.williaumwu.eee71/meelsrivavqqdkzy /tmp/meelsrivavqqdkzy.tar.gz --quiet
-      - mkdir -p /var/tmp/share/meelsrivavqqdkzy
-      - tar xfz /tmp/meelsrivavqqdkzy.tar.gz -C /var/tmp/share/meelsrivavqqdkzy/
-      - rm -rf /tmp/meelsrivavqqdkzy.tar.gz
-      - echo "Creating a virtual environment..."
-      - cd /var/tmp/share/meelsrivavqqdkzy && python3 -m venv venv
-  build:
-    commands:
-      - export PYTHON_VERSION=`python -c "import sys;print(f'{sys.version_info.major}.{sys.version_info.minor}')"`
-      - cd /var/tmp/share/meelsrivavqqdkzy
-      - . venv/bin/activate
-      - echo "Installing project dependencies..."
-      - pip install -r src/requirements.txt
-      - cp -rp src/* venv/lib/python$PYTHON_VERSION/site-packages/
-  post_build:
-    commands:
-      - cd /var/tmp/share/meelsrivavqqdkzy
-      - cd venv/lib/python$PYTHON_VERSION/site-packages/
-      - zip -r /tmp/trigger-codebuild.zip .
-      - aws s3 cp /tmp/trigger-codebuild.zip s3://codebuild-shared-ed-eval-d645633/trigger-codebuild.zip
-
-'''
-        return contents
 
     def _trigger_build(self):
 

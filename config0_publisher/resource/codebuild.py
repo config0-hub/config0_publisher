@@ -1,34 +1,13 @@
 #!/usr/bin/env python
 #
-#Project: config0_publisher: Config0 is a SaaS for building and managing
-#software and DevOps automation. This particular packages is a python
-#helper for publishing stacks, hostgroups, shellouts/scripts and other
-#assets used for automation
-#
-#Examples include cloud infrastructure, CI/CD, and data analytics
-#
-#Copyright (C) Gary Leong - All Rights Reserved
-#Unauthorized copying of this file, via any medium is strictly prohibited
-#Proprietary and confidential
-#Written by Gary Leong  <gary@config0.com, May 11,2022
-
-import os
-import jinja2
-import glob
-import json
-import boto3
-
-from time import sleep
-from time import time
-
-from config0_publisher.utilities import print_json
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import AWSBaseBuildParams
+from config0_publisher.resource.aws import TFCmdOnAWS
+
 
 class CodebuildParams(AWSBaseBuildParams):
 
     def __init__(self,**kwargs):
-
 
         AWSBaseBuildParams.__init__(self,**kwargs)
 
@@ -36,37 +15,6 @@ class CodebuildParams(AWSBaseBuildParams):
         self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
-    def _get_tf_direct(self):
-
-        contents = '''
-  install:
-    commands:
-      - which zip || apt-get update
-      - which zip || apt-get install -y unzip zip
-      - cd $TMPDIR
-      - aws s3 cp {loc} terraform.zip --quiet || export DNE="True"
-      - if [ ! -z "$DNE" ]; then echo "downloading tf {ver} from hashicorp"; fi
-      - if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{ver}/terraform_{ver}_linux_amd64.zip -o terraform.zip; fi
-      - if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {loc} --quiet ; fi
-      - unzip terraform.zip
-      - mv terraform /usr/local/bin/terraform
-'''.format(loc=self.tf_bucket_path,
-           ver=self.tf_version)
-
-        return contents
-
-    def _get_tf_from_docker_image(self):
-
-        contents = '''
-  install:
-    commands:
-      - docker run --name temp-copy-image -d --entrypoint /bin/sleep {} 900
-      - docker cp temp-copy-image:/bin/terraform /usr/local/bin/terraform
-      - docker rm -fv temp-copy-image
-      - terraform --version
-'''.format(self.build_env_vars["DOCKER_IMAGE"])
-
-        return contents
 
     def _set_inputargs(self):
 
@@ -88,10 +36,10 @@ class CodebuildParams(AWSBaseBuildParams):
 
         contents = '''
 version: 0.2
-
 env:
   variables:
     TMPDIR: /tmp
+    TF_PATH: /usr/local/bin/terraform
 '''
         if self.ssm_name:
             ssm_params_content = '''
@@ -106,13 +54,6 @@ phases:
         contents = contents + final_contents
 
         return contents
-
-    def _get_install_tf(self,source="direct"):
-
-        if source == "direct":
-            return self._get_tf_direct()
-
-        return self._get_tf_from_docker_image()
 
     def _init_codebuild_helper(self):
 
@@ -151,84 +92,71 @@ class Codebuild(CodebuildParams):
         CodebuildParams.__init__(self,
                                  **kwargs)
 
+        self.tfcmds = TFCmdOnAWS(runtime_env="codebuild")
+
     def _get_codebuildspec_prebuild(self):
 
-        contents = '''
+        cmds = self.tfcmds.s3_to_local()
+        cmds.extend(self.tfcmds.get_tf_install())
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars())
+        cmds.extend(self.tfcmds.get_src_buildenv_vars())
+
+        if self.ssm_name:
+            cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
+            cmds.append('. ./exports.env')
+
+            contents = '''
   pre_build:
     on-failure: ABORT
     commands:
-      - aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.tar.gz --quiet
-      - mkdir -p $TMPDIR/build
-      - tar xfz $TMPDIR/$STATEFUL_ID.tar.gz -C $TMPDIR/build
-      - rm -rf $TMPDIR/$STATEFUL_ID.tar.gz
-      - export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc
-      - if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > /tmp/build_env_vars.env; fi
-      - if [ -f /tmp/build_env_vars.env ]; then cd /tmp; . ./build_env_vars.env ; fi 
 '''
-        if self.ssm_name:
-            ssm_params_content = '''
-      - echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env
-      - . ./exports.env 
-'''
-            contents = contents + ssm_params_content
+        for cmd in cmds:
+            contents + "\n" + f'       - {cmd}'
 
         return contents
 
     def _get_codebuildspec_build(self):
 
+        contents = '''
+  build:
+     on-failure: ABORT
+     commands:
+'''
         if self.method == "create":
-
-            contents = '''
-  build:
-    on-failure: ABORT
-    commands:
-      - cd $TMPDIR/build/$APP_DIR
-      - /usr/local/bin/terraform init
-      - /usr/local/bin/terraform plan -out=tfplan
-      - /usr/local/bin/terraform apply tfplan || export FAILED=true
-      - if [ ! -z "$FAILED" ]; then /usr/local/bin/terraform destroy -auto-approve; fi
-      - if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi
-'''
+            cmds = self.tfcmds.get_tf_apply()
         elif self.method == "destroy":
-
-            contents = '''
-  build:
-    on-failure: ABORT
-    commands:
-      - cd $TMPDIR/build/$APP_DIR
-      - /usr/local/bin/terraform init
-      - /usr/local/bin/terraform destroy -auto-approve
-'''
+            cmds = self.tfcmds.get_tf_destroy()
         else:
             raise Exception("method needs to be create/destroy")
+
+        for cmd in cmds:
+            contents + "\n" + f'       - {cmd}'
 
         return contents
 
     def _get_codebuildspec_postbuild(self):
 
+        cmds = self.tfcmds.local_to_s3()
+
         contents = '''
   post_build:
     commands:
-      - cd $TMPDIR/build
-      - tar cfz $TMPDIR/$STATEFUL_ID.tar.gz .
-      - aws s3 cp $TMPDIR/$STATEFUL_ID.tar.gz s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet
-      - rm -rf $TMPDIR/$STATEFUL_ID.tar.gz
-      - echo "# terraform files uploaded s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"
-
 '''
-        return contents
+        for cmd in cmds:
+            contents + "\n" + f'       - {cmd}'
+
+            return contents
 
     def get_buildspec(self):
 
         init_contents = self.get_init_contents()
-        install_tf = self._get_install_tf()
         prebuild = self._get_codebuildspec_prebuild()
         build = self._get_codebuildspec_build()
         postbuild = self._get_codebuildspec_postbuild()
 
         if self.method == "create":
-            contents = init_contents + install_tf + prebuild + build + postbuild
+            contents = init_contents + prebuild + build + postbuild
         else:
-            contents = init_contents + install_tf + prebuild + build  # if destroy, we skip postbuild
+            contents = init_contents + prebuild + build  # if destroy, we skip postbuild
 
         return contents
