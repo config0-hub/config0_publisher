@@ -146,7 +146,7 @@ class Codebuild(CodebuildParams):
         for cmd in cmds:
             contents + "\n" + f'       - {cmd}'
 
-            return contents
+        return contents
 
     def get_buildspec(self):
 
@@ -159,5 +159,17 @@ class Codebuild(CodebuildParams):
             contents = init_contents + prebuild + build + postbuild
         else:
             contents = init_contents + prebuild + build  # if destroy, we skip postbuild
+
+        # testtest456
+        print("\n================================")
+        print(init_contents)
+        print("\n================================")
+        print(prebuild)
+        print("\n================================")
+        print(build)
+        print("\n================================")
+        print(postbuild)
+        print("\n================================")
+        raise Exception("dsfsdf")
 
         return contents
