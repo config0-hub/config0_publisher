@@ -134,10 +134,12 @@ class Codebuild(CodebuildParams):
         print("j3"*32)
         print(cmds)
         print("j4"*32)
-        raise Exception("dsfaf")
 
         for cmd in cmds:
             contents + "\n" + f'       - {cmd}'
+        print("j5"*32)
+        print(contents)
+        raise Exception("dsfaf")
 
         return contents
 
