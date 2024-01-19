@@ -112,7 +112,7 @@ class Codebuild(CodebuildParams):
     commands:
 '''
         for cmd in cmds:
-            contents + "\n" + f'       - {cmd}'
+            contents = contents + "\n" + f'       - {cmd}'
 
         return contents
 
@@ -136,7 +136,7 @@ class Codebuild(CodebuildParams):
         print("j4"*32)
 
         for cmd in cmds:
-            contents + "\n" + f'       - {cmd}'
+            contents = contents + "\n" + f'       - {cmd}'
         print("j5"*32)
         print(contents)
         raise Exception("dsfaf")
@@ -152,7 +152,7 @@ class Codebuild(CodebuildParams):
     commands:
 '''
         for cmd in cmds:
-            contents + "\n" + f'       - {cmd}'
+            contents = contents + "\n" + f'       - {cmd}'
 
         return contents
 
