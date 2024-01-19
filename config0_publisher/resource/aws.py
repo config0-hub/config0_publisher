@@ -6,7 +6,7 @@ class TFCmdOnAWS(object):
         self.classname = "TFCmdOnAWS"
         self.runtime_env = runtime_env
 
-    def get_tf_install(self,tf_bucket_path,tf_version=1.3.7):
+    def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
 
         if self.runtime_env == "codebuild":
             cmds = [
