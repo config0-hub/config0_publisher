@@ -94,6 +94,13 @@ class Codebuild(CodebuildParams):
 
         self.tfcmds = TFCmdOnAWS(runtime_env="codebuild")
 
+    def _add_cmds(self,contents,cmds):
+
+        for cmd in cmds:
+            contents = contents + "\n" + f'       - {cmd}'
+
+        return contents
+
     def _get_codebuildspec_prebuild(self):
 
         cmds = self.tfcmds.s3_to_local()
@@ -111,10 +118,7 @@ class Codebuild(CodebuildParams):
     on-failure: ABORT
     commands:
 '''
-        for cmd in cmds:
-            contents = contents + "\n" + f'       - {cmd}'
-
-        return contents
+        return self._add_command(contents,cmds)
 
     def _get_codebuildspec_build(self):
 
@@ -130,18 +134,7 @@ class Codebuild(CodebuildParams):
         else:
             raise Exception("method needs to be create/destroy")
 
-        # testtest456
-        print("j3"*32)
-        print(cmds)
-        print("j4"*32)
-
-        for cmd in cmds:
-            contents = contents + "\n" + f'       - {cmd}'
-        print("j5"*32)
-        print(contents)
-        raise Exception("dsfaf")
-
-        return contents
+        return self._add_command(contents,cmds)
 
     def _get_codebuildspec_postbuild(self):
 
@@ -151,10 +144,7 @@ class Codebuild(CodebuildParams):
   post_build:
     commands:
 '''
-        for cmd in cmds:
-            contents = contents + "\n" + f'       - {cmd}'
-
-        return contents
+        return self._add_command(contents,cmds)
 
     def get_buildspec(self):
 
