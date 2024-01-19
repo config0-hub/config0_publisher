@@ -97,7 +97,7 @@ class Codebuild(CodebuildParams):
     def _add_cmds(self,contents,cmds):
 
         for cmd in cmds:
-            contents = contents + "\n" + f'       - {cmd}'
+            contents = contents + f'       - {cmd}' + "\n"
 
         return contents
 

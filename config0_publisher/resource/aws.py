@@ -10,15 +10,15 @@ class TFCmdOnAWS(object):
 
         if self.runtime_env == "codebuild":
             cmds = [
-              'which zip || apt-get update'
-              'which zip || apt-get install -y unzip zip'
+              'which zip || apt-get update',
+              'which zip || apt-get install -y unzip zip',
             ]
         else:
             cmds = []
 
         cmds.extend([
-            'cd $TMPDIR'
-            'aws s3 cp {loc} terraform.zip --quiet || export DNE="True"',
+            'cd $TMPDIR',
+            f'aws s3 cp {tf_bucket_path} terraform.zip --quiet || export DNE="True"',
             f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
             'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{ver}/terraform_{ver}_linux_amd64.zip -o terraform.zip; fi',
             f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
@@ -30,7 +30,7 @@ class TFCmdOnAWS(object):
     def get_decrypt_buildenv_vars(self):
 
         cmds = [
-            'export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc'
+            'export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc',
             'if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > /$TMPDIR/build_env_vars.env; fi'
         ]
 
