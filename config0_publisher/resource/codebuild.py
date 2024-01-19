@@ -158,16 +158,4 @@ class Codebuild(CodebuildParams):
         else:
             contents = init_contents + prebuild + build  # if destroy, we skip postbuild
 
-        # testtest456
-        print("\n================================")
-        print(init_contents)
-        print("\n================================")
-        print(prebuild)
-        print("\n================================")
-        print(build)
-        print("\n================================")
-        print(postbuild)
-        print("\n================================")
-        raise Exception("dsfsdf")
-
         return contents
