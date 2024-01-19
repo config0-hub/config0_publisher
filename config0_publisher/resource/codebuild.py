@@ -118,7 +118,7 @@ class Codebuild(CodebuildParams):
     on-failure: ABORT
     commands:
 '''
-        return self._add_command(contents,cmds)
+        return self._add_cmds(contents,cmds)
 
     def _get_codebuildspec_build(self):
 
@@ -134,7 +134,7 @@ class Codebuild(CodebuildParams):
         else:
             raise Exception("method needs to be create/destroy")
 
-        return self._add_command(contents,cmds)
+        return self._add_cmds(contents,cmds)
 
     def _get_codebuildspec_postbuild(self):
 
@@ -144,7 +144,7 @@ class Codebuild(CodebuildParams):
   post_build:
     commands:
 '''
-        return self._add_command(contents,cmds)
+        return self._add_cmds(contents,cmds)
 
     def get_buildspec(self):
 
