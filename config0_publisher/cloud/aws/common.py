@@ -79,7 +79,6 @@ class AWSCommonConn(SetClassVarsHelper):
             "app_dir":None,
             "stateful_id":None,
             "remote_stateful_bucket":None,
-            "upload_bucket":None,
             "run_share_dir":None,
             "share_dir":None
         }
