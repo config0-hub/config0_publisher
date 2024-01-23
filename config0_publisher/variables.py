@@ -269,6 +269,8 @@ class EvaluateVar(object):
         except:
             msg = traceback.format_exc()
             self.logger.debug("could not update iterable object to not contain unicode")
+            self.logger.debug("current init_value {} type {}".format(self.init_value,
+                                                                     type(self.init_value))
             self.logger.debug(msg)
             new_obj = self.init_value
 
