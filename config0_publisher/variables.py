@@ -268,9 +268,11 @@ class EvaluateVar(object):
             new_obj = literal_eval(json.dumps(self.init_value))
         except:
             msg = traceback.format_exc()
-            self.logger.debug("could not update iterable object to not contain unicode")
             self.logger.debug("current init_value {} type {}".format(self.init_value,
                                                                      type(self.init_value)))
+            # testtest456
+            self.logger.json(self.results)
+            self.logger.debug("could not update iterable object to not contain unicode")
             self.logger.debug(msg)
             new_obj = self.init_value
 
