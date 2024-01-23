@@ -18,6 +18,7 @@ from config0_publisher.serialization import create_envfile
 from config0_publisher.serialization import b64_decode
 from config0_publisher.serialization import b64_encode
 from config0_publisher.variables import SyncClassVarsHelper
+from config0_publisher.variables import EnvVarsToClassVars:
 from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
 from config0_publisher.shellouts import rm_rf
@@ -119,12 +120,13 @@ class ResourceCmdHelper:
         ###############################################
 
         # set specified env variables
-        self._set_env_vars(**kwargs)
+        self._set_env_vars(env_vars=kwargs.get("env_vars"),
+                           clobber=True)
+
         self._set_os_env_prefix(**kwargs)
         self._set_app_params(**kwargs)
         
         self._init_syncvars(**kwargs)
-        self.set_class_vars()
         self._finalize_set_vars()
 
     def _set_phases_params(self):
@@ -172,16 +174,16 @@ class ResourceCmdHelper:
         self._set_stateful_params()
         self._set_exec_dir()
         self._set_docker_settings()
-
         self._set_destroy_env_vars()
         self._get_docker_env_filepath()
+        self._set_special_keywords_classvars()  # special keywords for chrootfiles_dest_dir
 
-        # special keywords for chrootfiles_dest_dir 
-        self._set_special_keywords_classvars()
+        # execute it final time to synchronize class vars set
+        self.set_class_vars()
 
-        self.set_class_vars()  # execute it final time to synchronize class vars set
+        # testtest456 not sure the below is needed
+        self.syncvars.set()
 
-        self.syncvars.set(init=None)
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
 
         self._set_json_files()
@@ -252,48 +254,94 @@ class ResourceCmdHelper:
             else:
                 self.syncvars.class_vars[key] = run_share_dir
 
+    #def _init_syncvars(self,**kwargs):
+
+    #    inputargs = kwargs.get("inputargs")
+    #    set_variables = kwargs.get("set_variables")
+    #    set_must_exists = kwargs.get("set_must_exists")
+    #    set_non_nullable = kwargs.get("set_non_nullable")
+    #    set_default_values = kwargs.get("set_default_values")
+
+    #    must_exists = ["stateful_id"]
+    #    non_nullable = []
+
+    #    # non_nullable = ["stateful_id"]
+
+    #    variables = ["stateful_id",
+    #                 "chrootfiles_dest_dir",
+    #                 "working_dir",
+    #                 "stateful_dir",
+    #                 "exec_base_dir",
+    #                 "tmp_bucket",
+    #                 "log_bucket",
+    #                 "run_share_dir",
+    #                 "remote_stateful_bucket",
+    #                 "tmpdir",
+    #                 "share_dir",
+    #                 "docker_runtime",
+    #                 "docker_exec_env",
+    #                 "docker_image",
+    #                 "destroy_execgroup",
+    #                 "destroy_env_vars"]
+
+    #    default_values = {"share_dir": "/var/tmp/share",
+    #                      "run_share_dir": None,
+    #                      "tmp_bucket": None,
+    #                      "log_bucket": None,
+    #                      "stateful_id": None,
+    #                      "destroy_env_vars": None,
+    #                      "destroy_execgroup": None,
+    #                      "docker_runtime": None,
+    #                      "docker_exec_env": None,
+    #                      "docker_image": None,
+    #                      "tmpdir": "/tmp",
+    #                      "exec_base_dir": os.getcwd()}
+
+    #    if set_must_exists:
+    #        must_exists.extend(set_must_exists)
+
+    #    if set_non_nullable:
+    #        non_nullable.extend(set_non_nullable)
+
+    #    if set_variables:
+    #        variables.extend(set_variables)
+
+    #    if set_default_values:
+    #        default_values.update(set_default_values)
+
+    #    self.syncvars = SyncClassVarsHelper(os_env_prefix=self.os_env_prefix,
+    #                                        app_name=self.app_name,
+    #                                        app_dir=self.app_dir,
+    #                                        variables=variables,
+    #                                        must_exists=must_exists,
+    #                                        non_nullable=non_nullable,
+    #                                        inputargs=inputargs,
+    #                                        default_values=default_values)
+
+    #    self.syncvars.set(init=True)
+
     def _init_syncvars(self,**kwargs):
 
-        inputargs = kwargs.get("inputargs")
-        set_variables = kwargs.get("set_variables")
         set_must_exists = kwargs.get("set_must_exists")
         set_non_nullable = kwargs.get("set_non_nullable")
         set_default_values = kwargs.get("set_default_values")
+        main_env_var_key = kwargs.get("main_env_var_key")
 
         must_exists = ["stateful_id"]
         non_nullable = []
 
-        #non_nullable = ["stateful_id"]
-        
-        variables = [ "stateful_id",
-                      "chrootfiles_dest_dir",
-                      "working_dir",
-                      "stateful_dir",
-                      "exec_base_dir",
-                      "tmp_bucket",
-                      "log_bucket",
-                      "run_share_dir",
-                      "remote_stateful_bucket",
-                      "tmpdir",
-                      "share_dir",
-                      "docker_runtime",
-                      "docker_exec_env",
-                      "docker_image",
-                      "destroy_execgroup",
-                      "destroy_env_vars" ]
-
-        default_values = { "share_dir":"/var/tmp/share",
-                           "run_share_dir":None,
-                           "tmp_bucket":None,
-                           "log_bucket":None,
-                           "stateful_id":None,
-                           "destroy_env_vars":None,
-                           "destroy_execgroup":None,
-                           "docker_runtime":None,
-                           "docker_exec_env":None,
-                           "docker_image":None,
-                           "tmpdir":"/tmp",
-                           "exec_base_dir":os.getcwd() }
+        default_values = {"share_dir": "/var/tmp/share",
+                          "run_share_dir": None,
+                          "tmp_bucket": None,
+                          "log_bucket": None,
+                          "stateful_id": None,
+                          "destroy_env_vars": None,
+                          "destroy_execgroup": None,
+                          "docker_runtime": None,
+                          "docker_exec_env": None,
+                          "docker_image": None,
+                          "tmpdir": "/tmp",
+                          "exec_base_dir": os.getcwd()}
 
         if set_must_exists:
             must_exists.extend(set_must_exists)
@@ -301,22 +349,20 @@ class ResourceCmdHelper:
         if set_non_nullable:
             non_nullable.extend(set_non_nullable)
 
-        if set_variables:
-            variables.extend(set_variables)
-
         if set_default_values:
             default_values.update(set_default_values)
 
-        self.syncvars = SyncClassVarsHelper(os_env_prefix=self.os_env_prefix,
-                                            app_name=self.app_name,
-                                            app_dir=self.app_dir,
-                                            variables=variables,
-                                            must_exists=must_exists,
-                                            non_nullable=non_nullable,
-                                            inputargs=inputargs,
-                                            default_values=default_values)
+        self.syncvars = EnvVarsToClassVars(
+            os_env_prefix=self.os_env_prefix,
+            app_name=self.app_name,
+            app_dir=self.app_dir,
+            must_exists=must_exists,
+            main_env_var_key=main_env_var_key,
+            non_nullable=non_nullable,
+            default_values=default_values)
 
         self.syncvars.set(init=True)
+        self.set_class_vars()
 
     def set_class_vars(self,class_vars=None):
 
@@ -336,19 +382,25 @@ class ResourceCmdHelper:
             #self.logger.debug(f" ## variable set: {_k} -> {_v}")
             exec(exp)
 
-    def _set_env_vars(self,**kwargs):
+    def _set_env_vars(self,env_vars=None,clobber=False):
 
-        set_env_vars = kwargs.get("env_vars")
+        set_env_vars = env_vars
 
         if not set_env_vars:
             return
 
         for _k,_v in set_env_vars.items():
+
             if _v is None:
                 continue
-            os.environ[_k] = str(_v)
+
+            if _k in os.environ and not clobber:
+                continue
+
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                print(f"{_k} -> {_v}")
+
+            os.environ[_k] = str(_v)
 
     def _set_os_env_prefix(self,**kwargs):
 

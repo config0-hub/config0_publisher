@@ -238,44 +238,40 @@ class TFConstructor(object):
 
         self.add_exclude_keys(keys)
 
-    def get_resource_configs(self):
+    def _get_resource_configs_hash(self):
 
-        resource_configs = { "include_raw": self.include_raw }
+        env_vars = self.stack.get_tagged_vars(
+            tag="resource",
+            output="dict",
+            uppercase=True
+        )
+
+        _configs = { "include_raw": self.include_raw }
 
         if self.include_keys:
-            resource_configs["include_keys"] = self.include_keys
+            _configs["include_keys"] = self.include_keys
 
         if self.exclude_keys:
-            resource_configs["exclude_keys"] = self.exclude_keys
+            _configs["exclude_keys"] = self.exclude_keys
 
         if self.maps:
-            resource_configs["map_keys"] = self.maps
-
-        return resource_configs
-
-    def _get_resource_settings(self):
-
-        settings = {}
-
-        env_vars = self.stack.get_tagged_vars(tag="resource",
-                                              output="dict",
-                                              uppercase=True)
+            _configs["map_keys"] = self.maps
 
         if self.resource_values:
-            settings["resource_values_hash"] = self.stack.b64_encode(self.resource_values)
+            _configs["values"] = self.resource_values
 
         if env_vars:
-            settings["resource_env_vars_hash"] = self.stack.b64_encode(env_vars)
+            _configs["env_vars"] = env_vars
 
         if self.output_keys:
-            settings["resource_output_keys_hash"] = self.stack.b64_encode(self.output_keys)
+            _configs["output_keys"] = self.output_keys
 
         if self.output_prefix_key:
-            settings["resource_output_prefix"] = self.output_prefix_key
+            _configs["output_prefix_key"] = self.output_prefix_key
 
-        return settings
+        return self.stack.b64_encode(_configs)
 
-    def _get_tf_runtime(self):
+    def _get_runtime_env_vars(self):
 
         # docker env vars during execution
         env_vars = self.stack.get_tagged_vars(tag="tf_runtime",
@@ -285,39 +281,20 @@ class TFConstructor(object):
         if not env_vars:
             return 
 
-        return {"runtime_env_vars_hash":self.stack.b64_encode(env_vars)}
+        return self.stack.b64_encode(env_vars)
 
-    def _get_tf_settings(self):
-
-        settings = {}
+    def _get_tf_vars_hash(self):
 
         # terraform variables converted to TF_VAR_<var>
         tf_vars = self.stack.get_tagged_vars(tag="tfvar",
                                              include_type=True,
                                              output="dict")
 
-        if tf_vars:
-            settings["tf_vars_hash"] = self.stack.b64_encode(tf_vars)
-
-        # tf resource params to enter tf create resource into
-        # the Config0 resource db
-        resource_configs = self.get_resource_configs()
-
-        if resource_configs:
-            settings["resource_configs_hash"] = self.stack.b64_encode(resource_configs)
-
-        return settings
+        return  self.stack.b64_encode(tf_vars)
 
     def get_inputargs(self):
 
         self.stack.verify_variables()
-
-        tf_settings = self._get_tf_settings()
-        tf_runtime = self._get_tf_runtime()
-        resource_settings = self._get_resource_settings()
-
-        overide_values = self.stack.get_tagged_vars(tag="execgroup_inputargs",
-                                                    output="dict")
 
         execgroup_ref = self.stack.get_locked(execgroup=self.execgroup_name)
 
@@ -325,11 +302,18 @@ class TFConstructor(object):
             self.stack.logger.warn("execgroup_ref cannot be found through assets locks - will use the latest")
             execgroup_ref = self.execgroup_name
 
+        overide_values = self.stack.get_tagged_vars(tag="execgroup_inputargs",
+                                                    output="dict")
+
         overide_values["provider"] = self.provider
         overide_values["execgroup_ref"] = execgroup_ref
         overide_values["resource_name"] = self.resource_name
         overide_values["resource_type"] = self.resource_type
         overide_values["terraform_type"] = self.terraform_type
+
+        overide_values["tf_vars_hash"] = self._get_tf_vars_hash()
+        overide_values["resource_configs_hash"] = self._get_resource_configs_hash()
+        overide_values["runtime_env_vars_hash"] = self._get_runtime_env_vars()
 
         # user provided overides
         if self.docker_runtime:
@@ -341,10 +325,6 @@ class TFConstructor(object):
 
         if self.stack.stateful_id:
             overide_values["stateful_id"] = self.stack.stateful_id
-
-        self._add_to_dict(overide_values,tf_settings)
-        self._add_to_dict(overide_values,tf_runtime)
-        self._add_to_dict(overide_values,resource_settings)
 
         inputargs = { "automation_phase": "infrastructure",
                       "human_description": "invoking tf executor",
