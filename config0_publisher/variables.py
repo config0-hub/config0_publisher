@@ -17,6 +17,7 @@
 
 import os
 import json
+import traceback
 
 from time import sleep
 from ast import literal_eval
@@ -266,7 +267,9 @@ class EvaluateVar(object):
         try:
             new_obj = literal_eval(json.dumps(self.init_value))
         except:
-            self.logger.warn("could not update iterable object to not contain unicode")
+            msg = traceback.format_exc()
+            self.logger.debug("could not update iterable object to not contain unicode")
+            self.logger.debug(msg)
             new_obj = self.init_value
 
         return new_obj
