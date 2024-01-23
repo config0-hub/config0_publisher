@@ -71,7 +71,7 @@ def get_init_var_type(value):
 
 class EvaluateVar(object):
 
-    def __init__(self):
+    def __init__(self,**kwargs):
 
         self.classname = 'EvaluateVar'
 
