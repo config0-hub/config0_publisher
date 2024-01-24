@@ -419,18 +419,23 @@ class ResourceCmdHelper:
 
         for _k,_v in set_env_vars.items():
 
+            if self.os_env_prefix in _k:
+                _key = _k
+            else:
+                _key = _k.upper()
+
             if _v is None:
                 continue
 
-            if _k in os.environ and not clobber:
+            if _key in os.environ and not clobber:
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
-               print(f"{_k} -> {_v}")
+               print(f"o--o {_key} -> {_v}")
 
-            print(f"o--o {_k} -> {_v}")
+            print(f"o--o {_key} -> {_v}")
 
-            os.environ[_k] = str(_v)
+            os.environ[_key] = str(_v)
 
     def _set_os_env_prefix(self,**kwargs):
 
