@@ -376,11 +376,11 @@ class ResourceCmdHelper:
             default_values.update(set_default_values)
 
         self.syncvars = EnvVarsToClassVars(
+            main_env_var_key=main_env_var_key,
             os_env_prefix=self.os_env_prefix,
             app_name=self.app_name,
             app_dir=self.app_dir,
             must_exists=must_exists,
-            main_env_var_key=main_env_var_key,
             non_nullable=non_nullable,
             default_keys=default_keys,
             default_values=default_values)
