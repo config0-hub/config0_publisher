@@ -428,8 +428,7 @@ class ResourceCmdHelper:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                print(f"{_k} -> {_v}")
 
-            # testtest456
-            print(f"-- {_k} -> {_v}")
+            print(f"o--o {_k} -> {_v}")
 
             os.environ[_k] = str(_v)
 
