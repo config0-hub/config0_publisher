@@ -546,6 +546,10 @@ class EnvVarsToClassVars:
         for _k in self._must_exists:
             if _k.lower() in self.class_vars:
                 continue
+
+            print("*"*32)
+            print(self.class_vars.keys())
+            print("*"*32)
             raise Exception(f"class var {_k} must be set")
 
     def eval_non_nullable(self):
