@@ -194,7 +194,6 @@ class ResourceCmdHelper:
 
         # testtest456
         self._print_out_key_class_vars()
-        raise Exception("456")
 
     def _set_json_files(self):
 
@@ -437,7 +436,6 @@ class ResourceCmdHelper:
 
             # testtest456
             print(f"o--o {_key} -> {_v}")
-
             os.environ[_key] = str(_v)
 
     def _set_os_env_prefix(self,**kwargs):
