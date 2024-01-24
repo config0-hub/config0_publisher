@@ -516,9 +516,6 @@ class EnvVarsToClassVars:
         self.main_dict = b64_decode(os.environ[self.main_env_var_key])
         self.env_vars = self.main_dict["env_vars"]
         self.env_vars_to_class_vars(self.env_vars)
-
-        print_json(self.env_vars)
-        raise Exception('hoho')
     def env_vars_to_class_vars(self,env_vars):
 
         for key,value in env_vars.items():
