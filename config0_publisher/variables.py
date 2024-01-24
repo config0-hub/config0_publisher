@@ -22,6 +22,7 @@ import traceback
 from ast import literal_eval
 from config0_publisher.serialization import b64_decode
 from config0_publisher.loggerly import Config0Logger
+from config0_publisher.utilities import print_json
 
 def get_init_var_type(value):
 
@@ -566,8 +567,15 @@ class EnvVarsToClassVars:
 
         if init:
             self.init_env_vars()
+        print("j1"*32)
+        print_json(self.env_vars)
+        print("j1"*32)
 
         self.set_default_values()
+        print("j2"*32)
+        print_json(self.env_vars)
+        print("j2"*32)
+        raise Exception('sdfafas')
         self.eval_must_exists()
         self.eval_non_nullable()
 

@@ -400,6 +400,9 @@ class ResourceCmdHelper:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                print(f"{_k} -> {_v}")
 
+            # testtest456
+            print(f"-- {_k} -> {_v}")
+
             os.environ[_k] = str(_v)
 
     def _set_os_env_prefix(self,**kwargs):
@@ -860,7 +863,6 @@ class ResourceCmdHelper:
         raise MissingEnvironmentVariable("{} does not exist".format(variable))
 
     def print_json(self,values):
-
         print_json(values)
 
     def templify(self,**kwargs):
