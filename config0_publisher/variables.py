@@ -543,7 +543,7 @@ class EnvVarsToClassVars:
         if not self._must_exists:
             return
 
-        for _k.lower() in self._must_exists:
+        for _k in self._must_exists:
             if _k.lower() in self.class_vars:
                 continue
             raise Exception(f"class var {_k} must be set")
@@ -553,7 +553,7 @@ class EnvVarsToClassVars:
         if not self._non_nullable:
             return
 
-        for _k.lower() in self._non_nullable:
+        for _k in self._non_nullable:
             if self.class_vars.get(_k.lower()):
                 continue
             raise Exception(f"class var {_k} cannot be null/None")
