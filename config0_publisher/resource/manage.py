@@ -1659,12 +1659,11 @@ class ResourceCmdHelper:
             create_envfile(self.build_env_vars,
                            envfile=envfile)
 
-
         # testtest456
         print("h0"*32)
         print(envfile)
         print("h0"*32)
-        sleep(300)
+        raise Exception('h1')
 
         return True
 
