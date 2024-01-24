@@ -232,10 +232,12 @@ class ResourceCmdHelper:
         working_dir = self.syncvars.class_vars.get("working_dir")
         run_share_dir = self.syncvars.class_vars.get("run_share_dir")
 
-        keys = [ "chrootfiles_dest_dir", "working_dir" ]
+        keys = [
+            "chrootfiles_dest_dir",
+            "working_dir"
+        ]
 
         for key in keys:
-
             if not self.syncvars.class_vars.get(key):
                 continue
 
@@ -243,7 +245,6 @@ class ResourceCmdHelper:
 
             if value not in ["_set_to_run_share_dir", "_set_to_share_dir"]:
                 continue
-
             if not run_share_dir:
                 self.logger.warn(f"could not set {key} run_share_dir")
                 self.syncvars.class_vars[key] = None
@@ -353,18 +354,20 @@ class ResourceCmdHelper:
             "config0_phases_json_file"
         ]
 
-        default_values = {"share_dir": "/var/tmp/share",
-                          "run_share_dir": None,
-                          "tmp_bucket": None,
-                          "log_bucket": None,
-                          "stateful_id": None,
-                          "destroy_env_vars": None,
-                          "destroy_execgroup": None,
-                          "docker_runtime": None,
-                          "docker_exec_env": None,
-                          "docker_image": None,
-                          "tmpdir": "/tmp",
-                          "exec_base_dir": os.getcwd()}
+        default_values = {
+            "share_dir": "/var/tmp/share",
+            "run_share_dir": None,
+            "tmp_bucket": None,
+            "log_bucket": None,
+            "stateful_id": None,
+            "destroy_env_vars": None,
+            "destroy_execgroup": None,
+            "docker_runtime": None,
+            "docker_exec_env": None,
+            "docker_image": None,
+            "tmpdir": "/tmp",
+            "exec_base_dir": os.getcwd()
+        }
 
         if set_must_exists:
             must_exists.extend(set_must_exists)
@@ -1604,11 +1607,12 @@ class ResourceCmdHelper:
 
     def _exec_codebuild(self,method="create"):
 
-        cinputargs = { "method":method,
-                       "build_timeout":self.build_timeout,
-                       "remote_stateful_bucket":self.remote_stateful_bucket,
-                       "aws_region":self.aws_region }
-
+        cinputargs = {
+            "method":method,
+            "build_timeout":self.build_timeout,
+            "remote_stateful_bucket":self.remote_stateful_bucket,
+            "aws_region":self.aws_region
+        }
                        # testtest456
                        #"codebuild_basename":self.codebuild_basename }
 
@@ -1654,6 +1658,13 @@ class ResourceCmdHelper:
         else:
             create_envfile(self.build_env_vars,
                            envfile=envfile)
+
+
+        # testtest456
+        print("h0"*32)
+        print(envfile)
+        print("h0"*32)
+        sleep(300)
 
         return True
 
