@@ -19,9 +19,9 @@ import os
 import json
 import traceback
 
-from time import sleep
 from ast import literal_eval
 from config0_publisher.serialization import b64_decode
+from config0_publisher.loggerly import Config0Logger
 
 def get_init_var_type(value):
 
@@ -71,12 +71,11 @@ def get_init_var_type(value):
 
 class EvaluateVar(object):
 
-    def __init__(self,**kwargs):
+    def __init__(self):
 
         self.classname = 'EvaluateVar'
 
-        self.logger = set_log(self.classname,
-                              logcategory="general")
+        self.logger = Config0Logger(self.classname)
 
         # revisit 3542353245
         # the boolean types need to cover
