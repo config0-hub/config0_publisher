@@ -518,6 +518,8 @@ class EnvVarsToClassVars:
 
         for key,value in env_vars.items():
             self.class_vars[key.lower()] = value
+            print(f"{key} -> {value}")
+        raise Exception('testtest456')
 
     def add_env_var(self,_env_var):
 
