@@ -518,8 +518,6 @@ class EnvVarsToClassVars:
 
         for key,value in env_vars.items():
             self.class_vars[key.lower()] = value
-            print(f"{key} -> {value}")
-        raise Exception('testtest456')
 
     def add_env_var(self,_env_var):
 
@@ -536,10 +534,8 @@ class EnvVarsToClassVars:
             return
 
         for _k,_v in self._default_values.items():
-
             if _k.lower() in self.class_vars:
                 continue
-
             self.class_vars[_k.lower()] = _v
 
     def eval_must_exists(self):
@@ -548,10 +544,8 @@ class EnvVarsToClassVars:
             return
 
         for _k in self._must_exists:
-
             if _k in self.class_vars:
                 continue
-
             raise Exception(f"class var {_k} must be set")
 
     def eval_non_nullable(self):
@@ -560,10 +554,8 @@ class EnvVarsToClassVars:
             return
 
         for _k in self._non_nullable:
-
             if self.class_vars.get(_k):
                 continue
-
             raise Exception(f"class var {_k} cannot be null/None")
 
     def set(self,init=None):

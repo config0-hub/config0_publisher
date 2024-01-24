@@ -379,7 +379,7 @@ class ResourceCmdHelper:
             else:
                 exp = f'self.{_k}="{_v}"'
 
-            #self.logger.debug(f" ## variable set: {_k} -> {_v}")
+            self.logger.debug(f" ## variable set: {_k} -> {_v}")
             exec(exp)
 
     def _set_env_vars(self,env_vars=None,clobber=False):
