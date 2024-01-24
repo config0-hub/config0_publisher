@@ -183,9 +183,7 @@ class ResourceCmdHelper:
 
         # testtest456 not sure the below is needed
         self.syncvars.set()
-
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
-
         self._set_json_files()
 
         if os.environ.get("JIFFY_ENHANCED_LOG"):
@@ -193,6 +191,10 @@ class ResourceCmdHelper:
                 self._print_out_key_class_vars()
             except:
                 self.logger.debug("could not print out debug class vars")
+
+        # testtest456
+        self._print_out_key_class_vars()
+        raise Exception("456")
 
     def _set_json_files(self):
 
