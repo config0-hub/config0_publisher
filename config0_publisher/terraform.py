@@ -246,6 +246,8 @@ class TFConstructor(object):
             uppercase=True
         )
 
+        env_vars["METHOD"] = "create"
+
         _configs = { "include_raw": self.include_raw }
 
         if self.include_keys:
