@@ -524,7 +524,7 @@ class EnvVarsToClassVars:
         if _env_var.upper() in os.environ:
             self.class_vars[_env_var.lower()] = os.environ[_env_var.upper()]  # we convert to lowercase
         elif self.os_env_prefix and self.os_env_prefix in _env_var in self._default_values:
-            self.class_vars[_env_var] = self._default_values[_env_var]  # we don't modify os env prefixed vars
+            self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we don't modify os env prefixed vars
         elif _env_var in self._default_values:
             self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we convert to lowercase
 
@@ -543,8 +543,8 @@ class EnvVarsToClassVars:
         if not self._must_exists:
             return
 
-        for _k in self._must_exists:
-            if _k in self.class_vars:
+        for _k.lower() in self._must_exists:
+            if _k.lower() in self.class_vars:
                 continue
             raise Exception(f"class var {_k} must be set")
 
@@ -553,8 +553,8 @@ class EnvVarsToClassVars:
         if not self._non_nullable:
             return
 
-        for _k in self._non_nullable:
-            if self.class_vars.get(_k):
+        for _k.lower() in self._non_nullable:
+            if self.class_vars.get(_k.lower()):
                 continue
             raise Exception(f"class var {_k} cannot be null/None")
 
