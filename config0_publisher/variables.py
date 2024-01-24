@@ -559,10 +559,6 @@ class EnvVarsToClassVars:
         for _k in self._must_exists:
             if _k.lower() in self.class_vars:
                 continue
-
-            print("*"*32)
-            print(self.class_vars.keys())
-            print("*"*32)
             raise Exception(f"class var {_k} must be set")
 
     def eval_non_nullable(self):
@@ -581,16 +577,23 @@ class EnvVarsToClassVars:
             self.init_env_vars()
 
         self.set_default_env_keys()
+
         print("j1"*32)
         print_json(self.env_vars)
         print("j1"*32)
+        print("")
+
         self.set_default_values()
+
         print("j2"*32)
         print_json(self.env_vars)
         print("j2"*32)
+        print("")
+
         print(os.environ.get("remote_stateful_bucket".upper()))
         print(self.main_env_var_key)
         print("j2"*32)
+        print("")
         raise Exception('sdfafas')
         self.eval_must_exists()
         self.eval_non_nullable()
