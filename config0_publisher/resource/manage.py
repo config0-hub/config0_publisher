@@ -57,13 +57,10 @@ def _to_json(output):
 
     try:
         _output = to_json(output)
-
-        if not _output: 
+        if not _output:
             raise Exception("output is None")
-
-        if not isinstance(_output,dict): 
+        if not isinstance(_output,dict):
             raise Exception("output is not a dict")
-
         output = _output
     except:
         print("Could not convert output to json")
@@ -406,7 +403,9 @@ class ResourceCmdHelper:
             else:
                 exp = f'self.{_k}="{_v}"'
 
-            self.logger.debug(f" ## variable set: {_k} -> {_v}")
+            if os.environ.get("JIFFY_ENHANCED_LOG"):
+                self.logger.debug(f" ## variable set: {_k} -> {_v}")
+
             exec(exp)
 
     def _set_env_vars(self,env_vars=None,clobber=False):
@@ -1538,7 +1537,6 @@ class ResourceCmdHelper:
 
         self.logger.error(failed_message)
         raise Exception(failed_message)
-
         return
 
     def _get_next_phase(self,method="create",**json_info):
@@ -1559,10 +1557,9 @@ class ResourceCmdHelper:
             self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
             return phase_param
 
-        self.logger.error("Cannot determine next phase to run - resetting")
-
         os.system(f"rm -rf {self.run_share_dir}")
 
+        self.logger.error("Cannot determine next phase to run - reset")
         raise Exception("Cannot determine next phase to run")
 
     def set_cur_phase(self):
