@@ -259,6 +259,9 @@ class TFConstructor(object):
             "output_prefix_key": self.output_prefix_key
         }
 
+        print(_configs)
+        raise Exception("testtest456")
+
         return self.stack.b64_encode(_configs)
 
     def _get_runtime_env_vars(self):
