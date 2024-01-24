@@ -316,9 +316,11 @@ class TFConstructor(object):
         if self.stack.stateful_id:
             overide_values["stateful_id"] = self.stack.stateful_id
 
-        inputargs = { "automation_phase": "infrastructure",
-                      "human_description": "invoking tf executor",
-                      "overide_values":overide_values }
+        inputargs = {
+            "automation_phase": "infrastructure",
+            "human_description": "invoking tf executor",
+            "overide_values":overide_values
+        }
 
         return inputargs
 
