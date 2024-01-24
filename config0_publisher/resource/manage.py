@@ -330,6 +330,31 @@ class ResourceCmdHelper:
         must_exists = ["stateful_id"]
         non_nullable = []
 
+        default_keys = [
+            "stateful_id",
+            "chrootfiles_dest_dir",
+            "working_dir",
+            "stateful_dir",
+            "exec_base_dir",
+            "tmp_bucket",
+            "log_bucket",
+            "run_share_dir",
+            "remote_stateful_bucket",
+            "tmpdir",
+            "method",
+            "share_dir",
+            "docker_runtime",
+            "docker_exec_env",
+            "docker_image",
+            "destroy_execgroup",
+            "destroy_env_vars",
+            "schedule_id",
+            "run_id",
+            "job_instance_id",
+            "config0_resource_json_file",
+            "config0_phases_json_file"
+        ]
+
         default_values = {"share_dir": "/var/tmp/share",
                           "run_share_dir": None,
                           "tmp_bucket": None,
@@ -359,6 +384,7 @@ class ResourceCmdHelper:
             must_exists=must_exists,
             main_env_var_key=main_env_var_key,
             non_nullable=non_nullable,
+            default_keys=default_keys,
             default_values=default_values)
 
         self.syncvars.set(init=True)

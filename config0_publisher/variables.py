@@ -428,7 +428,6 @@ class SyncClassVarsHelper:
             return
 
         for _k,_v in self._default_values.items():
-
             if _k.lower() in self.class_vars:
                 continue
 
@@ -484,6 +483,8 @@ class EnvVarsToClassVars:
         non_nullable = kwargs.get("non_nullable")
         default_values = kwargs.get("default_values")
 
+        self.default_keys = kwargs.get("default_keys")
+
         if non_nullable:
             self._non_nullable = non_nullable
         else:
@@ -524,10 +525,19 @@ class EnvVarsToClassVars:
 
         if _env_var.upper() in os.environ:
             self.class_vars[_env_var.lower()] = os.environ[_env_var.upper()]  # we convert to lowercase
-        elif self.os_env_prefix and self.os_env_prefix in _env_var in self._default_values:
+        elif self.os_env_prefix and self.os_env_prefix in _env_var in self._default_values:  # testtest456
             self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we don't modify os env prefixed vars
         elif _env_var in self._default_values:
             self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we convert to lowercase
+    def set_default_env_keys(self):
+
+        if not self.default_keys:
+            return
+
+        for _env_var in self.default_keys:
+            if _env_var.lower() in self.class_vars:
+                continue
+            self.add_env_var(_env_var)
 
     def set_default_values(self):
 
@@ -567,10 +577,11 @@ class EnvVarsToClassVars:
 
         if init:
             self.init_env_vars()
+
+        self.set_default_env_keys()
         print("j1"*32)
         print_json(self.env_vars)
         print("j1"*32)
-
         self.set_default_values()
         print("j2"*32)
         print_json(self.env_vars)
