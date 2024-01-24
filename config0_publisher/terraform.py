@@ -248,28 +248,16 @@ class TFConstructor(object):
 
         env_vars["METHOD"] = "create"
 
-        _configs = { "include_raw": self.include_raw }
-
-        if self.include_keys:
-            _configs["include_keys"] = self.include_keys
-
-        if self.exclude_keys:
-            _configs["exclude_keys"] = self.exclude_keys
-
-        if self.maps:
-            _configs["map_keys"] = self.maps
-
-        if self.resource_values:
-            _configs["values"] = self.resource_values
-
-        if env_vars:
-            _configs["env_vars"] = env_vars
-
-        if self.output_keys:
-            _configs["output_keys"] = self.output_keys
-
-        if self.output_prefix_key:
-            _configs["output_prefix_key"] = self.output_prefix_key
+        _configs = {
+            "include_raw": self.include_raw,
+            "include_keys": self.include_keys,
+            "exclude_keys": self.exclude_keys,
+            "map_keys": self.maps,
+            "values": self.resource_values,
+            "env_vars": env_vars,
+            "output_keys": self.output_keys,
+            "output_prefix_key": self.output_prefix_key
+        }
 
         return self.stack.b64_encode(_configs)
 
