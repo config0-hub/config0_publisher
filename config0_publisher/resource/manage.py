@@ -296,72 +296,6 @@ class ResourceCmdHelper:
             else:
                 self.syncvars.class_vars[key] = run_share_dir
 
-    #def _init_syncvars(self,**kwargs):
-
-    #    inputargs = kwargs.get("inputargs")
-    #    set_variables = kwargs.get("set_variables")
-    #    set_must_exists = kwargs.get("set_must_exists")
-    #    set_non_nullable = kwargs.get("set_non_nullable")
-    #    set_default_values = kwargs.get("set_default_values")
-
-    #    must_exists = ["stateful_id"]
-    #    non_nullable = []
-
-    #    # non_nullable = ["stateful_id"]
-
-    #    variables = ["stateful_id",
-    #                 "chrootfiles_dest_dir",
-    #                 "working_dir",
-    #                 "stateful_dir",
-    #                 "exec_base_dir",
-    #                 "tmp_bucket",
-    #                 "log_bucket",
-    #                 "run_share_dir",
-    #                 "remote_stateful_bucket",
-    #                 "tmpdir",
-    #                 "share_dir",
-    #                 "docker_runtime",
-    #                 "docker_exec_env",
-    #                 "docker_image",
-    #                 "destroy_execgroup",
-    #                 "destroy_env_vars"]
-
-    #    default_values = {"share_dir": "/var/tmp/share",
-    #                      "run_share_dir": None,
-    #                      "tmp_bucket": None,
-    #                      "log_bucket": None,
-    #                      "stateful_id": None,
-    #                      "destroy_env_vars": None,
-    #                      "destroy_execgroup": None,
-    #                      "docker_runtime": None,
-    #                      "docker_exec_env": None,
-    #                      "docker_image": None,
-    #                      "tmpdir": "/tmp",
-    #                      "exec_base_dir": os.getcwd()}
-
-    #    if set_must_exists:
-    #        must_exists.extend(set_must_exists)
-
-    #    if set_non_nullable:
-    #        non_nullable.extend(set_non_nullable)
-
-    #    if set_variables:
-    #        variables.extend(set_variables)
-
-    #    if set_default_values:
-    #        default_values.update(set_default_values)
-
-    #    self.syncvars = SyncClassVarsHelper(os_env_prefix=self.os_env_prefix,
-    #                                        app_name=self.app_name,
-    #                                        app_dir=self.app_dir,
-    #                                        variables=variables,
-    #                                        must_exists=must_exists,
-    #                                        non_nullable=non_nullable,
-    #                                        inputargs=inputargs,
-    #                                        default_values=default_values)
-
-    #    self.syncvars.set(init=True)
-
     def _init_syncvars(self,**kwargs):
 
         set_must_exists = kwargs.get("set_must_exists")
@@ -1681,6 +1615,45 @@ class ResourceCmdHelper:
             return codebuild.submit(**self.get_phase_inputargs())
 
         return codebuild.run()
+
+    def create_config0_settings_file(self):
+
+        try:
+            value = os.environ.get("CONFIG0_RESOURCE_SETTINGS_HASH")
+        except:
+            value = None
+
+        if not value:
+            return
+
+        _file = os.path.join(
+            self.run_share_dir,
+            self.app_dir,
+            "config0_resource_settings_hash")
+
+        with open(_file, "w") as file:
+            file.write(contents)
+
+    def create_remote_tf_bkend(self):
+
+        _file = os.path.join(
+            self.run_share_dir,
+            self.app_dir,
+            "backend.tf"
+        )
+
+        contents = f"""\
+        terraform {{
+          backend "s3" {{
+            bucket = "{self.remote_stateful_bucket}"
+            key    = "{self.stateful_id}-tfstate"
+            region = "{self.aws_region}"
+          }}
+        }}
+        """
+
+        with open(_file, "w") as file:
+            file.write(contents)
 
     def create_build_envfile(self):
         '''
