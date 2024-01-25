@@ -1635,7 +1635,7 @@ class ResourceCmdHelper:
             "config0_resource_settings_hash")
 
         with open(_file, "w") as file:
-            file.write(contents)
+            file.write(value)
 
     def create_remote_tf_bkend(self):
 
