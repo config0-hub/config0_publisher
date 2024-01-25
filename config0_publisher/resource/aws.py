@@ -49,8 +49,7 @@ class TFCmdOnAWS(object):
 
         cmds = [
           'cd $TMPDIR/build',
-          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate --quiet || export NO_REMOTE_STATEFILE=true',
-          'if [ ! -z "$NO_REMOTE_STATEFILE" ]; then mv $STATEFUL_ID.tfstate terraform.tfstate; fi',
+          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform.tfstate --quiet || echo "remote state file not found"'
           'tar cfz $TMPDIR/$STATEFUL_ID.tar.gz . ',
           'aws s3 cp $TMPDIR/$STATEFUL_ID.tar.gz s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
           'rm -rf $TMPDIR/$STATEFUL_ID.tar.gz ',
