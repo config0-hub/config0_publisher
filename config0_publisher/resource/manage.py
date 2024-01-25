@@ -1646,13 +1646,14 @@ class ResourceCmdHelper:
         )
 
         contents = f"""\
-        terraform {{
-          backend "s3" {{
-            bucket = "{self.remote_stateful_bucket}"
-            key    = "{self.stateful_id}.tfstate"
-            region = "{self.aws_region}"
-          }}
-        }}
+terraform {{
+  backend "s3" {{
+    bucket = "{self.remote_stateful_bucket}"
+    key    = "{self.stateful_id}.tfstate"
+    region = "{self.aws_region}"
+  }}
+}}
+
         """
 
         with open(_file, "w") as file:
