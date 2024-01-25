@@ -126,8 +126,12 @@ class ResourceCmdHelper:
         self._init_syncvars(**kwargs)
         self._finalize_set_vars()
 
+        # testtest456
         if not hasattr(self,"build_timeout"):
             self.build_timeout = 3600
+
+        if not hasattr(self,"aws_region"):
+            self.aws_region = "us-east-1"
 
     def _set_phases_params(self):
 
