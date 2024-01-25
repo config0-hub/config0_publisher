@@ -126,12 +126,48 @@ class ResourceCmdHelper:
         self._init_syncvars(**kwargs)
         self._finalize_set_vars()
 
-        # testtest456
-        if not hasattr(self,"build_timeout"):
-            self.build_timeout = 3600
+        self._set_build_timeout()
+        self._set_aws_region()
 
-        if not hasattr(self,"aws_region"):
-            self.aws_region = "us-east-1"
+    def _set_build_timeout(self):
+
+        if hasattr(self,"build_timeout") and self.build_timeout:
+            return
+
+        try:
+            self.build_timeout = int(os.environ.get("BUILD_TIMEOUT"))
+        except:
+            self.build_timeout = None
+
+        if self.build_timeout:
+            return
+
+        try:
+            self.build_timeout = int(os.environ.get("TIMEOUT")) - 60
+        except:
+            self.build_timeout = None
+
+        if self.build_timeout:
+            return
+
+        self.build_timeout = 3600
+
+    def _set_aws_region(self):
+
+        if hasattr(self,"aws_region") and self.aws_region:
+            return
+
+        self.aws_region = os.environ.get("AWS_REGION")
+
+        if self.aws_region:
+            return
+
+        self.aws_region = os.environ.get("AWS_DEFAULT_REGION")
+
+        if self.aws_region:
+            return
+
+        self.aws_region = "us-east-1"
 
     def _set_phases_params(self):
 
