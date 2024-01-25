@@ -126,6 +126,9 @@ class ResourceCmdHelper:
         self._init_syncvars(**kwargs)
         self._finalize_set_vars()
 
+        if not hasattr(self,"build_timeout"):
+            self.build_timeout = 3600
+
     def _set_phases_params(self):
 
         if self.phases_params_hash:
