@@ -1649,7 +1649,7 @@ class ResourceCmdHelper:
         terraform {{
           backend "s3" {{
             bucket = "{self.remote_stateful_bucket}"
-            key    = "{self.stateful_id}-tfstate"
+            key    = "{self.stateful_id}.tfstate"
             region = "{self.aws_region}"
           }}
         }}
