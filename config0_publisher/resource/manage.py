@@ -1679,11 +1679,6 @@ terraform {{
             create_envfile(self.build_env_vars,
                            envfile=envfile)
 
-        # testtest456
-        print("h0"*32)
-        print(envfile)
-        print("h0"*32)
-
         return True
 
     def _exec_tf(self,method):
@@ -1728,10 +1723,3 @@ terraform {{
             self.print_output(output=self.tf_results.get("output"))
 
         return status
-
-    def test_exit(self):
-        print("e"*32)
-        print("e"*32)
-        exit(0)
-        print("f" * 32)
-        print("f" * 32)
