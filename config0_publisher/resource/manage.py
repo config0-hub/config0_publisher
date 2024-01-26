@@ -1728,3 +1728,6 @@ terraform {{
             self.print_output(output=self.tf_results.get("output"))
 
         return status
+
+    def test_exit(self):
+        exit(0)
