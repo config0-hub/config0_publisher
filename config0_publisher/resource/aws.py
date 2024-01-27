@@ -91,6 +91,16 @@ class TFCmdOnAWS(object):
 
         return cmds
 
+    def get_tf_validate(self):
+
+        cmds = [
+            'cd $TMPDIR/build/$APP_DIR',
+            '$TF_PATH init',
+            '$TF_PATH destroy -auto-approve'
+        ]
+
+        return cmds
+
     def _test_get_with_buildspec(self):
 
         contents = '''version: 0.2

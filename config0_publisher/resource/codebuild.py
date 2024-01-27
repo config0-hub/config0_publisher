@@ -131,7 +131,10 @@ class Codebuild(CodebuildParams):
             cmds = self.tfcmds.get_tf_apply()
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
+        elif self.method == "validate":
+            cmds = self.tfcmds.get_tf_validate()
         else:
+            else:
             raise Exception("method needs to be create/destroy")
 
         return self._add_cmds(contents,cmds)

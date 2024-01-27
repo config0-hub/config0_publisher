@@ -1442,7 +1442,6 @@ class ResourceCmdHelper:
         self.logger.aggmsg("")
 
         for key in kwargs["keys"]:
-
             if self.os_env_prefix:
                 self.logger.aggmsg("\t{} or Environmental Variable {}/{}_{}".format(key,
                                                                                     key.upper(),
@@ -1451,8 +1450,6 @@ class ResourceCmdHelper:
             else:
                 self.logger.aggmsg("\t{} or Environmental Variable {}".format(key,
                                                                               key.upper()))
-
-
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
@@ -1485,16 +1482,13 @@ class ResourceCmdHelper:
                         "status":self.tf_results.get("status"),
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
-
             if build_expire_at:
                 json_values["build_expire_at"] = build_expire_at
-
             self.write_phases_to_json_file(json_values)
 
         if self.tf_results:
             if self.tf_results.get("status") is False:
                 self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
-
             if self.tf_results.get("status") is None:
                 return
 
@@ -1593,8 +1587,6 @@ class ResourceCmdHelper:
             "remote_stateful_bucket":self.remote_stateful_bucket,
             "aws_region":self.aws_region
         }
-                       # testtest456
-                       #"codebuild_basename":self.codebuild_basename }
 
         if self.build_env_vars:
             cinputargs["build_env_vars"] = self.build_env_vars
@@ -1692,6 +1684,13 @@ terraform {{
             self.tf_results = self._exec_docker_local(method=method)
 
         return self.tf_results
+    def _exec_tf_validate(self):
+
+        self._get_runtime_env_vars(method="validate")
+        self._set_build_method()
+        self._exec_tf(method="validate")
+
+        return self.tf_results
 
     def _exec_tf_destroy(self):
 
@@ -1700,6 +1699,10 @@ terraform {{
         self._exec_tf(method="destroy")
 
         return self.tf_results
+
+    def validate(self):
+
+        self._exec_tf_validate()
 
     def destroy(self):
 
