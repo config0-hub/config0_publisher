@@ -1646,7 +1646,7 @@ terraform {{
   }}
 }}
 
-        """
+"""
 
         with open(_file, "w") as file:
             file.write(contents)

@@ -96,7 +96,8 @@ class TFCmdOnAWS(object):
         cmds = [
             'cd $TMPDIR/build/$APP_DIR',
             '$TF_PATH init',
-            '$TF_PATH destroy -auto-approve'
+            '$TF_PATH terraform refresh',
+            '$TF_PATH terraform plan -detailed-exitcode'
         ]
 
         return cmds
