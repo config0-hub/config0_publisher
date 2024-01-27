@@ -1727,6 +1727,6 @@ terraform {{
     def test_exit(self):
         print("e"*32)
         print("e"*32)
-        exit(0)
-        print("f" * 32)
-        print("f" * 32)
+        #exit(0)
+        #print("f" * 32)
+        #print("f" * 32)
