@@ -217,7 +217,7 @@ class ResourceCmdHelper:
         self._set_stateful_params()
         self._set_exec_dir()
         self._set_docker_settings()
-        self._set_destroy_env_vars()
+        self._set_mod_env_vars()
         self._get_docker_env_filepath()
         self._set_special_keywords_classvars()  # special keywords for chrootfiles_dest_dir
 
@@ -325,8 +325,9 @@ class ResourceCmdHelper:
             "docker_runtime",
             "docker_exec_env",
             "docker_image",
-            "destroy_execgroup",
+            "mod_execgroup",
             "destroy_env_vars",
+            "validate_env_vars"
             "schedule_id",
             "run_id",
             "job_instance_id",
@@ -341,7 +342,8 @@ class ResourceCmdHelper:
             "log_bucket": None,
             "stateful_id": None,
             "destroy_env_vars": None,
-            "destroy_execgroup": None,
+            "validate_env_vars": None,
+            "mod_execgroup": None,
             "docker_runtime": None,
             "docker_exec_env": None,
             "docker_image": None,
@@ -467,10 +469,7 @@ class ResourceCmdHelper:
 
         return _template_vars
 
-    def _set_destroy_env_vars(self):
-
-        if not self.destroy_env_vars:
-            return
+    def _set_mod_env_vars(self):
 
         try:
             self.destroy_env_vars = eval(self.destroy_env_vars)
@@ -478,6 +477,13 @@ class ResourceCmdHelper:
             self.destroy_env_vars = None
 
         self.syncvars.class_vars["destroy_env_vars"] = self.destroy_env_vars
+
+        try:
+            self.validate_env_vars = eval(self.validate_env_vars)
+        except:
+            self.validate_env_vars = None
+
+        self.syncvars.class_vars["validate_env_vars"] = self.validate_env_vars
 
     def _set_docker_settings(self):
 
@@ -778,10 +784,14 @@ class ResourceCmdHelper:
         return values
 
     def add_destroy_params(self,resource):
-
         self.logger.debug("add_destroy_params is to specified by the inherited class")
+        return
 
-        return 
+    def add_mod_params(self,resource):
+        self.logger.debug("add_mod_params is to specified by the inherited class")
+        return
+
+    def get_resources_details(self):
 
     def get_resources_details(self):
 
