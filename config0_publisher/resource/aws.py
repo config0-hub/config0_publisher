@@ -107,8 +107,8 @@ class TFCmdOnAWS(object):
         cmds = [
             'cd $TMPDIR/build/$APP_DIR',
             '$TF_PATH init',
-            '$TF_PATH terraform refresh',
-            '$TF_PATH terraform plan -detailed-exitcode'
+            '$TF_PATH refresh',
+            '$TF_PATH plan -detailed-exitcode'
         ]
 
         return cmds
