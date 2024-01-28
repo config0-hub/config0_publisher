@@ -458,12 +458,12 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         # we don't want to clobber the intact
         # stateful files from creation
-        if self.method != "destroy":
+        if self.method == "create":
             self.upload_to_s3_stateful()
-
-        self.phase_result["executed"].append("upload_to_s3")
+            self.phase_result["executed"].append("upload_to_s3")
 
         self._trigger_build()
+
         self.phase_result["executed"].append("trigger_codebuild")
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)

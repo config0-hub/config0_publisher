@@ -1749,11 +1749,7 @@ terraform {{
 
         self._get_runtime_env_vars(method="validate")
         self._set_build_method()
-
-        # testtest456
-        raise Exception('yyoyo')
         self._exec_tf(method="validate")
-
         return self.tf_results
 
     def _exec_tf_destroy(self):
