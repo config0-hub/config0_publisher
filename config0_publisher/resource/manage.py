@@ -783,10 +783,6 @@ class ResourceCmdHelper:
 
         return values
 
-    def add_destroy_params(self,resource):
-        self.logger.debug("add_destroy_params is to specified by the inherited class")
-        return
-
     def add_mod_params(self,resource):
         self.logger.debug("add_mod_params is to specified by the inherited class")
         return
@@ -811,7 +807,7 @@ class ResourceCmdHelper:
             self.add_resource_tags(resources)
 
             try:
-                self.add_destroy_params(resources)
+                self.add_mod_params(resources)
             except:
                 self.logger.debug("Did not add destroy params")
 
@@ -825,7 +821,7 @@ class ResourceCmdHelper:
                     continue
 
                 try:
-                    self.add_destroy_params(_resource)
+                    self.add_mod_params(_resource)
                 except:
                     self.logger.debug("Did not add destroy params")
 
