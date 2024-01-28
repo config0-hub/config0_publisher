@@ -1744,6 +1744,7 @@ terraform {{
             self.tf_results = self._exec_docker_local(method=method)
 
         return self.tf_results
+
     def _exec_tf_validate(self):
 
         self._get_runtime_env_vars(method="validate")
