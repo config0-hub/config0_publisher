@@ -1488,7 +1488,7 @@ class ResourceCmdHelper:
             "APP_DIR":self.app_dir
         }
 
-        resource["mod_params"]["env_vars"] = json.dumps(env_vars)
+        resource["mod_params"]["env_vars"] = env_vars
 
         if env_vars.get("STATEFUL_ID"):
             resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
