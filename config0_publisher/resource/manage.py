@@ -108,16 +108,14 @@ class ResourceCmdHelper:
         self.phase = None  # can be "run" since will only one phase
         self.current_phase = None
 
+        ###############################################
         # testtest456
+        ###############################################
         self.use_remote_state = os.environ.get("USE_REMOTE_STATE",True)
-
-        self._set_phases_params()
-
-        ###############################################
-        # testtest456
-        ###############################################
         os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
         ###############################################
+
+        self._set_phases_params()
 
         # set specified env variables
         self._set_env_vars(env_vars=kwargs.get("env_vars"),
