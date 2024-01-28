@@ -1462,6 +1462,62 @@ class ResourceCmdHelper:
     # insert 45245
     #######################################################################
 
+    def add_mod_params(self,resource):
+
+        '''
+        - we typically load the modifications parameters along with created resource like a
+        VPC or database
+
+        - the resource is therefore self contained, whereby it specifies to the
+        system how it can be validated/destroyed.
+
+        - for terraform, we include things like the docker image used to
+        validate/destroy the resource and any environmental variables
+        '''
+
+        # Create mod params resource arguments and reference
+        resource["mod_params"] = {"shelloutconfig":self.shelloutconfig}
+
+        # environmental variables to include during destruction
+        env_vars = {
+            "DOCKER_EXEC_ENV": self.docker_image,
+            "DOCKER_RUNTIME": self.docker_image,
+            "REMOTE_STATEFUL_BUCKET":self.remote_stateful_bucket,
+            "STATEFUL_ID": self.stateful_id,
+            "BUILD_TIMEOUT": self.build_timeout,
+            "APP_DIR":self.app_dir
+        }
+
+        resource["mod_params"]["env_vars"] = json.dumps(env_vars)
+
+        if env_vars.get("STATEFUL_ID"):
+            resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
+
+        if self.mod_execgroup:
+            resource["mod_params"]["execgroup"] = self.mod_execgroup
+
+        if self.destroy_env_vars:
+            resource["destroy_params"] = {
+                "env_vars": dict({"METHOD": "destroy"},
+                                 **self.destroy_env_vars)
+            }
+        else:
+            resource["destroy_params"] = {
+                "env_vars": {"METHOD": "destroy"}
+            }
+
+        if self.validate_env_vars:
+            resource["validate_params"] = {
+                "env_vars":dict({"METHOD":"validate"},
+                                **self.validate_env_vars)
+            }
+        else:
+            resource["validate_params"] = {
+                "env_vars":{"METHOD":"validate"}
+            }
+
+        return resource
+
     def _eval_post_tf(self,method):
 
         # add feature
