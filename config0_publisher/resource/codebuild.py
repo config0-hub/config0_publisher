@@ -153,9 +153,9 @@ class Codebuild(CodebuildParams):
         init_contents = self.get_init_contents()
         prebuild = self._get_codebuildspec_prebuild()
         build = self._get_codebuildspec_build()
-        postbuild = self._get_codebuildspec_postbuild()
 
         if self.method == "create":
+            postbuild = self._get_codebuildspec_postbuild()
             contents = init_contents + prebuild + build + postbuild
         else:
             contents = init_contents + prebuild + build  # if destroy, we skip postbuild
