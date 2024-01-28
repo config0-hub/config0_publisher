@@ -793,8 +793,6 @@ class ResourceCmdHelper:
 
     def get_resources_details(self):
 
-    def get_resources_details(self):
-
         resources = self.get_state_info()
 
         if not resources: 
