@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import os
+
 class TFCmdOnAWS(object):
     def __init__(self,runtime_env="codebuild"):
 
@@ -16,15 +18,24 @@ class TFCmdOnAWS(object):
         else:
             cmds = []
 
-        cmds.extend([
-            'cd $TMPDIR',
-            f'aws s3 cp {tf_bucket_path} terraform.zip --quiet || export DNE="True"',
-            f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
-            f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
-            f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
-            'unzip terraform.zip',
-            'mv terraform $TF_PATH'
-        ])
+        if tf_bucket_path:
+            cmds.extend([
+                'cd $TMPDIR',
+                f'aws s3 cp {tf_bucket_path} terraform.zip --quiet || export DNE="True"',
+                f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
+                f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
+                f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
+                'unzip terraform.zip',
+                'mv terraform $TF_PATH'
+            ])
+        else:
+            cmds.extend([
+                'cd $TMPDIR',
+                'export DNS=True'
+                f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
+                'unzip terraform.zip',
+                'mv terraform $TF_PATH'
+            ])
 
         return cmds
     def get_decrypt_buildenv_vars(self):
@@ -174,7 +185,7 @@ class AWSBaseBuildParams(object):
         try:
             self.tmp_bucket = self.build_env_vars["TMP_BUCKET"]
         except:
-            self.tmp_bucket = None
+            self.tmp_bucket = os.environ.get("TMP_BUCKET")
 
         if self.tmp_bucket:
             self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
