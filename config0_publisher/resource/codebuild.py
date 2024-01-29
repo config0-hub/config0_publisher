@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#
+
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import AWSBaseBuildParams
 from config0_publisher.resource.aws import TFCmdOnAWS

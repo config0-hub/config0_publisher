@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
 import re
-import gzip
-import traceback
-
-from io import BytesIO
+import json
 from time import sleep
 from time import time
+#import gzip
+#import traceback
+#from io import BytesIO
 
-#from config0_publisher.utilities import print_json
+from config0_publisher.serialization import b64_encode
 from config0_publisher.cloud.aws.common import AWSCommonConn
+#from config0_publisher.utilities import print_json
 
 class LambdaResourceHelper(AWSCommonConn):
 
@@ -23,6 +24,9 @@ class LambdaResourceHelper(AWSCommonConn):
                                default_values=default_values,
                                set_env_vars=self.get_set_env_vars(),
                                **kwargs)
+
+        self.init_env_vars = kwargs.get("init_env_vars")
+        self.cmds_b64 = b64_encode(kwargs["cmds"])
 
         self.lambda_client = self.session.client('lambda')
         self.logs_client = self.session.client('logs')
@@ -227,7 +231,11 @@ class LambdaResourceHelper(AWSCommonConn):
                         "TMPDIR",
                         "APP_DIR" ]
 
-        env_vars = {}
+        if self.init_env_vars:
+            env_vars = self.init_env_vars
+        else:
+            env_vars = {}
+
         _added = []
 
         if not self.build_env_vars:
@@ -275,7 +283,7 @@ class LambdaResourceHelper(AWSCommonConn):
             'FunctionName': self.lambda_function_name,
             'InvocationType': 'RequestResponse',
             'LogType':'Tail',
-            'Payload': '{}',  # Replace with the payload you want to send to the Lambda function
+            'Payload': json.dumps({"cmds_b64":self.cmds_b64}),
             'Timeout': timeout,
             'Environment': {
                 'Variables': self._env_vars_to_lambda_format(),

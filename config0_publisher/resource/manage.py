@@ -21,6 +21,7 @@ from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
 from config0_publisher.shellouts import rm_rf
 from config0_publisher.resource.codebuild import Codebuild
+from config0_publisher.resource.lambdabuild import Lambdabuild
 from config0_publisher.variables import EnvVarsToClassVars
 #from config0_publisher.variables import SyncClassVarsHelper
 
@@ -1637,7 +1638,7 @@ class ResourceCmdHelper:
 
     #################################
 
-    def _exec_codebuild(self,method="create"):
+    def _get_aws_exec_cinputargs(self,method="create"):
 
         cinputargs = {
             "method":method,
@@ -1655,19 +1656,39 @@ class ResourceCmdHelper:
         if self.phases_info:
             cinputargs["phases_info"] = self.phases_info
 
-        # we can add other implementation of codebuild with the spec version
-        codebuild = Codebuild(**cinputargs)
+        return cinputargs
+
+    def _exec_codebuild(self,method="create"):
+
+        cinputargs = self._get_aws_exec_cinputargs(method=method)
+        _awsbuild = Codebuild(**cinputargs)
 
         if self.phase == "retrieve":
-            return codebuild.retrieve(**self.get_phase_inputargs())
+            return _awsbuild.retrieve(**self.get_phase_inputargs())
 
         # submit and run required env file
         self.create_build_envfile()
 
         if self.phase == "submit":
-            return codebuild.submit(**self.get_phase_inputargs())
+            return _awsbuild.submit(**self.get_phase_inputargs())
 
-        return codebuild.run()
+        return _awsbuild.run()
+
+    def _exec_lambdabuild(self,method="create"):
+
+        cinputargs = self._get_aws_exec_cinputargs(method=method)
+        _awsbuild = Lambdabuild(**cinputargs)
+
+        if self.phase == "retrieve":
+            return _awsbuild.retrieve(**self.get_phase_inputargs())
+
+        # submit and run required env file
+        self.create_build_envfile()
+
+        if self.phase == "submit":
+            return _awsbuild.submit(**self.get_phase_inputargs())
+
+        return _awsbuild.run()
 
     def create_config0_settings_file(self):
 
@@ -1736,7 +1757,7 @@ terraform {{
         if self.build_method == "codebuild":
             self.tf_results = self._exec_codebuild(method=method)
         elif self.build_method == "lambda":
-            self.tf_results = self._exec_lambda(method=method)
+            self.tf_results = self._exec_lambdabuild(method=method)
         else:  # execute locally
             self._create_docker_env_file()
             self.tf_results = self._exec_docker_local(method=method)
