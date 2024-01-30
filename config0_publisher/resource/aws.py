@@ -26,19 +26,21 @@ class TFCmdOnAWS(object):
                 f'aws s3 cp {tf_bucket_path} terraform.zip --quiet',
                 f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
                 f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
-                f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
-                'unzip terraform.zip',
-                'mv terraform $TF_PATH || echo "looks like same path"'
+                f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi'
             ])
         else:
             cmds.extend([
                 'cd $TMPDIR',
                 'export DNS=True'
-                f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
-                'unzip terraform.zip',
-                'chmod 777 $TF_PATH',
-                'ls -al $TF_PATH'
+                f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi'
             ])
+
+        cmds.extend([
+            'unzip terraform.zip',
+            'mv terraform $TF_PATH > /dev/null || exit 0',
+            'chmod 777 $TF_PATH'
+            ]
+        )
 
         return cmds
     def get_decrypt_buildenv_vars(self):
@@ -49,8 +51,6 @@ class TFCmdOnAWS(object):
             'ls -al /tmp',
             'ls -al /tmp/build',
             'ls -al /tmp/build/var/tmp/terraform',
-            'chmod 777 $TF_PATH',
-            'ls -al $TF_PATH',
             'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'  # testtest456
         ]
 
