@@ -17,6 +17,64 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet
+
+def convert_to_fernet_key(key):
+
+    # Pad the key with zeros to make it 32 bytes long
+    padded_key = key.ljust(32, "\x00")
+
+    # Convert the padded key to bytes
+    key_bytes = padded_key.encode()
+
+    # Encode the key bytes using base64
+    base64_key = base64.urlsafe_b64encode(key_bytes)
+
+    return base64_key
+
+def encrypt_file(secret, input_file=None, file_content=None, output_file=None):
+
+    passphrase = convert_to_fernet_key(secret)
+
+    if input_file:
+        with open(input_file, 'rb') as file:
+            file_content = file.read()
+
+    if not file_content:
+        raise Exception("no content to encrypt")
+
+    # Convert the file content to base64
+    base64_content = base64.b64encode(file_content)
+
+    # Encrypt the base64 content
+    cipher_suite = Fernet(passphrase)
+    encrypted_content = cipher_suite.encrypt(base64_content)
+
+    if not output_file:
+        return encrypted_content
+
+    # Write the encrypted content to the output file
+    with open(output_file, 'wb') as file:
+        file.write(encrypted_content)
+
+def decrypt_file(input_file, output_file, secret):
+
+    passphrase = convert_to_fernet_key(secret)
+
+    # Read the encrypted content from the input file
+    with open(input_file, 'rb') as file:
+        encrypted_content = file.read()
+
+    # Decrypt the encrypted content
+    cipher_suite = Fernet(passphrase)
+    decrypted_content = cipher_suite.decrypt(encrypted_content)
+
+    # Convert the decrypted content from base64
+    base64_content = base64.b64decode(decrypted_content)
+
+    # Write the decrypted content to the output file
+    with open(output_file, 'wb') as file:
+        file.write(base64_content)
 
 def b64_encode(obj):
 
@@ -174,7 +232,7 @@ def decrypt_str_openssl(password, encrypted_text):
 
     return decrypted_output.strip().decode()
 
-def create_envfile(env_vars,envfile=None,secret=True):
+def create_envfile(env_vars,envfile=None,secret=True,openssl=True):
     '''
     we use stateful_id for the encrypt key
     '''
@@ -194,19 +252,23 @@ def create_envfile(env_vars,envfile=None,secret=True):
 
         return True
 
-    # create encrypted string here
     virtual_file = StringIO()
 
     for key,value in env_vars.items():
         virtual_file.write(f"{key}={value}\n")
 
     base64_string = b64_encode(virtual_file.getvalue())
-    encrypted_str = encrypt_str_openssl(secret,
-                                        base64_string)
 
-    with open(envfile, 'w') as f:
-        f.write(encrypted_str)
+    if openssl:
+        encrypted_content = encrypt_str_openssl(secret,
+                                                base64_string)
+        with open(envfile, 'w') as f:
+            f.write(encrypted_content)
+    else:
+        encrypted_content = encrypt_file(secret,
+                                         file_content=base64_string,
+                                         output_file=envfile)
 
-    print(f"encrypted envfile {envfile} written.")
+    print(f"encrypted envfile {envfile}/openssl {openssl} written.")
 
-    return encrypted_str
+    return encrypted_content

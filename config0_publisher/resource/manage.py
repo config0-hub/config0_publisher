@@ -1683,7 +1683,7 @@ class ResourceCmdHelper:
             return _awsbuild.retrieve(**self.get_phase_inputargs())
 
         # submit and run required env file
-        self.create_build_envfile()
+        self.create_build_envfile(openssl=False)
 
         if self.phase == "submit":
             return _awsbuild.submit(**self.get_phase_inputargs())
@@ -1730,7 +1730,7 @@ terraform {{
         with open(_file, "w") as file:
             file.write(contents)
 
-    def create_build_envfile(self):
+    def create_build_envfile(self,openssl=True):
         '''
         we use stateful_id for the encrypt key
         '''
@@ -1745,7 +1745,8 @@ terraform {{
         if self.build_env_vars.get("STATEFUL_ID"):
             create_envfile(self.build_env_vars,
                            envfile=f"{envfile}.enc",
-                           secret=self.build_env_vars["STATEFUL_ID"])
+                           secret=self.build_env_vars["STATEFUL_ID"],
+                           openssl=openssl)
         else:
             create_envfile(self.build_env_vars,
                            envfile=envfile)
