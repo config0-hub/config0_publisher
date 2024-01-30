@@ -76,7 +76,7 @@ class TFCmdOnAWS(object):
 
         cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.zip',
                  'mkdir -p $TMPDIR/build',
-                 'unzip -o $TMPDIR/$STATEFUL_ID.tar.gz -d $TMPDIR/build',
+                 'unzip -o $TMPDIR/$STATEFUL_ID.zip -d $TMPDIR/build',
                  'rm -rf $TMPDIR/$STATEFUL_ID.zip'
         ]
 
