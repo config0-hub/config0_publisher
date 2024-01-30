@@ -75,7 +75,9 @@ class SetClassVarsHelper:
                 self.logger.debug(env_var)
                 self.logger.debug("0"*32)
                 self.logger.debug("0"*32)
+                raise
                 continue
+
 
             if must_exists:
                 raise Exception("variable {} needs to be set".format(env_var))
