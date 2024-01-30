@@ -60,9 +60,10 @@ class TFCmdOnAWS(object):
 
     def local_to_s3(self):
 
+        #'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
         cmds = [
           'cd $TMPDIR/build',
-          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
+          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate',
           'tar cfz $TMPDIR/$STATEFUL_ID.tar.gz . ',
           'aws s3 cp $TMPDIR/$STATEFUL_ID.tar.gz s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
           'rm -rf $TMPDIR/$STATEFUL_ID.tar.gz ',
@@ -73,7 +74,7 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.tar.gz --quiet',
+        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.tar.gz',
                  'mkdir -p $TMPDIR/build',
                  'tar xfz $TMPDIR/$STATEFUL_ID.tar.gz -C $TMPDIR/build',
                  'rm -rf $TMPDIR/$STATEFUL_ID.tar.gz'
