@@ -1643,6 +1643,8 @@ class ResourceCmdHelper:
         cinputargs = {
             "method":method,
             "build_timeout":self.build_timeout,
+            "run_share_dir":self.run_share_dir,
+            "app_dir":self.app_dir,
             "remote_stateful_bucket":self.remote_stateful_bucket,
             "aws_region":self.aws_region
         }

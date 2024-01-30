@@ -17,8 +17,10 @@ class LambdaParams(AWSBaseBuildParams):
         self.lambda_role = kwargs.get("lambda_role",
                                       "config0-assume-poweruser")
 
-    def _set_inputargs(self):
+        self.run_share_dir = kwargs["run_share_dir"]
+        self.app_dir = kwargs["app_dir"]
 
+    def _set_inputargs(self):
 
         self.buildparams = {
             "init_env_vars": self.get_init_env_vars(),
@@ -83,7 +85,7 @@ class Lambdabuild(LambdaParams):
         self.classname = "Lambdabuild"
 
         LambdaParams.__init__(self,
-                                 **kwargs)
+                              **kwargs)
 
         self.tfcmds = TFCmdOnAWS(runtime_env="lambda",
                                  run_share_dir=self.run_share_dir,
