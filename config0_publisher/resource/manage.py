@@ -113,7 +113,7 @@ class ResourceCmdHelper:
         # testtest456
         ###############################################
         self.use_remote_state = os.environ.get("USE_REMOTE_STATE",True)
-        os.environ["USE_CODEBUILD"] = "True"  # longer than 900 seconds
+        os.environ["USE_LAMBDA"] = "True"  # longer than 900 seconds
         ###############################################
 
         self._set_phases_params()
