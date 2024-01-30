@@ -49,18 +49,19 @@ class LambdaResourceHelper(AWSCommonConn):
 
     def _get_build_status(self):
 
-        # Get the details of the Lambda function invocation
-        response = self.lambda_client.get_function_execution(
+        response = self.lambda_client.get_invocation(
             FunctionName=self.lambda_function_name,
             InvocationId=self.request_id
         )
 
+        status_code = response['StatusCode']
+        print("Status Code:",status_code)
         status = response['Status']
 
         return {self.request_id: {"status": status}}
 
     def _set_build_status(self):
-
+        
         # Extract the status from the response
         self.results["build_status"] = self._get_build_status()[self.request_id]["status"]
 
