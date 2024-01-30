@@ -36,7 +36,7 @@ class TFCmdOnAWS(object):
             ])
 
         # testtest456
-        cmds = [ f'cd $TMPDIR && export DNS=True && if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi' ]
+        cmds = [ f'cd $TMPDIR && export DNS=True && if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o $TMPDIR/terraform.zip; fi' ]
 
         cmds.extend([
             'cd $TMPDIR && unzip terraform.zip',
