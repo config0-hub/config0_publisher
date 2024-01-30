@@ -43,6 +43,14 @@ class SetClassVarsHelper:
         if not self.set_env_vars:
             return
 
+        # testtest456
+        self.logger.debug("0" * 32)
+        self.logger.debug("0" * 32)
+        self.logger.debug(self.default_values)
+        self.logger.debug("0" * 32)
+        self.logger.debug("0" * 32)
+        raise
+
         for env_var,must_exists in self.set_env_vars.items():
 
             if env_var in self.kwargs:
@@ -67,17 +75,6 @@ class SetClassVarsHelper:
                 self._vars_set[env_var.lower()] = self.default_values[env_var.lower()]
                 exec('self.{}="{}"'.format(env_var.lower(),
                                            self.default_values[env_var.lower()]))
-                # testtest456
-                self.logger.debug("0"*32)
-                self.logger.debug("0"*32)
-                self.logger.debug(env_var)
-                self.logger.debug(env_var)
-                self.logger.debug(env_var)
-                self.logger.debug("0"*32)
-                self.logger.debug("0"*32)
-                raise
-                continue
-
 
             if must_exists:
                 raise Exception("variable {} needs to be set".format(env_var))
