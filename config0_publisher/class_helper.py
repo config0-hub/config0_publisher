@@ -43,13 +43,6 @@ class SetClassVarsHelper:
         if not self.set_env_vars:
             return
 
-        # testtest456
-        self.logger.debug("0" * 32)
-        self.logger.debug("0" * 32)
-        self.logger.debug(self.default_values)
-        self.logger.debug("0" * 32)
-        self.logger.debug("0" * 32)
-
         for env_var,must_exists in self.set_env_vars.items():
 
             if env_var in self.kwargs:

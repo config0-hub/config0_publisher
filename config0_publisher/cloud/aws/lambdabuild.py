@@ -284,11 +284,11 @@ class LambdaResourceHelper(AWSCommonConn):
             'FunctionName': self.lambda_function_name,
             'InvocationType': 'RequestResponse',
             'LogType':'Tail',
-            'Payload': json.dumps({"cmds_b64":self.cmds_b64}),
-            'Timeout': timeout,
-            'Environment': {
-                'Variables': self._env_vars_to_lambda_format(),
-            }
+            'Payload': json.dumps(
+                {
+                    "cmds_b64":self.cmds_b64,
+                    "env_vars_b64":b64_encode(self._env_vars_to_lambda_format()),
+                })
         }
 
         # Invoke the Lambda function with the specified environment variables
