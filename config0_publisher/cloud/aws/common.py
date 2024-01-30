@@ -26,7 +26,7 @@ class AWSCommonConn(SetClassVarsHelper):
         logging.getLogger('s3transfer.tasks').setLevel(logging.WARNING)
         logging.getLogger('s3transfer.futures').setLevel(logging.WARNING)
 
-        self.tarfile = None
+        self.zipfile = None
         self.share_dir = None
         self.run_share_dir = None
         self.stateful_id = None
@@ -125,7 +125,7 @@ class AWSCommonConn(SetClassVarsHelper):
             self.run_share_dir = os.path.join(self.share_dir,
                                               self.stateful_id)
 
-        self.tarfile = os.path.join("/tmp",
+        self.zipfile = os.path.join("/tmp",
                                     self.stateful_id)
 
         if not hasattr(self,'aws_region') or not self.aws_region:
@@ -141,7 +141,7 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results["inputargs"]["stateful_id"] = self.stateful_id
         self.results["inputargs"]["share_dir"] = self.share_dir
         self.results["inputargs"]["run_share_dir"] = self.run_share_dir
-        self.results["inputargs"]["tarfile"] = self.tarfile
+        self.results["inputargs"]["zipfile"] = self.zipfile
 
     def _reset_share_dir(self):
         if not os.path.exists(self.run_share_dir):
@@ -153,30 +153,29 @@ class AWSCommonConn(SetClassVarsHelper):
         cmd = f"mkdir -p {self.run_share_dir}/{self.app_dir}"
         os.system(cmd)
 
-    def _rm_tarfile(self):
-        if not self.tarfile:
+    def _rm_zipfile(self):
+        if not self.zipfile:
             return
 
-        if not os.path.exists(self.tarfile):
+        if not os.path.exists(self.zipfile):
             return
 
         os.chdir(self.cwd)
-        rm_rf(self.tarfile)
+        rm_rf(self.zipfile)
 
     def s3_stateful_to_share_dir(self):
         if not self.stateful_id:
             return
 
-        self._rm_tarfile()
+        self._rm_zipfile()
 
         self.s3.Bucket(self.upload_bucket).download_file(self.stateful_id,
-                                                         self.tarfile)
+                                                         self.zipfile)
 
         self._reset_share_dir()
 
         # ref 452345235
-        # cmd = f"tar xfz {self.tarfile} -C {self.run_share_dir}/{self.app_dir}"
-        cmd = f"tar xfz {self.tarfile} -C {self.run_share_dir}"
+        cmd = f"unzip -o {self.zipfile} -d {self.run_share_dir}"
 
         self.execute(cmd,
                      output_to_json=False,
@@ -187,35 +186,34 @@ class AWSCommonConn(SetClassVarsHelper):
         if not self.stateful_id:
             return
 
-        self._rm_tarfile()
+        self._rm_zipfile()
 
         # ref 452345235
         # we keep the app_dir
-        # cmd = f"cd {self.run_share_dir}/{self.app_dir} && tar cfz {self.tarfile}.tar.gz ."
-        cmd = f"cd {self.run_share_dir} && tar cfz {self.tarfile}.tar.gz ."
+        cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile}.zip ."
 
         self.execute(cmd,
                      output_to_json=False,
                      exit_error=True)
 
         try:
-            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.tarfile}.tar.gz",
+            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
                                                            self.stateful_id)
             status = True
         except:
             status = False
 
         if os.environ.get("DEBUG_STATEFUL"):
-            self.logger.debug(f"tarfile file {self.tarfile}.tar.gz")
+            self.logger.debug(f"zipfile file {self.zipfile}.zip")
         else:
-            self._rm_tarfile()
+            self._rm_zipfile()
 
         if status is False:
-            _log = f"tar file failed to upload to {self.upload_bucket}/{self.stateful_id}"
+            _log = f"zip file failed to upload to {self.upload_bucket}/{self.stateful_id}"
             self.logger.error(_log)
             raise Exception(_log)
         else:
-            _log = f"tar file uploaded to {self.upload_bucket}/{self.stateful_id}"
+            _log = f"zip file uploaded to {self.upload_bucket}/{self.stateful_id}"
             self.logger.debug_highlight(_log)
             self.phase_result["logs"].append(_log)
 

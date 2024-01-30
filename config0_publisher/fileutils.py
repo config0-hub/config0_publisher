@@ -93,6 +93,52 @@ def count_files_targz(file_path):
                 count += 1
 
     return count
+def zipcli(src,dst,filename,exit_error=True):
+
+    if os.path.exists(src):
+        try:
+            exit_status = os.system("cd %s && zip -r %s/%s.zip ." % (src,dst,filename))
+            if int(exit_status) != 0:
+                raise Exception("zip-ing")
+        except:
+            if exit_error:
+                raise Exception("zip-ing")
+            return False
+    else:
+        print(("Source %s does not exists.\n" % src))
+
+        if exit_error:
+            sys.exit(78)
+
+        return False
+
+    return "{}.zip".format(os.path.join(dst,filename))
+
+def unzipcli(directory,name,newlocation,exit_error=True):
+
+    if "zip" in name:
+        filename = name
+    elif os.path.exists(directory+"/"+name+".zip"):
+        filename = name+".zip"
+    else:
+        print(("\n%s is not in the correct .zip format!\n" % name))
+
+        if exit_error:
+            sys.exit(78)
+
+        return False
+
+    cmd = "unzip -o %s/%s -d %s/ > /dev/null" % (directory,filename,newlocation)
+    exit_status = os.system(cmd)
+
+    if int(exit_status) != 0:
+        failed_message = "FAILED: {}".format(cmd)
+        print(failed_message)
+        if not exit_error:
+            return False
+        raise Exception(failed_message)
+
+    return newlocation
 
 def targz(srcdir,dstdir,filename,verbose=True):
 
