@@ -49,7 +49,6 @@ class SetClassVarsHelper:
         self.logger.debug(self.default_values)
         self.logger.debug("0" * 32)
         self.logger.debug("0" * 32)
-        raise
 
         for env_var,must_exists in self.set_env_vars.items():
 
