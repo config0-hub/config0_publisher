@@ -98,7 +98,7 @@ class TFCmdOnAWS(object):
     def get_tf_apply(self):
 
         cmds = [
-            'cd $TMPDIR/build/$APP_DIR',
+            'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
