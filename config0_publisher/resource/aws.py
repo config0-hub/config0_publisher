@@ -23,7 +23,7 @@ class TFCmdOnAWS(object):
         if tf_bucket_path:
             cmds.extend([
                 'cd $TMPDIR',
-                f'aws s3 cp {tf_bucket_path} terraform.zip',
+                f'aws s3 cp {tf_bucket_path} terraform.zip --quiet',
                 f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
                 f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
                 f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
@@ -45,6 +45,7 @@ class TFCmdOnAWS(object):
         cmds = [
             'export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc',
             'if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/build_env_vars.env; fi',
+            'find .',
             'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'  # testtest456
         ]
 
@@ -63,7 +64,7 @@ class TFCmdOnAWS(object):
         #'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
         cmds = [
           'cd $TMPDIR/build',
-          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate',
+          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet',
           'zip -r $TMPDIR/$STATEFUL_ID.zip . ',
           'aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
           'rm -rf $TMPDIR/$STATEFUL_ID.zip ',
@@ -74,7 +75,7 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.zip',
+        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.zip --quiet',
                  'mkdir -p $TMPDIR/build',
                  'unzip -o $TMPDIR/$STATEFUL_ID.zip -d $TMPDIR/build',
                  'rm -rf $TMPDIR/$STATEFUL_ID.zip'
