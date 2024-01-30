@@ -52,6 +52,7 @@ class TFCmdOnAWS(object):
              ]
         else:
             cmds = [
+                'cat /tmp/decrypt',
                 '/tmp/decrypt -s $STATEFUL_ID -o $TMPDIR/build_env_vars.env $ENVFILE_ENC',
                 'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'
                 # testtest456
