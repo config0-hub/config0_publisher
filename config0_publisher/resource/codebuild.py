@@ -92,7 +92,10 @@ class Codebuild(CodebuildParams):
         CodebuildParams.__init__(self,
                                  **kwargs)
 
-        self.tfcmds = TFCmdOnAWS(runtime_env="codebuild")
+        self.tfcmds = TFCmdOnAWS(runtime_env="codebuild",
+                                 run_share_dir=self.run_share_dir,
+                                 app_dir=self.app_dir,
+                                 envfile="build_env_vars.env")
 
     def _add_cmds(self,contents,cmds):
 

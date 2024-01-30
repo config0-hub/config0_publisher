@@ -3,10 +3,13 @@
 import os
 
 class TFCmdOnAWS(object):
-    def __init__(self,runtime_env="codebuild"):
+    def __init__(self,**kwargs):
 
         self.classname = "TFCmdOnAWS"
-        self.runtime_env = runtime_env
+        self.runtime_env = kwargs["runtime_env"]
+        self.run_share_dir = kwargs["run_share_dir"]
+        self.app_dir = kwargs["app_dir"]
+        self.envfile = kwargs["envfile"]
 
     def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
 
@@ -46,14 +49,19 @@ class TFCmdOnAWS(object):
     def get_decrypt_buildenv_vars(self,openssl=True):
 
         if openssl:
-             cmds = [
-                 'if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/build_env_vars.env; fi',
-                 'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'  # testtest456
+            envfile_env = os.path.join(self.run_share_dir,
+                                       self.app_dir,
+                                       self.envfile)
+            cmds = [
+                 f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/{self.envfile}; fi',
+                 f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'  # testtest456
              ]
         else:
+            envfile_env = os.path.join(self.app_dir,
+                                       self.envfile)
             cmds = [
-                '/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/build_env_vars.env -e $ENVFILE_ENC',
-                'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'
+                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/{envfile_env}.enc',
+                f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
                 # testtest456
             ]
 
@@ -62,7 +70,7 @@ class TFCmdOnAWS(object):
     def get_src_buildenv_vars(self):
 
         cmds = [
-            'if [ -f /$TMPDIR/build_env_vars.env ]; then cd /$TMPDIR; . ./build_env_vars.env ; fi'
+            f'if [ -f /$TMPDIR/{self.envfile} ]; then cd /$TMPDIR; . ./{self.envfile} ; fi'
         ]
 
         return cmds

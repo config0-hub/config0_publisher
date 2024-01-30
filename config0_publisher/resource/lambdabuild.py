@@ -85,8 +85,10 @@ class Lambdabuild(LambdaParams):
         LambdaParams.__init__(self,
                                  **kwargs)
 
-        self.tfcmds = TFCmdOnAWS(runtime_env="lambda")
-
+        self.tfcmds = TFCmdOnAWS(runtime_env="lambda",
+                                 run_share_dir=self.run_share_dir,
+                                 app_dir=self.app_dir,
+                                 envfile="build_env_vars.env")
     def _get_prebuild_cmds(self):
 
         cmds = self.tfcmds.s3_to_local()
