@@ -60,7 +60,7 @@ class TFCmdOnAWS(object):
             envfile_env = os.path.join(self.app_dir,
                                        self.envfile)
             cmds = [
-                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/{envfile_env}.enc',
+                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/build/{envfile_env}.enc',
                 f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
                 # testtest456
             ]
