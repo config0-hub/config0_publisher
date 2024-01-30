@@ -28,7 +28,7 @@ class TFCmdOnAWS(object):
                 f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
                 f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi',
                 'unzip terraform.zip',
-                'mv terraform $TF_PATH'
+                'mv terraform $TF_PATH || echo "looks like same path"'
             ])
         else:
             cmds.extend([
