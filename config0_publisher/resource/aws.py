@@ -36,8 +36,7 @@ class TFCmdOnAWS(object):
                 'export DNS=True'
                 f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
                 'unzip terraform.zip',
-                'chmod 777 terraform',
-                'mv terraform $TF_PATH',
+                'chmod 777 $TF_PATH',
                 'ls -al $TF_PATH'
             ])
 
@@ -50,6 +49,8 @@ class TFCmdOnAWS(object):
             'ls -al /tmp',
             'ls -al /tmp/build',
             'ls -al /tmp/build/var/tmp/terraform',
+            'chmod 777 $TF_PATH',
+            'ls -al $TF_PATH',
             'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'  # testtest456
         ]
 
