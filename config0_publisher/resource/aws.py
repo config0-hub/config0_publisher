@@ -64,9 +64,9 @@ class TFCmdOnAWS(object):
         cmds = [
           'cd $TMPDIR/build',
           'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate',
-          'tar cfz $TMPDIR/$STATEFUL_ID.tar.gz . ',
-          'aws s3 cp $TMPDIR/$STATEFUL_ID.tar.gz s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
-          'rm -rf $TMPDIR/$STATEFUL_ID.tar.gz ',
+          'zip -r $TMPDIR/$STATEFUL_ID.zip . ',
+          'aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
+          'rm -rf $TMPDIR/$STATEFUL_ID.zip ',
           'echo "# terraform files uploaded s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID" '
         ]
 
@@ -74,10 +74,10 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.tar.gz',
+        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.zip',
                  'mkdir -p $TMPDIR/build',
-                 'tar xfz $TMPDIR/$STATEFUL_ID.tar.gz -C $TMPDIR/build',
-                 'rm -rf $TMPDIR/$STATEFUL_ID.tar.gz'
+                 'unzip -o $TMPDIR/$STATEFUL_ID.tar.gz -d $TMPDIR/build',
+                 'rm -rf $TMPDIR/$STATEFUL_ID.zip'
         ]
 
         return cmds
@@ -115,40 +115,6 @@ class TFCmdOnAWS(object):
         ]
 
         return cmds
-
-    def _test_get_with_buildspec(self):
-
-        contents = '''version: 0.2
-phases:
-  install:
-    commands:
-      - echo "Installing system dependencies..."
-      - apt-get update && apt-get install -y zip
-  pre_build:
-    commands:
-      - aws s3 cp s3://app-env.tmp.williaumwu.eee71/meelsrivavqqdkzy /tmp/meelsrivavqqdkzy.tar.gz --quiet
-      - mkdir -p /var/tmp/share/meelsrivavqqdkzy
-      - tar xfz /tmp/meelsrivavqqdkzy.tar.gz -C /var/tmp/share/meelsrivavqqdkzy/
-      - rm -rf /tmp/meelsrivavqqdkzy.tar.gz
-      - echo "Creating a virtual environment..."
-      - cd /var/tmp/share/meelsrivavqqdkzy && python3 -m venv venv
-  build:
-    commands:
-      - export PYTHON_VERSION=`python -c "import sys;print(f'{sys.version_info.major}.{sys.version_info.minor}')"`
-      - cd /var/tmp/share/meelsrivavqqdkzy
-      - . venv/bin/activate
-      - echo "Installing project dependencies..."
-      - pip install -r src/requirements.txt
-      - cp -rp src/* venv/lib/python$PYTHON_VERSION/site-packages/
-  post_build:
-    commands:
-      - cd /var/tmp/share/meelsrivavqqdkzy
-      - cd venv/lib/python$PYTHON_VERSION/site-packages/
-      - zip -r /tmp/trigger-codebuild.zip .
-      - aws s3 cp /tmp/trigger-codebuild.zip s3://codebuild-shared-ed-eval-d645633/trigger-codebuild.zip
-
-'''
-        return contents
 
 class AWSBaseBuildParams(object):
 
