@@ -45,7 +45,9 @@ class TFCmdOnAWS(object):
         cmds = [
             'export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc',
             'if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/build_env_vars.env; fi',
-            'find .',
+            'ls -al /tmp',
+            'ls -al /tmp/build',
+            'ls -al /tmp/build/var/tmp/terraform',
             'echo "#######################################" && cat $TMPDIR/build_env_vars.env && echo "#######################################"'  # testtest456
         ]
 
