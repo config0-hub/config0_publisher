@@ -15,6 +15,8 @@ class CodebuildParams(AWSBaseBuildParams):
         self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
+        self.run_share_dir = kwargs["run_share_dir"]
+        self.app_dir = kwargs["app_dir"]
 
     def _set_inputargs(self):
 
