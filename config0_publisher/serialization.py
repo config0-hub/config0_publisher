@@ -39,12 +39,11 @@ def encrypt_file(secret, input_file=None, file_content=None, output_file=None):
     if input_file:
         with open(input_file, 'rb') as file:
             file_content = file.read()
-
-    if not file_content:
+    elif file_content:
+        # Convert the file content to base64
+        base64_content = base64.b64encode(file_content.encode())
+    else:
         raise Exception("no content to encrypt")
-
-    # Convert the file content to base64
-    base64_content = base64.b64encode(file_content)
 
     # Encrypt the base64 content
     cipher_suite = Fernet(passphrase)
