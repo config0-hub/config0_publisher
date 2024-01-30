@@ -39,7 +39,9 @@ class LambdaParams(AWSBaseBuildParams):
 
         env_vars = {
             "TMPDIR":"/tmp",
-            "TF_PATH":"/tmp/terraform" }
+            "TF_PATH":"/tmp/terraform",
+            "METHOD":self.method
+        }
 
         if self.ssm_name:
             env_vars["SSM_NAME"] = self.ssm_name
