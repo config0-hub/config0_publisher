@@ -42,9 +42,9 @@ class TFCmdOnAWS(object):
         return cmds
     def get_decrypt_buildenv_vars(self):
 
+        #'if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/build_env_vars.env; fi',
         cmds = [
-            'export ENVFILE_ENC=$TMPDIR/build/$APP_DIR/build_env_vars.env.enc',
-            'if [ -f "$ENVFILE_ENC" ]; then cat $ENVFILE_ENC | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/build_env_vars.env; fi',
+            'cat $TMPDIR/build/$APP_DIR/build_env_vars.env.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/build_env_vars.env',
             'ls -al /tmp',
             'ls -al /tmp/build',
             'ls -al /tmp/build/var/tmp/terraform',
