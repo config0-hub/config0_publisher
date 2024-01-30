@@ -25,22 +25,19 @@ class TFCmdOnAWS(object):
 
         if tf_bucket_path:
             cmds.extend([
-                'cd $TMPDIR',
-                f'aws s3 cp {tf_bucket_path} terraform.zip --quiet',
-                f'if [ ! -z "$DNE" ]; then echo "downloading tf {tf_version} from hashicorp"; fi',
-                f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
-                f'if [ ! -z "$DNE" ]; then aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi'
+                f'(cd $TMPDIR && aws s3 cp {tf_bucket_path} terraform.zip --quiet) || export DNE="True"',
+                f'if [ ! -z "$DNE" ]; then cd $TMPDIR && echo "downloading tf {tf_version} from hashicorp"; fi',
+                f'if [ ! -z "$DNE" ]; then cd $TMPDIR && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi',
+                f'if [ ! -z "$DNE" ]; then cd $TMPDIR && aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi'
             ])
         else:
             cmds.extend([
-                'cd $TMPDIR',
-                'export DNS=True'
-                f'if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi'
+                f'cd $TMPDIR && export DNS=True && if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi'
             ])
 
         cmds.extend([
-            'unzip terraform.zip',
-            'mv terraform $TF_PATH > /dev/null || exit 0',
+            'cd $TMPDIR && unzip terraform.zip',
+            'cd $TMPDIR && mv terraform $TF_PATH > /dev/null || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
@@ -79,11 +76,10 @@ class TFCmdOnAWS(object):
 
         #'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
         cmds = [
-          'cd $TMPDIR/build',
-          'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet',
-          'zip -r $TMPDIR/$STATEFUL_ID.zip . ',
-          'aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
-          'rm -rf $TMPDIR/$STATEFUL_ID.zip ',
+          'cd $TMPDIR/build && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet',
+          'cd $TMPDIR/build && zip -r $TMPDIR/$STATEFUL_ID.zip . ',
+          'cd $TMPDIR/build && aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
+          'cd $TMPDIR/build && rm -rf $TMPDIR/$STATEFUL_ID.zip ',
           'echo "# terraform files uploaded s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID" '
         ]
 
@@ -103,10 +99,10 @@ class TFCmdOnAWS(object):
 
         cmds = [
             'cd $TMPDIR/build/$APP_DIR',
-            '$TF_PATH init',
-            '$TF_PATH plan -out=tfplan',
-            '$TF_PATH apply tfplan || export FAILED=true',
-            'if [ ! -z "$FAILED" ]; then $TF_PATH destroy -auto-approve; fi',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
+            'if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
             'if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi'
         ]
 
@@ -116,8 +112,8 @@ class TFCmdOnAWS(object):
 
         cmds = [
           'cd $TMPDIR/build/$APP_DIR',
-          '$TF_PATH init',
-          '$TF_PATH destroy -auto-approve'
+          'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
+          'cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
         return cmds
@@ -126,9 +122,9 @@ class TFCmdOnAWS(object):
 
         cmds = [
             'cd $TMPDIR/build/$APP_DIR',
-            '$TF_PATH init',
-            '$TF_PATH refresh',
-            '$TF_PATH plan -detailed-exitcode'
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH refresh',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
 
         return cmds
