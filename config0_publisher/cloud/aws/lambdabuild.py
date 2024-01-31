@@ -120,102 +120,30 @@ class LambdaResourceHelper(AWSCommonConn):
                 })
         }
 
-        self.response = self.lambda_client.invoke(**invocation_config)
-
-        #self.request_id = self.response['ResponseMetadata']['RequestId']
-        #self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
-        #self.logger.debug("a"*32)
-        #self.logger.debug_highlight(self.response)
-        #self.logger.debug(self.response.keys())
-
-        # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
-
-        self.logger.debug("b"*32)
-        self.logger.debug("b"*32)
-        log_result = b64_decode(self.response["LogResult"])
-        status = self.response["StatusCode"]
-        self.logger.debug("c"*32)
-        self.logger.debug(f"status = {status}")
-        self.logger.debug("d"*32)
-        self.logger.debug(f"log_result = \n{log_result}")
-        self.logger.debug("e"*32)
+        return self.lambda_client.invoke(**invocation_config)
 
     def _submit(self):
-
-        self.phase_result = self.new_phase("submit")
 
         # we don't want to clobber the intact
         # stateful files from creation
         if self.method != "destroy":
             self.upload_to_s3_stateful()
 
-        self.phase_result["executed"].append("upload_to_s3")
+        # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
+        self.response = self._trigger_build()
 
-        self._trigger_build()
-        self.phase_result["executed"].append("trigger_build")
-        self.phase_result["status"] = True
-        self.results["phases_info"].append(self.phase_result)
+        lambda_status = self.response["StatusCode"]
+        if lambda_status == 200:
+            self.results["status"] = True
+            self.results["lambda_status"] = lambda_status
+            self.results["exitcode"] = 0
+        else:
+            self.results["status"] = False
 
-        return self.results
+        self.results["log"] = b64_decode(self.response["LogResult"])
 
-    # revisit
-    # testtest456
-    # check with endpoint?
-    #def check(self,wait_int=10,retries=12):
-
-    #    for retry in range(retries):
-    #        self.logger.debug(f'check: lambda function "{self.lambda_function_name}" request_id "{self.request_id}" retry {retry}/{retries} {wait_int} seconds')
-    #        if self._check_status():
-    #            return True
-    #        sleep(wait_int)
-    #    return
-
-    def retrieve(self,**kwargs):
-
-        '''
-        {
-          "inputargs": {
-              "interval": 10,
-              "retries": 12
-          },
-              "name": "retrieve",
-              "timewait": 3
-        }
-
-        retrieve is the same as _retrieve except
-        there is a check of the build status
-        where the check itself times out
-        '''
-
-        self.phase_result = self.new_phase("retrieve")
-
-        wait_int = kwargs.get("interval",10)
-        retries = kwargs.get("retries",12)
-
-        #if not self.check(wait_int=wait_int,
-        #                  retries=retries):
-        #    return
-
-        return self._retrieve()
-
-    def _retrieve(self):
-
-        self.s3_stateful_to_share_dir()
-        self.phase_result["executed"].append("s3_share_dir")
-
-        self.clean_output()
-
-        if self.output:
-            self.results["output"] = self.output
-
-        self.print_output()
-
-        if self.results.get("failed_message"):
-            self.logger.error(self.results["failed_message"])
-            raise Exception(self.results.get("failed_message"))
-
-        self.phase_result["status"] = True
-        self.results["phases_info"].append(self.phase_result)
+        self.logger.debug(f'log_result = \n{self.results["log"]}')
+        self.logger.debug(f'lambda_status = \n{lambda_status}')
 
         return self.results
 
@@ -224,10 +152,5 @@ class LambdaResourceHelper(AWSCommonConn):
     def run(self):
 
         self._submit()
-
-        # testtest456
-        #exit(0)
-        #raise Exception('yoyo')
-        #self._retrieve()
 
         return self.results
