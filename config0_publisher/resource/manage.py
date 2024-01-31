@@ -1723,7 +1723,8 @@ class ResourceCmdHelper:
         #    return _awsbuild.retrieve(**self.get_phase_inputargs())
 
         # submit and run required env file
-        self.create_build_envfile(openssl=False)
+        if method == "create":
+            self.create_build_envfile(openssl=False)
 
         #if self.phase == "submit":
         #    return _awsbuild.submit(**self.get_phase_inputargs())
