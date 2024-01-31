@@ -378,6 +378,9 @@ class LambdaResourceHelper(AWSCommonConn):
     def run(self):
 
         self._submit()
+
+        # testtest456
+        raise Exception('yoyo')
         #self._retrieve()
 
         return self.results
