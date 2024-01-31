@@ -47,176 +47,6 @@ class LambdaResourceHelper(AWSCommonConn):
             "share_dir":None
         }
 
-    #def _get_build_status(self):
-
-    #    response = self.lambda_client.get_invocation(
-    #        FunctionName=self.lambda_function_name,
-    #        InvocationId=self.request_id
-    #    )
-
-    #    status_code = response['StatusCode']
-    #    print("Status Code:",status_code)
-    #    status = response['Status']
-
-    #    return {self.request_id: {"status": status}}
-
-    #def _set_build_status(self):
-    #
-    #    # Extract the status from the response
-    #    self.results["build_status"] = self._get_build_status()[self.request_id]["status"]
-
-    def _check_status(self):
-        '''
-        'InProgress': The invocation is still in progress.
-        'Success': The invocation finished successfully.
-        'Failed': The invocation failed.
-        '''
-
-        #self._set_build_status()
-
-        status = self.results["build_status"]
-
-        if status == 'IN_PROGRESS':
-            self.logger.debug(f"lambda status: {status}")
-            return
-
-        done = [ "Success",
-                 "Failed" ]
-
-        if status in done:
-            self.logger.debug(f"lambda completed with status: {status}")
-            return status
-
-        self.logger.debug(f"lambda status: {status}")
-
-        return status
-
-    def _set_build_status_codes(self):
-
-        build_status = self.results["build_status"]
-
-        if build_status == 'Success':
-            self.results["status_code"] = "successful"
-            self.results["status"] = True
-            return True
-
-        failed_message = f"lambda failed with status {build_status}"
-
-        if build_status == 'Failed':
-            self.results["failed_message"] = failed_message
-            self.results["status_code"] = "failed"
-            self.results["status"] = False
-            return True
-
-        _time_elapsed = int(time()) - self.results["run_t0"]
-
-        # if run time exceed 5 minutes, then it
-        # will be considered failed
-        if _time_elapsed > 300:
-            failed_message = "build should match one of the build status: after 300 seconds"
-            self.logger.error(failed_message)
-            self.results["failed_message"] = failed_message
-            self.results["status_code"] = "failed"
-            self.results["status"] = False
-            return False
-
-        return
-
-    def _eval_build(self):
-
-        _t1 = int(time())
-        status = None
-
-        while True:
-
-            sleep(5)
-
-            _time_elapsed = _t1 - self.results["run_t0"]
-
-            if _time_elapsed > self.build_timeout:
-                failed_message = "run max time exceeded {}".format(self.build_timeout)
-                self.phase_result["logs"].append(failed_message)
-                self.results["failed_message"] = failed_message
-                self.results["status"] = False
-                self.logger.warn(failed_message)
-                status = False
-                break
-
-            # check build exceeded total build time alloted
-            if _t1 > self.build_expire_at:
-                self.results["status_code"] = "timed_out"
-                self.results["status"] = False
-                failed_message = "build timed out: after {} seconds.".format(str(self.build_timeout))
-                self.phase_result["logs"].append(failed_message)
-                self.results["failed_message"] = failed_message
-                self.logger.warn(failed_message)
-                status = False
-                break
-
-            self._get_log()
-
-        self.results["time_elapsed"] = int(time()) - self.results["run_t0"]
-
-        if not self.output:
-            self.output = 'Could not get log request_id "{}"'.format(self.request_id)
-
-        return status
-    def _get_log(self):
-
-        if self.output:
-            return {"status":True}
-
-        log_group_name = f'/aws/lambda/{self.lambda_function_name}'
-
-        self.logs_client = self.session.client('logs')
-
-        # Filter the log events based on the request ID
-        response = self.logs_client.filter_log_events(
-            logGroupName=log_group_name,
-            filterPattern=self.request_id,
-        )
-
-        # Retrieve the log events from the response
-        log_events = response['events']
-
-        _logs = []
-
-        # Print the log messages
-        for event in log_events:
-            message = event.get('message')
-            if not message:
-                continue
-            _logs.append(message)
-            print(message)
-
-        self.output = "\n".join(_logs)
-
-        return {"status":True}
-
-    def _set_build_summary(self):
-
-        if self.results["status_code"] == "successful":
-            summary_msg = "# Successful \n# request_id {}".format(self.request_id)
-
-        elif self.results["status_code"] == "timed_out":
-            summary_msg = "# Timed out \n# request_id {}".format(self.request_id)
-
-        elif self.request_id is False:
-            self.results["status_code"] = "failed"
-            summary_msg = "# Never Triggered"
-
-        elif self.request_id:
-            self.results["status_code"] = "failed"
-            summary_msg = "# Failed \n# request_id {}".format(self.request_id)
-
-        else:
-            self.results["status_code"] = "failed"
-            summary_msg = "# Failed \n# request_id {}".format(self.request_id)
-
-        self.results["msg"] = summary_msg
-
-        return summary_msg
-
     def _env_vars_to_lambda_format(self,sparse=True):
 
         skip_keys = [ "AWS_ACCESS_KEY_ID",
@@ -311,16 +141,17 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return self.results
 
-    def check(self,wait_int=10,retries=12):
+    # revisit
+    # testtest456
+    # check with endpoint?
+    #def check(self,wait_int=10,retries=12):
 
-        self._set_build_status()
-
-        for retry in range(retries):
-            self.logger.debug(f'check: lambda function "{self.lambda_function_name}" request_id "{self.request_id}" retry {retry}/{retries} {wait_int} seconds')
-            if self._check_status():
-                return True
-            sleep(wait_int)
-        return
+    #    for retry in range(retries):
+    #        self.logger.debug(f'check: lambda function "{self.lambda_function_name}" request_id "{self.request_id}" retry {retry}/{retries} {wait_int} seconds')
+    #        if self._check_status():
+    #            return True
+    #        sleep(wait_int)
+    #    return
 
     def retrieve(self,**kwargs):
 
@@ -344,16 +175,13 @@ class LambdaResourceHelper(AWSCommonConn):
         wait_int = kwargs.get("interval",10)
         retries = kwargs.get("retries",12)
 
-        if not self.check(wait_int=wait_int,
-                          retries=retries):
-            return
+        #if not self.check(wait_int=wait_int,
+        #                  retries=retries):
+        #    return
 
         return self._retrieve()
 
     def _retrieve(self):
-
-        self._eval_build()
-        self.phase_result["executed"].append("eval_build")
 
         self.s3_stateful_to_share_dir()
         self.phase_result["executed"].append("s3_share_dir")
@@ -381,8 +209,8 @@ class LambdaResourceHelper(AWSCommonConn):
         self._submit()
 
         # testtest456
-        exit(0)
-        raise Exception('yoyo')
+        #exit(0)
+        #raise Exception('yoyo')
         #self._retrieve()
 
         return self.results
