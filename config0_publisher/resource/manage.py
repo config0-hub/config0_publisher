@@ -1471,6 +1471,10 @@ class ResourceCmdHelper:
 
         if os.path.exists(self.tf_exec_state_file):
             tfstate_file = self.tf_exec_state_file
+
+            with open(tfstate_file) as json_file:
+                data = json.load(json_file)
+
         else:
             cmd = f'aws s3 cp s3://{self.remote_stateful_bucket}/{self.stateful_id}.tfstate /tmp/{self.stateful_id}.tfstate'
 
@@ -1480,13 +1484,11 @@ class ResourceCmdHelper:
 
             tfstate_file = f"/tmp/{self.stateful_id}.tfstate"
 
-        # read output file
-        with open(tfstate_file) as json_file:
-            data = json.load(json_file)
+            # read output file
+            with open(tfstate_file) as json_file:
+                data = json.load(json_file)
 
-        # testtest456
-        print(data)
-        raise Exception('gogog')
+            os.system(f'rm -rf {tfstate_file}')
 
         if not data:
             msg = "tfstate_to_output: there is no data from {}".format(os.path.join(os.getcwd(),
