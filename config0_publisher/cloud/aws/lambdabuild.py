@@ -193,7 +193,7 @@ class LambdaResourceHelper(AWSCommonConn):
             if not message:
                 continue
             _logs.append(message)
-            #print('Log Message:', message)
+            print('Log Message:', message)
 
         self.output = "\n".join(_logs)
 
@@ -298,32 +298,8 @@ class LambdaResourceHelper(AWSCommonConn):
         self.request_id = self.response['ResponseMetadata']['RequestId']
         self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
 
-        # Wait until the invocation is complete
-        waiter = self.lambda_client.get_waiter('function_invocation_complete')
-        waiter.wait(
-            FunctionName=self.lambda_function_name,
-            InvocationType='RequestResponse',
-            RequestId=self.request_id
-        )
-
-        # Get the status of the invocation
-        invocation_response = self.lambda_client.get_invocation(
-            FunctionName=self.lambda_function_name,
-            InvocationId=self.request_id
-        )
-
-        function_status = invocation_response['StatusCode']
-
-        self.logger.debug_highlight("Lambda function status:", function_status)
-
-        #self.request_id = response['ResponseMetadata']['RequestId']
-        #self.results["inputargs"]["request_id"] = self.request_id
-
-        #_log = f"trigger run on lambda function: request_id: {self.request_id}, build_expire_at: {self.build_expire_at}"
-        #self.logger.debug(_log)
-        #self.phase_result["logs"].append(_log)
-
-        #return response
+        sleep(10)
+        self._get_log()
 
     def _submit(self):
 
