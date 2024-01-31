@@ -30,8 +30,8 @@ class LambdaResourceHelper(AWSCommonConn):
         self.init_env_vars = kwargs.get("init_env_vars")
         self.cmds_b64 = b64_encode(kwargs["cmds"])
 
-        self.lambda_client = self.botocore_session.create_client('lambda',
-                                                                 config=self.botocore_client_config)
+        #self.lambda_client = self.botocore_session.create_client('lambda',
+        #                                                         config=self.botocore_client_config)
 
         #self.lambda_client = self.session.client('lambda')
 
