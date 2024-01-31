@@ -1461,6 +1461,41 @@ class ResourceCmdHelper:
     # insert 45245
     #######################################################################
 
+    def _get_tfstate_file(self):
+        """
+        This method gets the Terraform state file.
+        """
+
+        #bucket = "{self.remote_stateful_bucket}"
+        #key = "{self.stateful_id}.tfstate"
+
+        if os.path.exists(self.tf_exec_state_file):
+            tfstate_file = self.tf_exec_state_file
+        else:
+            cmd = f'aws s3 cp s3://{self.remote_stateful_bucket}/{self.stateful_id}.tfstate /tmp/{self.stateful_id}.tfstate'
+
+            self.execute(cmd,
+                         output_to_json=False,
+                         exit_error=True)
+
+            tfstate_file = f"/tmp/{self.stateful_id}.tfstate"
+
+        # read output file
+        with open(tfstate_file) as json_file:
+            data = json.load(json_file)
+
+        # testtest456
+        print(data)
+        raise Exception('gogog')
+
+        if not data:
+            msg = "tfstate_to_output: there is no data from {}".format(os.path.join(os.getcwd(),
+                                                                                    self.tf_exec_state_file))
+            self.logger.debug(msg)
+            return
+
+        return data
+
     def add_mod_params(self,resource):
 
         '''
@@ -1681,14 +1716,15 @@ class ResourceCmdHelper:
         cinputargs = self._get_aws_exec_cinputargs(method=method)
         _awsbuild = Lambdabuild(**cinputargs)
 
-        if self.phase == "retrieve":
-            return _awsbuild.retrieve(**self.get_phase_inputargs())
+        # phases aren't used for lambda execution
+        #if self.phase == "retrieve":
+        #    return _awsbuild.retrieve(**self.get_phase_inputargs())
 
         # submit and run required env file
         self.create_build_envfile(openssl=False)
 
-        if self.phase == "submit":
-            return _awsbuild.submit(**self.get_phase_inputargs())
+        #if self.phase == "submit":
+        #    return _awsbuild.submit(**self.get_phase_inputargs())
 
         return _awsbuild.run()
 
@@ -1772,6 +1808,7 @@ terraform {{
         self._get_runtime_env_vars(method="validate")
         self._set_build_method()
         self._exec_tf(method="validate")
+
         return self.tf_results
 
     def _exec_tf_destroy(self):
