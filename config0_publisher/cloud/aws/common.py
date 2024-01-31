@@ -110,10 +110,6 @@ class AWSCommonConn(SetClassVarsHelper):
         else:
             set_env_vars = self.get_default_env_vars()
 
-        self.logger.info("a9"*32)
-        self.logger.json(kwargs.get("default_values"))
-        self.logger.info("a9"*32)
-
         SetClassVarsHelper.__init__(self,
                                     set_env_vars=set_env_vars,
                                     kwargs=kwargs,
