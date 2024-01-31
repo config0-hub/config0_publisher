@@ -187,7 +187,7 @@ class LambdaResourceHelper(AWSCommonConn):
             if not message:
                 continue
             _logs.append(message)
-            print('-- Log Message:', message)
+            print(message)
 
         self.output = "\n".join(_logs)
 
