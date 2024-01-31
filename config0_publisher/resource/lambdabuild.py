@@ -131,9 +131,6 @@ class Lambdabuild(LambdaParams):
         if build_cmds:
             cmds["build"] = {"cmds":build_cmds}
 
-        print_json(cmds)
-        raise Exception('abc')
-
         #if self.method == "create":
         #    postbuild_cmds = self._get_postbuild_cmds()
         #else:
@@ -141,11 +138,6 @@ class Lambdabuild(LambdaParams):
 
         #if postbuild_cmds:
         #    cmds["postbuild"] = {"cmds":postbuild_cmds}
-
-        # testtest456
-        print_json(cmds)
-        raise Exception('def')
-
 
         return cmds
 
