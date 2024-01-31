@@ -135,7 +135,7 @@ class LambdaResourceHelper(AWSCommonConn):
         self.response = self._trigger_build()
 
         lambda_status = self.response["StatusCode"]
-        payload = self.response["Payload"].read()
+        payload = json.loads(self.response["Payload"].read().decode())
 
         if lambda_status == 200:
             self.results["status"] = True
