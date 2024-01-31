@@ -148,7 +148,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self.logger.debug("8"*32)
         self.logger.debug("8"*32)
-        self.logger.json(f'payload \n {payload}')
+        self.logger.json(payload)
         self.logger.debug("9"*32)
         self.logger.debug("9"*32)
         raise Exception('dsfdf')
