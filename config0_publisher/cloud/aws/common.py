@@ -65,8 +65,7 @@ class AWSCommonConn(SetClassVarsHelper):
         client_config = botocore.config.Config(
             retries={
                 'max_attempts': 0
-            },
-            timeout=900
+            }
         )
 
         self.lambda_client = botocore.client.Lambda(
