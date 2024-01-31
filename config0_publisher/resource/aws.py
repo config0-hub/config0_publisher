@@ -103,12 +103,11 @@ class TFCmdOnAWS(object):
 
         cmds = [
             'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
-            'cd $TMPDIR/build/$APP_DIR && rm -rf backend.tf',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
-            'if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
-            'if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi'
+            'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
+            'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi'
         ]
 
         return cmds
@@ -186,6 +185,8 @@ class AWSBaseBuildParams(object):
         except:
             self.tf_version = "1.5.4"
 
+    # testtest456
+    # is this needed?
     def _override_env_var_method(self):
 
         if not self.build_env_vars.get("METHOD"):
