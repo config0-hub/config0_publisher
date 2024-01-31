@@ -110,6 +110,9 @@ class AWSCommonConn(SetClassVarsHelper):
         else:
             set_env_vars = self.get_default_env_vars()
 
+        print(kwargs.get("default_values"))
+        raise Exception("dsfasfd")
+
         SetClassVarsHelper.__init__(self,
                                     set_env_vars=set_env_vars,
                                     kwargs=kwargs,
