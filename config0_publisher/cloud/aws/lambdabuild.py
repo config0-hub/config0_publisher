@@ -136,7 +136,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         lambda_status = self.response["StatusCode"]
         payload = json.loads(self.response["Payload"].read().decode())
-        lambda_results = json.loads(payload["Body"])
+        lambda_results = json.loads(payload["body"])
 
         if lambda_status == 200:
             self.results["status"] = True
