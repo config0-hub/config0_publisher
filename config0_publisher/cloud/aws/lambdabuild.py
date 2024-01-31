@@ -47,23 +47,23 @@ class LambdaResourceHelper(AWSCommonConn):
             "share_dir":None
         }
 
-    def _get_build_status(self):
+    #def _get_build_status(self):
 
-        response = self.lambda_client.get_invocation(
-            FunctionName=self.lambda_function_name,
-            InvocationId=self.request_id
-        )
+    #    response = self.lambda_client.get_invocation(
+    #        FunctionName=self.lambda_function_name,
+    #        InvocationId=self.request_id
+    #    )
 
-        status_code = response['StatusCode']
-        print("Status Code:",status_code)
-        status = response['Status']
+    #    status_code = response['StatusCode']
+    #    print("Status Code:",status_code)
+    #    status = response['Status']
 
-        return {self.request_id: {"status": status}}
+    #    return {self.request_id: {"status": status}}
 
-    def _set_build_status(self):
-        
-        # Extract the status from the response
-        self.results["build_status"] = self._get_build_status()[self.request_id]["status"]
+    #def _set_build_status(self):
+    #
+    #    # Extract the status from the response
+    #    self.results["build_status"] = self._get_build_status()[self.request_id]["status"]
 
     def _check_status(self):
         '''
@@ -72,7 +72,7 @@ class LambdaResourceHelper(AWSCommonConn):
         'Failed': The invocation failed.
         '''
 
-        self._set_build_status()
+        #self._set_build_status()
 
         status = self.results["build_status"]
 
@@ -293,16 +293,37 @@ class LambdaResourceHelper(AWSCommonConn):
         }
 
         # Invoke the Lambda function with the specified environment variables
-        response = self.lambda_client.invoke(**invocation_config)
+        self.response = self.lambda_client.invoke(**invocation_config)
 
-        self.request_id = response['ResponseMetadata']['RequestId']
-        self.results["inputargs"]["request_id"] = self.request_id
+        self.request_id = self.response['ResponseMetadata']['RequestId']
+        self.logger.debug_highlight("Lambda function invocation request ID:", self.request_id)
 
-        _log = f"trigger run on lambda function: request_id: {self.request_id}, build_expire_at: {self.build_expire_at}"
-        self.logger.debug(_log)
-        self.phase_result["logs"].append(_log)
+        # Wait until the invocation is complete
+        waiter = self.lambda_client.get_waiter('function_invocation_complete')
+        waiter.wait(
+            FunctionName=self.lambda_function_name,
+            InvocationType='RequestResponse',
+            RequestId=self.request_id
+        )
 
-        return response
+        # Get the status of the invocation
+        invocation_response = self.lambda_client.get_invocation(
+            FunctionName=self.lambda_function_name,
+            InvocationId=self.request_id
+        )
+
+        function_status = invocation_response['StatusCode']
+
+        self.logger.debug_highlight("Lambda function status:", function_status)
+
+        #self.request_id = response['ResponseMetadata']['RequestId']
+        #self.results["inputargs"]["request_id"] = self.request_id
+
+        #_log = f"trigger run on lambda function: request_id: {self.request_id}, build_expire_at: {self.build_expire_at}"
+        #self.logger.debug(_log)
+        #self.phase_result["logs"].append(_log)
+
+        #return response
 
     def _submit(self):
 
