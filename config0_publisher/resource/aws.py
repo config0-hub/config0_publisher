@@ -23,9 +23,9 @@ class TFCmdOnAWS(object):
 
         if tf_bucket_path:
             cmds.extend([
-                f'(cd $TMPDIR && aws s3 cp {tf_bucket_path} terraform.zip --quiet) && \
+                f'(cd $TMPDIR && aws s3 cp {tf_bucket_path} terraform.zip --quiet) || \
                    cd $TMPDIR && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip && \
-                   cd $TMPDIR && aws s3 cp terraform.zip {tf_bucket_path} --quiet ; fi'
+                   cd $TMPDIR && aws s3 cp terraform.zip {tf_bucket_path} --quiet'
             ])
         else:
             cmds.extend([
