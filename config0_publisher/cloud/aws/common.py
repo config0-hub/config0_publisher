@@ -14,7 +14,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
     def __init__(self,**kwargs):
 
-        self.classname = "Codebuild"
+        self.classname = "AWSCommonConn"
         self.logger = Config0Logger(self.classname)
 
         # Set the logging level for Boto3 to a higher level than DEBUG
