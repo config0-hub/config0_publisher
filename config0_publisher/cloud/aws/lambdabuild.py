@@ -135,31 +135,24 @@ class LambdaResourceHelper(AWSCommonConn):
         self.response = self._trigger_build()
 
         lambda_status = self.response["StatusCode"]
+
         payload = json.loads(self.response["Payload"].read().decode())
         lambda_results = json.loads(payload["body"])
 
-        if lambda_status == 200:
-            self.results["status"] = True
-            self.results["lambda_status"] = lambda_status
+        self.results["lambda_status"] = lambda_status
+        self.results["lambda_results"] = lambda_results
+
+        if lambda_results.get("status") is True:
+            self.results["status"] = lambda_results["status"]
             self.results["exitcode"] = 0
         else:
             self.results["status"] = False
+            self.results["exitcode"] = "78"
 
         self.results["log"] = b64_decode(self.response["LogResult"])
 
-        self.logger.debug("8"*32)
-        self.logger.json(payload)
-        self.logger.debug("8"*32)
-        self.logger.debug("9"*32)
-        self.logger.json(lambda_results)
-        self.logger.debug("9"*32)
-        raise Exception('dsfdf')
-        self.logger.json(self.response)
-        self.logger.debug("9"*32)
-        self.logger.debug("9"*32)
-        self.logger.debug(f'log_result = \n{self.results["log"]}')
-        self.logger.debug(f'lambda_status = \n{lambda_status}')
-        self.logger.debug("10"*32)
+        #self.logger.debug(f'log_result = \n{self.results["log"]}')
+        #self.logger.debug(f'lambda_status = \n{lambda_status}')
 
         return self.results
 
