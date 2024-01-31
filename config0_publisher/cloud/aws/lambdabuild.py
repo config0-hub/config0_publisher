@@ -290,6 +290,7 @@ class LambdaResourceHelper(AWSCommonConn):
         self.response = self.lambda_client.invoke(**invocation_config)
 
         self.request_id = self.response['ResponseMetadata']['RequestId']
+
         self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
 
     def _submit(self):
@@ -380,6 +381,7 @@ class LambdaResourceHelper(AWSCommonConn):
         self._submit()
 
         # testtest456
+        sleep(30)
         raise Exception('yoyo')
         #self._retrieve()
 
