@@ -378,6 +378,6 @@ class LambdaResourceHelper(AWSCommonConn):
     def run(self):
 
         self._submit()
-        self._retrieve()
+        #self._retrieve()
 
         return self.results
