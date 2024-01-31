@@ -296,7 +296,7 @@ class LambdaResourceHelper(AWSCommonConn):
         self.response = self.lambda_client.invoke(**invocation_config)
 
         self.request_id = self.response['ResponseMetadata']['RequestId']
-        self.logger.debug_highlight("Lambda function invocation request ID:", self.request_id)
+        self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
 
         # Wait until the invocation is complete
         waiter = self.lambda_client.get_waiter('function_invocation_complete')
