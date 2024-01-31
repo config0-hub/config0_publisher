@@ -95,8 +95,10 @@ class TFCmdOnAWS(object):
 
     def get_tf_apply(self):
 
+        # testtest456
         cmds = [
             'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
+            'cd $TMPDIR/build/$APP_DIR && rm -rf .terraform',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
