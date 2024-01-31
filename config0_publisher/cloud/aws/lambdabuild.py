@@ -116,10 +116,6 @@ class LambdaResourceHelper(AWSCommonConn):
             'FunctionName': self.lambda_function_name,
             'InvocationType': 'RequestResponse',
             'LogType':'Tail',
-            'Config': botocore.config.Config(
-                connect_timeout=900,
-                read_timeout=900
-            ),
             'Payload': json.dumps(
                 {
                     "cmds_b64":self.cmds_b64,

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import logging
-import botocore.session
 import os
 import boto3
+import botocore
 from time import time
 
 from config0_publisher.class_helper import SetClassVarsHelper
@@ -59,18 +59,15 @@ class AWSCommonConn(SetClassVarsHelper):
         #client_config.retries = {'max_attempts': 0}
         #client_config.timeout = 900
         #self.lambda_client = session.create_client('lambda', config=client_config)
-        
-        import botocore
 
-        client_config = botocore.config.Config(
-            retries={
-                'max_attempts': 0
-            }
-        )
+        cfg = botocore.config.Config(retries={'max_attempts': 0},
+                                     read_timeout=900,
+                                     connect_timeout=900,
+                                     region_name=self.aws_region)
 
-        self.lambda_client = botocore.client.Lambda(
-            config=client_config
-        )
+        self.lambda_client = boto3.client('lambda',
+                                          config=cfg,
+                                          region_name=self.aws_region)
 
         self.zipfile = None
 
