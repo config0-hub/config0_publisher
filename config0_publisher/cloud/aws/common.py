@@ -139,6 +139,11 @@ class AWSCommonConn(SetClassVarsHelper):
         self.zipfile = os.path.join("/tmp",
                                     self.stateful_id)
 
+        print(self.zipfile)
+        print(self.zipfile)
+        print(self.zipfile)
+        raise
+
         if not hasattr(self,'aws_region') or not self.aws_region:
             self.aws_region = kwargs.get("aws_region","us-east-1")
 
