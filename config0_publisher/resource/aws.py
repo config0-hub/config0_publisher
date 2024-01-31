@@ -72,9 +72,11 @@ class TFCmdOnAWS(object):
 
     def local_to_s3(self):
 
-        #'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
+        # testtest456
         cmds = [
-          'cd $TMPDIR/build && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet',
+          'echo "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"'
+          '(cd $TMPDIR/build && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate $APP_DIR/terraform-tfstate --quiet) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
+          'echo "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"'
           'cd $TMPDIR/build && zip -r $TMPDIR/$STATEFUL_ID.zip . ',
           'cd $TMPDIR/build && aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID --quiet ',
           'cd $TMPDIR/build && rm -rf $TMPDIR/$STATEFUL_ID.zip ',
