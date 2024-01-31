@@ -120,6 +120,10 @@ class LambdaResourceHelper(AWSCommonConn):
                 })
         }
 
+        self.logger.debug("0"*32)
+        self.logger.json(invocation_config)
+        self.logger.debug("0"*32)
+
         return self.lambda_client.invoke(**invocation_config)
 
     def _submit(self):
