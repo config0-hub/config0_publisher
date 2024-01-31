@@ -3,6 +3,7 @@
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
 from config0_publisher.resource.aws import AWSBaseBuildParams
 from config0_publisher.resource.aws import TFCmdOnAWS
+from config0_publisher.utilities import print_json
 
 
 class LambdaParams(AWSBaseBuildParams):
@@ -133,7 +134,7 @@ class Lambdabuild(LambdaParams):
         if build_cmds:
             cmds["build"] = {"cmds":build_cmds}
 
-        print(cmds)
+        print_json(cmds)
         raise Exception('abc')
 
         #if self.method == "create":
