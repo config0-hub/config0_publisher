@@ -94,7 +94,28 @@ def b64_decode(token):
     try:
         _results = json.loads(_bytes.decode('ascii'))
     except:
+        _results = None
+
+    if _results:
+        return _results
+
+    try:
         _results = _bytes.decode('ascii')
+    except:
+        _results = None
+
+    if _results:
+        return _results
+
+    try:
+        _results = _bytes.decode()
+    except:
+        _results = None
+
+    if _results:
+        return _results
+
+    _results = _bytes.decode("utf-8")
 
     return _results
 
