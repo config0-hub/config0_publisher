@@ -381,7 +381,7 @@ class LambdaResourceHelper(AWSCommonConn):
         self._submit()
 
         # testtest456
-        sleep(30)
+        exit(0)
         raise Exception('yoyo')
         #self._retrieve()
 
