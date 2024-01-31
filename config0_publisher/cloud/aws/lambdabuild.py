@@ -121,8 +121,8 @@ class LambdaResourceHelper(AWSCommonConn):
         #self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
         self.logger.debug("a"*32)
         self.logger.debug_highlight(self.response)
+        self.logger.debug(self.response.keys())
         self.logger.debug("a"*32)
-        raise Exception('sha')
 
     def _submit(self):
 
