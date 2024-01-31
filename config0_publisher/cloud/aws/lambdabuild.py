@@ -147,10 +147,13 @@ class LambdaResourceHelper(AWSCommonConn):
         self.results["log"] = b64_decode(self.response["LogResult"])
 
         self.logger.debug("8"*32)
+        self.logger.debug("8"*32)
         self.logger.json(f'payload \n {payload}')
+        self.logger.debug("9"*32)
+        self.logger.debug("9"*32)
         self.logger.debug(f'log_result = \n{self.results["log"]}')
         self.logger.debug(f'lambda_status = \n{lambda_status}')
-        self.logger.debug("8"*32)
+        self.logger.debug("10"*32)
 
         return self.results
 
