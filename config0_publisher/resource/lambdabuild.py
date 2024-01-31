@@ -119,6 +119,8 @@ class Lambdabuild(LambdaParams):
         else:
             raise Exception("method needs to be create/validate/destroy")
 
+        raise Exception(cmds)
+
         return cmds
 
     def get_cmds(self):
