@@ -124,18 +124,12 @@ class LambdaResourceHelper(AWSCommonConn):
 
     def _eval_build(self):
 
-        self._set_build_status()
-
         _t1 = int(time())
         status = None
 
         while True:
 
             sleep(5)
-
-            if self._check_status() and self._set_build_status_codes():
-                status = True
-                break
 
             _time_elapsed = _t1 - self.results["run_t0"]
 
@@ -159,7 +153,7 @@ class LambdaResourceHelper(AWSCommonConn):
                 status = False
                 break
 
-        self._get_log()
+            self._get_log()
 
         self.results["time_elapsed"] = int(time()) - self.results["run_t0"]
 
@@ -193,7 +187,7 @@ class LambdaResourceHelper(AWSCommonConn):
             if not message:
                 continue
             _logs.append(message)
-            print('Log Message:', message)
+            print('-- Log Message:', message)
 
         self.output = "\n".join(_logs)
 
@@ -297,9 +291,6 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self.request_id = self.response['ResponseMetadata']['RequestId']
         self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
-
-        sleep(10)
-        self._get_log()
 
     def _submit(self):
 
