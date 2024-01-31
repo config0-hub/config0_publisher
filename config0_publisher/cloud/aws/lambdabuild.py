@@ -116,12 +116,10 @@ class LambdaResourceHelper(AWSCommonConn):
                 })
         }
 
-        # Invoke the Lambda function with the specified environment variables
         self.response = self.lambda_client.invoke(**invocation_config)
-
         self.request_id = self.response['ResponseMetadata']['RequestId']
-
         self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
+        raise Exception('sha')
 
     def _submit(self):
 
