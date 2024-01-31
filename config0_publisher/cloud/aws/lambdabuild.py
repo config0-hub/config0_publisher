@@ -117,15 +117,25 @@ class LambdaResourceHelper(AWSCommonConn):
                 })
         }
 
+
         self.response = self.lambda_client.invoke(**invocation_config)
         #self.request_id = self.response['ResponseMetadata']['RequestId']
         #self.logger.debug_highlight(f"Lambda function invocation request ID: {self.request_id}")
-        self.logger.debug("a"*32)
-        self.logger.debug_highlight(self.response)
-        self.logger.debug(self.response.keys())
+        #self.logger.debug("a"*32)
+        #self.logger.debug_highlight(self.response)
+        #self.logger.debug(self.response.keys())
+
+        # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
+
         self.logger.debug("b"*32)
-        self.logger.debug(b64_decode(self.response["LogResult"]))
+        self.logger.debug("b"*32)
+        log_result = b64_decode(self.response["LogResult"])
+        status = self.response["StatusCode"]
         self.logger.debug("c"*32)
+        self.logger.debug(f"status = {status}")
+        self.logger.debug("d"*32)
+        self.logger.debug(f"log_result = \n{log_result}")
+        self.logger.debug("e"*32)
 
     def _submit(self):
 
