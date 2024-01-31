@@ -124,6 +124,8 @@ class LambdaResourceHelper(AWSCommonConn):
 
     def _submit(self):
 
+        self.phase_result = self.new_phase("submit")
+
         # we don't want to clobber the intact
         # stateful files from creation
         if self.method != "destroy":
