@@ -21,8 +21,6 @@ class TFCmdOnAWS(object):
         else:
             cmds = []
 
-        #f'aws s3 cp {tf_bucket_path} terraform.zip --quiet || export DNE="True"',
-
         if tf_bucket_path:
             cmds.extend([
                 f'(cd $TMPDIR && aws s3 cp {tf_bucket_path} terraform.zip --quiet) || export DNE="True"',
@@ -34,10 +32,6 @@ class TFCmdOnAWS(object):
             cmds.extend([
                 f'cd $TMPDIR && export DNS=True && if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip; fi'
             ])
-
-        # testtest456
-        #cmds = [ f'cd $TMPDIR && export DNS=True && if [ ! -z "$DNE" ]; then curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o $TMPDIR/terraform.zip; fi',
-        #         'ls -al $TMPDIR']
 
         cmds.extend([
             'cd $TMPDIR && unzip terraform.zip',
