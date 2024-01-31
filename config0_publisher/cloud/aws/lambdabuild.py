@@ -9,6 +9,7 @@ from time import time
 #from io import BytesIO
 
 from config0_publisher.serialization import b64_encode
+from config0_publisher.serialization import b64_decode
 from config0_publisher.cloud.aws.common import AWSCommonConn
 #from config0_publisher.utilities import print_json
 
@@ -122,7 +123,9 @@ class LambdaResourceHelper(AWSCommonConn):
         self.logger.debug("a"*32)
         self.logger.debug_highlight(self.response)
         self.logger.debug(self.response.keys())
-        self.logger.debug("a"*32)
+        self.logger.debug("b"*32)
+        self.logger.debug(b64_decode(self.response["LogResult"]))
+        self.logger.debug("c"*32)
 
     def _submit(self):
 
