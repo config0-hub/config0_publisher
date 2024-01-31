@@ -148,9 +148,10 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self.logger.debug("8"*32)
         self.logger.debug("8"*32)
-        self.logger.json(f'payload \n {payload}')
+        self.logger.json(self.response)
         self.logger.debug("9"*32)
         self.logger.debug("9"*32)
+        raise Exception('yoyo')
         self.logger.debug(f'log_result = \n{self.results["log"]}')
         self.logger.debug(f'lambda_status = \n{lambda_status}')
         self.logger.debug("10"*32)
