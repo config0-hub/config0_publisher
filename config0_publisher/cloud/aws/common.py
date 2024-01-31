@@ -53,12 +53,26 @@ class AWSCommonConn(SetClassVarsHelper):
         self.s3 = boto3.resource('s3')
         self.session = boto3.Session(region_name=self.aws_region)
 
-        session = botocore.session.Session()
-        config = session.get_config()
-        client_config = botocore.client.Config(config=config)
-        client_config.retries = {'max_attempts': 0}
-        client_config.timeout = 900
-        self.lambda_client = session.create_client('lambda', config=client_config)
+        #session = botocore.session.Session()
+        #config = session.get_config()
+        #client_config = botocore.client.Config(config=config)
+        #client_config.retries = {'max_attempts': 0}
+        #client_config.timeout = 900
+        #self.lambda_client = session.create_client('lambda', config=client_config)
+        
+        import botocore
+
+        client_config = botocore.config.Config(
+            retries={
+                'max_attempts': 0
+            },
+            timeout=900
+        )
+
+        self.lambda_client = botocore.client.Lambda(
+            config=client_config
+        )
+
         self.zipfile = None
 
     def new_phase(self,name):
