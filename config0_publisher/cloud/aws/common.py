@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import logging
+import botocore.session
 import os
 import boto3
-import botocore
 from time import time
 
 from config0_publisher.class_helper import SetClassVarsHelper
@@ -51,14 +51,6 @@ class AWSCommonConn(SetClassVarsHelper):
             self.set_class_vars_frm_results()
 
         self.s3 = boto3.resource('s3')
-        self.session = boto3.Session(region_name=self.aws_region)
-
-        #session = botocore.session.Session()
-        #config = session.get_config()
-        #client_config = botocore.client.Config(config=config)
-        #client_config.retries = {'max_attempts': 0}
-        #client_config.timeout = 900
-        #self.lambda_client = session.create_client('lambda', config=client_config)
 
         cfg = botocore.config.Config(retries={'max_attempts': 0},
                                      read_timeout=900,
@@ -214,12 +206,15 @@ class AWSCommonConn(SetClassVarsHelper):
                      output_to_json=False,
                      exit_error=True)
 
-        try:
-            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-                                                           self.stateful_id)
-            status = True
-        except:
-            status = False
+        self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
+                                                       self.stateful_id)
+
+        #try:
+        #    self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
+        #                                                   self.stateful_id)
+        #    status = True
+        #except:
+        #    status = False
 
         if os.environ.get("DEBUG_STATEFUL"):
             self.logger.debug(f"zipfile file {self.zipfile}.zip")
