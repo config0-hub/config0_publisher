@@ -72,12 +72,10 @@ class TFCmdOnAWS(object):
 
     def local_to_s3(self):
 
-        # testtest456
+        # this does not work in lambda
+        # so we won't use it for now
         cmds = [
-          'echo "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"',
           '(cd $TMPDIR/build/$APP_DIR && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform-tfstate) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
-          'cd $TMPDIR/build/$APP_DIR && ls -al',
-          'echo "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"',
           'cd $TMPDIR/build && zip -r $TMPDIR/$STATEFUL_ID.zip . ',
           'cd $TMPDIR/build && aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID',
           'cd $TMPDIR/build && rm -rf $TMPDIR/$STATEFUL_ID.zip ',

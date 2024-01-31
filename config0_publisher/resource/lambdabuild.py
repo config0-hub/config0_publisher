@@ -118,10 +118,6 @@ class Lambdabuild(LambdaParams):
 
         return cmds
 
-    def _get_postbuild_cmds(self):
-
-        return self.tfcmds.local_to_s3()
-
     def get_cmds(self):
 
         cmds = {}
@@ -134,12 +130,16 @@ class Lambdabuild(LambdaParams):
         if build_cmds:
             cmds["build"] = {"cmds":build_cmds}
 
-        if self.method == "create":
-            postbuild_cmds = self._get_postbuild_cmds()
-        else:
-            postbuild_cmds = None
+        #if self.method == "create":
+        #    postbuild_cmds = self._get_postbuild_cmds()
+        #else:
+        #    postbuild_cmds = None
 
-        if postbuild_cmds:
-            cmds["postbuild"] = {"cmds":postbuild_cmds}
+        #if postbuild_cmds:
+        #    cmds["postbuild"] = {"cmds":postbuild_cmds}
 
         return cmds
+
+    #def _get_postbuild_cmds(self):
+
+    #    return self.tfcmds.local_to_s3()
