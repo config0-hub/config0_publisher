@@ -115,10 +115,11 @@ class Lambdabuild(LambdaParams):
         elif self.method == "validate":
             cmds = self.tfcmds.get_tf_validate()
             # testtest456
-            print(cmds)
-            raise Exception('abc-validate')
         else:
             raise Exception("method needs to be create/validate/destroy")
+
+        print(cmds)
+        raise Exception('def')
 
         return cmds
 
