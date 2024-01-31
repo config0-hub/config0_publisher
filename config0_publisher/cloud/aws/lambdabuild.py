@@ -136,6 +136,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         lambda_status = self.response["StatusCode"]
         payload = json.loads(self.response["Payload"].read().decode())
+        lambda_results = json.loads(payload["Body"])
 
         if lambda_status == 200:
             self.results["status"] = True
@@ -147,9 +148,10 @@ class LambdaResourceHelper(AWSCommonConn):
         self.results["log"] = b64_decode(self.response["LogResult"])
 
         self.logger.debug("8"*32)
-        self.logger.debug("8"*32)
         self.logger.json(payload)
+        self.logger.debug("8"*32)
         self.logger.debug("9"*32)
+        self.logger.json(lambda_results)
         self.logger.debug("9"*32)
         raise Exception('dsfdf')
         self.logger.json(self.response)
