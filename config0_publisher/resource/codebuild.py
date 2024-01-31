@@ -144,6 +144,7 @@ class Codebuild(CodebuildParams):
         return self._add_cmds(contents,cmds)
 
 def get_buildspec(self):
+
     init_contents = self.get_init_contents()
     prebuild = self._get_codebuildspec_prebuild()
     build = self._get_codebuildspec_build()

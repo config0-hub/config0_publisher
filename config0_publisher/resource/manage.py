@@ -410,15 +410,11 @@ class ResourceCmdHelper:
                 continue
 
             if _key in os.environ and not clobber:
-                # testtest456
-                print(f"n--n {_key} -> {_v}")
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                print(f"o--o {_key} -> {_v}")
 
-            # testtest456
-            print(f"o--o {_key} -> {_v}")
             os.environ[_key] = str(_v)
 
     def _set_os_env_prefix(self,**kwargs):

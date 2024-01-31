@@ -132,7 +132,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         # we don't want to clobber the intact
         # stateful files from creation
-        if self.method != "destroy":
+        if self.method == "create":
             self.upload_to_s3_stateful()
 
         # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
@@ -154,9 +154,6 @@ class LambdaResourceHelper(AWSCommonConn):
             self.results["exitcode"] = "78"
 
         self.results["log"] = b64_decode(self.response["LogResult"])
-
-        #self.logger.debug(f'log_result = \n{self.results["log"]}')
-        #self.logger.debug(f'lambda_status = \n{lambda_status}')
 
         return self.results
 

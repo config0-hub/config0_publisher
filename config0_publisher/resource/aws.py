@@ -47,17 +47,18 @@ class TFCmdOnAWS(object):
                                        self.app_dir,
                                        self.envfile)
             cmds = [
-                 f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/{self.envfile}; fi',
-                 f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'  # testtest456
+                 f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/{self.envfile}; fi'
              ]
+            #f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
         else:
             envfile_env = os.path.join(self.app_dir,
                                        self.envfile)
             cmds = [
-                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/build/{envfile_env}.enc',
-                f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
-                # testtest456
+                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/build/{envfile_env}.enc'
             ]
+
+            # testtest456
+            #f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
 
         return cmds
 
@@ -96,9 +97,9 @@ class TFCmdOnAWS(object):
     def get_tf_apply(self):
 
         # testtest456
+        #'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
+        #'cd $TMPDIR/build/$APP_DIR && rm -rf .terraform',
         cmds = [
-            'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
-            'cd $TMPDIR/build/$APP_DIR && rm -rf .terraform',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
