@@ -35,6 +35,7 @@ class AWSCommonConn(SetClassVarsHelper):
         self.cwd = os.getcwd()
 
         self.results = kwargs.get("results")
+        self.zipfile = None
 
         if not self.results:
             self.results = {
@@ -61,8 +62,6 @@ class AWSCommonConn(SetClassVarsHelper):
         self.lambda_client = boto3.client('lambda',
                                           config=cfg,
                                           region_name=self.aws_region)
-
-        self.zipfile = None
 
     def new_phase(self,name):
 
@@ -139,11 +138,6 @@ class AWSCommonConn(SetClassVarsHelper):
         self.zipfile = os.path.join("/tmp",
                                     self.stateful_id)
 
-        print(self.zipfile)
-        print(self.zipfile)
-        print(self.zipfile)
-        raise
-
         if not hasattr(self,'aws_region') or not self.aws_region:
             self.aws_region = kwargs.get("aws_region","us-east-1")
 
@@ -212,15 +206,12 @@ class AWSCommonConn(SetClassVarsHelper):
                      output_to_json=False,
                      exit_error=True)
 
-        self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-                                                       self.stateful_id)
-
-        #try:
-        #    self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-        #                                                   self.stateful_id)
-        #    status = True
-        #except:
-        #    status = False
+        try:
+            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
+                                                           self.stateful_id)
+            status = True
+        except:
+            status = False
 
         if os.environ.get("DEBUG_STATEFUL"):
             self.logger.debug(f"zipfile file {self.zipfile}.zip")
