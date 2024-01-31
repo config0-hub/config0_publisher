@@ -51,6 +51,7 @@ class AWSCommonConn(SetClassVarsHelper):
             self.set_class_vars_frm_results()
 
         self.s3 = boto3.resource('s3')
+        self.session = boto3.Session(region_name=self.aws_region)
 
         cfg = botocore.config.Config(retries={'max_attempts': 0},
                                      read_timeout=900,
