@@ -149,7 +149,7 @@ class LambdaResourceHelper(AWSCommonConn):
             self.results["status"] = False
             self.results["exitcode"] = "78"
 
-        self.results["log"] = b64_decode(self.response["LogResult"])
+        self.results["output"] = b64_decode(self.response["LogResult"])
 
         return self.results
 
@@ -159,14 +159,11 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self._submit()
 
-        if self.results.get("log"):
-            print(self.results["log"])
-
-        if self.results.get("status") is False and self.method == "validate":
-            self.logger.error("the resources have drifted")
-        elif self.results.get("status") is False and self.method == "create":
-            self.logger.error("creation of resources have failed")
-        elif self.results.get("status") is False and self.method == "destroy":
-            self.logger.error("destroying of resources have failed")
+        #if self.results.get("status") is False and self.method == "validate":
+        #    self.logger.error("the resources have drifted")
+        #elif self.results.get("status") is False and self.method == "create":
+        #    self.logger.error("creation of resources have failed")
+        #elif self.results.get("status") is False and self.method == "destroy":
+        #    self.logger.error("destroying of resources have failed")
 
         return self.results
