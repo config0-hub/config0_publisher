@@ -98,13 +98,15 @@ class LambdaResourceHelper(AWSCommonConn):
         return env_vars
     def _trigger_build(self):
 
+        # we limit the build to 500 seconds, which is one min
+        # less than 10 minutes
         try:
             timeout = int(self.build_timeout)
         except:
-            timeout = 900
+            timeout = 500
 
-        if timeout > 900:
-            timeout = 900
+        if timeout > 500:
+            timeout = 500
 
         self.build_expire_at = time() + timeout
 

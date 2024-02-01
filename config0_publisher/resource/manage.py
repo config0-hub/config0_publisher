@@ -114,7 +114,7 @@ class ResourceCmdHelper:
         # testtest456
         ###############################################
         self.use_remote_state = os.environ.get("USE_REMOTE_STATE",True)
-        os.environ["USE_LAMBDA"] = "True"  # longer than 900 seconds
+        self.drift_protection = os.environ.get("DRIFT_PROTECTION",True)
         ###############################################
 
         self._set_phases_params()
@@ -146,14 +146,14 @@ class ResourceCmdHelper:
             return
 
         try:
-            self.build_timeout = int(os.environ.get("TIMEOUT")) - 60
+            self.build_timeout = int(os.environ.get("TIMEOUT")) - 90
         except:
             self.build_timeout = None
 
         if self.build_timeout:
             return
 
-        self.build_timeout = 3600
+        self.build_timeout = 500
 
     def _set_aws_region(self):
 

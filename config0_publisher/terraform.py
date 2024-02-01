@@ -144,11 +144,10 @@ class TFConstructor(object):
                                           default="null",
                                           types="bool,null")
 
-        # this for the orchestrator calling codebuild, lambda function executor
-        if not hasattr(self.stack,"timeout"):  
+        if not hasattr(self.stack,"timeout"):
             include.append("timeout")
             self.stack.parse.add_optional(key="timeout",
-                                          default=1800,
+                                          default=600,
                                           types="int")
 
 
@@ -299,7 +298,6 @@ class TFConstructor(object):
                                                     output="dict")
 
         # build timeout is less than timeout at least by 1 min
-        overide_values["build_timeout"] = overide_values["timeout"] - 90
         overide_values["provider"] = self.provider
         overide_values["execgroup_ref"] = execgroup_ref
         overide_values["resource_name"] = self.resource_name
