@@ -1476,8 +1476,8 @@ class ResourceCmdHelper:
             self.build_method = "local"
 
         # testtest456
-        print(self.build_method)
-        raise Exception("test test456")
+        #print(self.build_method)
+        #raise Exception("test test456")
 
     def _get_tfstate_file(self):
         """
