@@ -113,7 +113,6 @@ class ResourceCmdHelper:
         ###############################################
         # testtest456
         ###############################################
-        self.use_remote_state = os.environ.get("USE_REMOTE_STATE",True)
         self.drift_protection = os.environ.get("DRIFT_PROTECTION",True)
         ###############################################
 
@@ -786,33 +785,33 @@ class ResourceCmdHelper:
         self.logger.debug("add_mod_params is to specified by the inherited class")
         return
 
-    def get_resources_details(self):
+    def get_resource_details(self):
 
-        resources = self.get_state_info()
+        resource = self.get_state_info()
 
-        if not resources: 
+        if not resource:
             return 
 
-        return self.configure_resources_details(resources)
+        return self.config_resource_details(resource)
 
-    def configure_resources_details(self,resources):
+    def config_resource_details(self,resource):
 
-        if not isinstance(resources,dict) and not isinstance(resources,list):
+        if not isinstance(resource,dict) and not isinstance(resource,list):
             self.logger.error("resource needs to be a dictionary or list!")
             return False
 
-        if isinstance(resources,dict): 
+        if isinstance(resource,dict):
 
-            self.add_resource_tags(resources)
+            self.add_resource_tags(resource)
 
             try:
-                self.add_mod_params(resources)
+                self.add_mod_params(resource)
             except:
                 self.logger.debug("Did not add destroy params")
 
-        if isinstance(resources,list):
+        if isinstance(resource,list):
 
-            for _resource in resources:
+            for _resource in resource:
 
                 self.add_resource_tags(_resource)
 
@@ -824,7 +823,7 @@ class ResourceCmdHelper:
                 except:
                     self.logger.debug("Did not add destroy params")
 
-        return resources
+        return resource
 
     def _get_docker_env_filepath(self):
 
@@ -1535,8 +1534,14 @@ class ResourceCmdHelper:
             "REMOTE_STATEFUL_BUCKET":self.remote_stateful_bucket,
             "STATEFUL_ID": self.stateful_id,
             "BUILD_TIMEOUT": self.build_timeout,
-            "APP_DIR":self.app_dir
+            "APP_DIR":self.app_dir,
         }
+
+        if hasattr(self,"tf_version") and self.tf_version:
+            env_vars["TF_VERSION"] = self.tf_version
+
+        if hasattr(self,"drift_protection") and self.drift_protection:
+            resource["drift_protection"] = self.drift_protection
 
         resource["mod_params"]["env_vars"] = env_vars
 
