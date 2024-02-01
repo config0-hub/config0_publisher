@@ -159,4 +159,8 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self._submit()
 
+        if self.results.get("status") is False:
+            print(self.results["log"])
+            exit(self.results["exitcode"])
+
         return self.results
