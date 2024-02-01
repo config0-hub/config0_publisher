@@ -246,3 +246,10 @@ def get_values_frm_json(json_file=None):
         print("ERROR: could not retrieved from json file {}".format(json_file))
 
     return values
+
+def eval_str_to_join(str_obj):
+    for j in "\n".join(str_obj):
+        if len(j) in [ 0, 1 ]:
+            continue
+        return True
+    return

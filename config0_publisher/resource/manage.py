@@ -12,6 +12,7 @@ from config0_publisher.utilities import print_json
 from config0_publisher.utilities import to_json
 from config0_publisher.utilities import get_values_frm_json
 from config0_publisher.utilities import get_hash
+from config0_publisher.utilities import eval_str_to_join
 from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
@@ -701,11 +702,12 @@ class ResourceCmdHelper:
             logfile = "/tmp/{}.log".format(self.stateful_id)
             append = False
 
-        try:
-            _str = "\n".join(log)
-            # testtest456
-            raise
-        except:
+        if eval_str_to_join(log):
+            try:
+                _str = "\n".join(log)
+            except:
+                _str = None
+        else:
             _str = None
 
         if _str:
@@ -1595,6 +1597,9 @@ class ResourceCmdHelper:
 
         if self.tf_results.get("status") not in [ False, "False" ]:
             return
+
+        if self.tf_results.get("output"):
+            print(self.tf_results["output"])
 
         # failed at this point
         if self.tf_results.get("failed_message"):
