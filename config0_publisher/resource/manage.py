@@ -1461,6 +1461,24 @@ class ResourceCmdHelper:
     # insert 45245
     #######################################################################
 
+    def _set_build_method(self):
+
+        if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
+            self.build_method = "codebuild"
+        elif os.environ.get("USE_LAMBDA"):  # shorter than 900 seconds
+            self.build_method = "lambda"
+        elif os.environ.get("USE_AWS",True):  # select codebuild or lambda
+            if int(self.build_timeout) > 600:
+                self.build_method = "codebuild"
+            else:
+                self.build_method = "lambda"
+        else:
+            self.build_method = "local"
+
+        # testtest456
+        print(self.build_method)
+        raise Exception("test test456")
+
     def _get_tfstate_file(self):
         """
         This method gets the Terraform state file.
