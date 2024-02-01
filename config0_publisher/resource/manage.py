@@ -703,6 +703,8 @@ class ResourceCmdHelper:
 
         try:
             _str = "\n".join(log)
+            # testtest456
+            raise
         except:
             _str = None
 
