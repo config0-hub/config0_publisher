@@ -1598,14 +1598,16 @@ class ResourceCmdHelper:
         if self.tf_results.get("failed_message"):
             failed_message = self.tf_results.get("failed_message")
         else:
-            failed_message = "exec tf apply/destroy failed"
+            failed_message = "exec tf apply/destroy/validate failed"
 
         # this should also be removed further upstream
         # but included to be explicit
         self.delete_phases_to_json_file()
 
         self.logger.error(failed_message)
+
         raise Exception(failed_message)
+
         return
 
     def _get_next_phase(self,method="create",**json_info):
@@ -1825,6 +1827,8 @@ terraform {{
         if self.tf_results:
             self.print_output(output=self.tf_results.get("output"))
 
+        self._eval_failure()
+
     def destroy(self):
 
         self.init_phase_run()
@@ -1847,10 +1851,3 @@ terraform {{
             self.print_output(output=self.tf_results.get("output"))
 
         return status
-
-    def test_exit(self):
-        print("e"*32)
-        print("e"*32)
-        #exit(0)
-        #print("f" * 32)
-        #print("f" * 32)

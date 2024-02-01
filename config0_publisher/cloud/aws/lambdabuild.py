@@ -159,11 +159,11 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self._submit()
 
-        #if self.results.get("status") is False and self.method == "validate":
-        #    self.logger.error("the resources have drifted")
-        #elif self.results.get("status") is False and self.method == "create":
-        #    self.logger.error("creation of resources have failed")
-        #elif self.results.get("status") is False and self.method == "destroy":
-        #    self.logger.error("destroying of resources have failed")
+        if self.results.get("status") is False and self.method == "validate":
+            self.results["failed_message"] = "the resources have drifted"
+        elif self.results.get("status") is False and self.method == "create":
+            self.results["failed_message"] = "creation of resources have failed"
+        elif self.results.get("status") is False and self.method == "destroy":
+            self.results["failed_message"] = "destroying of resources have failed"
 
         return self.results
