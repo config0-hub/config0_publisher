@@ -1822,6 +1822,9 @@ terraform {{
 
         self._exec_tf_validate()
 
+        if self.tf_results:
+            self.print_output(output=self.tf_results.get("output"))
+
     def destroy(self):
 
         self.init_phase_run()
