@@ -807,6 +807,8 @@ class ResourceCmdHelper:
 
         if isinstance(resource,list):
 
+            raise Exception("000000")
+
             for _resource in resource:
 
                 self.add_resource_tags(_resource)
