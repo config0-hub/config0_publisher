@@ -798,7 +798,6 @@ class ResourceCmdHelper:
         print(count)
         print(count)
         print(count)
-        raise Exception(count)
 
 
         for resource in self.data["resources"]:
@@ -897,9 +896,12 @@ class ResourceCmdHelper:
 
         # testtest456
         try:
-            self._insert_tf_add_keys(values)
+            self._insert_tf_add_keys2(values)
         except:
             self.logger.warn("_insert_tf_add_keys failed")
+
+        # testtest456
+        raise Exception(count)
 
         try:
             self._insert_tf_map_keys(values)
