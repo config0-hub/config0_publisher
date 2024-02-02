@@ -819,6 +819,9 @@ class ResourceCmdHelper:
                 except:
                     self.logger.debug("Did not add destroy params")
 
+        print_json(resource)
+        raise Exception("herehere")
+
         return resource
 
     def _get_docker_env_filepath(self):
