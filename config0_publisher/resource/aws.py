@@ -19,7 +19,7 @@ class TFCmdOnAWS(object):
               'which zip || apt-get install -y unzip zip',
             ]
         else:
-            cmds = []
+            cmds = [f'echo "downloading terraform {tf_version}"']
 
         if tf_bucket_path:
             cmds.extend([
