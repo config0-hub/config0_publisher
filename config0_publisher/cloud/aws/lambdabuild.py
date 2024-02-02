@@ -13,7 +13,7 @@ from time import time
 from config0_publisher.serialization import b64_encode
 from config0_publisher.serialization import b64_decode
 from config0_publisher.cloud.aws.common import AWSCommonConn
-#from config0_publisher.utilities import print_json
+from config0_publisher.utilities import print_json
 
 class LambdaResourceHelper(AWSCommonConn):
 
@@ -153,7 +153,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self.results["output"] = b64_decode(self.response["LogResult"])
 
-        print(self.results["output"])
+        print_json(self.results)
         raise Exception("dsfasfd")
 
         return self.results
