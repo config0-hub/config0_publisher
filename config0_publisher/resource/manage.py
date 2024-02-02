@@ -798,6 +798,8 @@ class ResourceCmdHelper:
 
         if isinstance(resource,dict):
 
+            raise Exception("111111")
+
             self.add_resource_tags(resource)
 
             try:
