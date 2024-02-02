@@ -708,7 +708,6 @@ class ResourceCmdHelper:
             output = log
 
         if append:
-
             with open(logfile, "a") as file:
                 file.write("#"*32)
                 file.write("# append log ")
@@ -716,7 +715,6 @@ class ResourceCmdHelper:
                 file.write(output)
                 file.write("#"*32)
         else:
-
             with open(logfile, "w") as file:
                 file.write("#"*32)
                 file.write("# append log ")
@@ -1455,6 +1453,25 @@ class ResourceCmdHelper:
     # insert 45245
     #######################################################################
 
+    def create(self):
+
+        self.init_phase_run()
+
+        if self.phase == "submit":
+            self._init_create()
+            self._exec_tf_apply()
+        elif self.phase == "retrieve":
+            self._exec_tf_apply()
+        else:
+            self._init_create()
+            self._exec_tf_apply()
+
+        self._eval_phases_tf("create")
+        self._eval_failure(method="create")
+        self._post_create()
+
+        return
+
     def _insert_tf_version(self,env_vars):
 
         if env_vars.get("TF_VERSION"):
@@ -1592,7 +1609,7 @@ class ResourceCmdHelper:
 
         return resource
 
-    def _eval_post_tf(self,method):
+    def _eval_phases_tf(self,method):
 
         # add feature
         # can add failure count in the future
@@ -1616,44 +1633,47 @@ class ResourceCmdHelper:
                         "status":self.tf_results.get("status"),
                         "phases_params_hash":b64_encode(self.phases_params),
                     }
+
             if build_expire_at:
                 json_values["build_expire_at"] = build_expire_at
+
             self.write_phases_to_json_file(json_values)
-
-        if self.tf_results:
-            if self.tf_results.get("status") is False:
-                self.logger.error(f"Terraform apply {method} failed here {self.run_share_dir}!")
-            if self.tf_results.get("status") is None:
-                return
-
-        # evaluate whether it failed
-        self._eval_failure()
 
         return True
 
-    def _eval_failure(self):
+    def _eval_failure(self,method=None):
 
-        if self.tf_results.get("status") not in [ False, "False" ]:
+        output = None
+
+        if not hasattr(self,"tf_results"):
+            return
+
+        if not self.tf_results:
             return
 
         if self.tf_results.get("output"):
-            print(self.tf_results["output"])
+            output = self.tf_results["output"]
+            del self.tf_results["output"]
+            self.append_log(output)
 
-        # failed at this point
-        if self.tf_results.get("failed_message"):
-            failed_message = self.tf_results.get("failed_message")
-        else:
-            failed_message = "exec tf apply/destroy/validate failed"
+        if output:
+            print(output)
 
-        # this should also be removed further upstream
-        # but included to be explicit
-        self.delete_phases_to_json_file()
+        if self.tf_results.get("status") is False:
+            # failed at this point
+            if self.tf_results.get("failed_message"):
+                failed_message = self.tf_results.get("failed_message")
+            else:
+                failed_message = f"Terraform apply {method} failed here {self.run_share_dir}!"
 
-        self.logger.error(failed_message)
+            # this should also be removed further upstream
+            # but included to be explicit
+            self.delete_phases_to_json_file()
 
-        raise Exception(failed_message)
+            # self.logger.error(failed_message)
+            raise Exception(failed_message)
 
-        return
+        return True
 
     def _get_next_phase(self,method="create",**json_info):
 
@@ -1871,13 +1891,8 @@ terraform {{
         return self.tf_results
 
     def validate(self):
-
         self._exec_tf_validate()
-
-        if self.tf_results:
-            self.print_output(output=self.tf_results.get("output"))
-
-        self._eval_failure()
+        return self._eval_failure(method="validate")
 
     def destroy(self):
 
@@ -1890,14 +1905,11 @@ terraform {{
         else:
             self._exec_tf_destroy()
 
-        status = self._eval_post_tf("destroy") # see if phases
+        self._eval_phases_tf("destroy") # see if phases
 
         try:
             os.chdir(self.cwd)
         except:
             os.chdir("/tmp")
 
-        if self.tf_results:
-            self.print_output(output=self.tf_results.get("output"))
-
-        return status
+        return self._eval_failure(method="destroy")
