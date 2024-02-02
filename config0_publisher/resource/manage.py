@@ -790,16 +790,77 @@ class ResourceCmdHelper:
     #def configure_resources_details(self,resource):
     #    return self.config_resource_details(resource)
 
-    def config_resource_details(self,resource):
+    def _tfstate_to_output2(self):
+
+        self.data = self._get_tfstate_file()
+
+        if not self.data:
+            self.logger.debug("u4324: no data to retrieved from statefile")
+            return False
+
+        self.logger.debug("u4324: retrieved data from statefile")
+
+        values = {"terraform_type": self.terraform_type,
+                  "resource_type": self.resource_type,
+                  "source_method": "terraform",
+                  "provider": self.provider,
+                  "main": True}
+
+        self._insert_resource_values(values)
+
+        # special case of ssm_name/secrets
+        if self.ssm_name:
+            values["ssm_name"] = self.ssm_name
+
+        try:
+            self._insert_resource_labels(values)
+        except:
+            self.logger.warn("_insert_resource_labels failed")
+
+        try:
+            self._insert_tf_raw(values)
+        except:
+            self.logger.warn("_insert_tf_raw b64 failed")
+
+        try:
+            self._insert_tf_outputs(values)
+        except:
+            self.logger.warn("_insert_tf_outputs failed")
+
+        try:
+            self._insert_tf_add_keys(values)
+        except:
+            self.logger.warn("_insert_tf_add_keys failed")
+
+        try:
+            self._insert_tf_map_keys(values)
+        except:
+            self.logger.warn("_insert_tf_map_keys failed")
+
+        try:
+            self._insert_standard_resource_labels(values)
+        except:
+            self.logger.warn("_insert_standard resource labels failed")
+
+        try:
+            self._insert_tf_remove_keys(values)
+        except:
+            self.logger.warn("_insert_tf remove keys failed")
+
+        return values
+
+    def config_resocure_details(self,resource):
+
+        # testtest456
+        values = self._tfstate_to_output2()
+        print_json(values)
+        raise Exception("111111")
 
         if not isinstance(resource,dict) and not isinstance(resource,list):
             self.logger.error("resource needs to be a dictionary or list!")
             return False
 
         if isinstance(resource,dict):
-
-            print_json(resource)
-            raise Exception("111111")
 
             self.add_resource_tags(resource)
 
@@ -821,9 +882,6 @@ class ResourceCmdHelper:
                     self.add_mod_params(_resource)
                 except:
                     self.logger.debug("Did not add destroy params")
-
-        print_json(resource)
-        raise Exception("herehere")
 
         return resource
 
