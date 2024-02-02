@@ -1633,6 +1633,9 @@ class ResourceCmdHelper:
 
     def _eval_failure(self):
 
+        print_json(self.tf_results)
+        raise Exception("dsfasfd")
+
         if self.tf_results.get("status") not in [ False, "False" ]:
             return
 
