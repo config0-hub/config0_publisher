@@ -827,10 +827,10 @@ class ResourceCmdHelper:
         except:
             self.logger.warn("_insert_tf_outputs failed")
 
-        try:
-            self._insert_tf_add_keys(values)
-        except:
-            self.logger.warn("_insert_tf_add_keys failed")
+        #try:
+        #    self._insert_tf_add_keys(values)
+        #except:
+        #    self.logger.warn("_insert_tf_add_keys failed")
 
         #try:
         #    self._insert_tf_map_keys(values)
