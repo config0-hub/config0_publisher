@@ -1772,9 +1772,6 @@ class ResourceCmdHelper:
         #    return _awsbuild.submit(**self.get_phase_inputargs())
         results = _awsbuild.run()
 
-        print_json(results)
-        raise Exception("dsfasfd")
-
         return results
 
 
@@ -1851,6 +1848,9 @@ terraform {{
         else:  # execute locally
             self._create_docker_env_file()
             self.tf_results = self._exec_docker_local(method=method)
+
+        print_json(self.tf_results)
+        raise Exception("dsfasfd")
 
         return self.tf_results
 
