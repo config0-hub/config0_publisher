@@ -153,6 +153,9 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self.results["output"] = b64_decode(self.response["LogResult"])
 
+        print(self.results["output"])
+        raise Exception("dsfasfd")
+
         return self.results
 
     # this is a single run and not in phases
