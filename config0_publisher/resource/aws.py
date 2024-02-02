@@ -160,7 +160,7 @@ class AWSBaseBuildParams(object):
         self.tf_bucket_key = None
         self.tf_bucket_path = None
 
-        self._set_tf_version()
+        self.tf_version = self.build_env_vars.get("TF_VERSION","1.5.4")
         self._set_tmp_tf_bucket_loc()
 
     def _set_tmp_tf_bucket_loc(self):
@@ -175,13 +175,6 @@ class AWSBaseBuildParams(object):
             self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
 
     # 123
-    def _set_tf_version(self):
-
-        try:
-            self.tf_version = self.build_env_vars["DOCKER_IMAGE"].split(":")[-1]
-        except:
-            self.tf_version = "1.5.4"
-
     # testtest456
     # is this needed?
     def _override_env_var_method(self):

@@ -110,12 +110,6 @@ class ResourceCmdHelper:
         self.phase = None  # can be "run" since will only one phase
         self.current_phase = None
 
-        ###############################################
-        # testtest456
-        ###############################################
-        self.drift_protection = os.environ.get("DRIFT_PROTECTION",True)
-        ###############################################
-
         self._set_phases_params()
 
         # set specified env variables
@@ -794,8 +788,8 @@ class ResourceCmdHelper:
 
         return self.config_resource_details(resource)
 
-    def configure_resources_details(self,resource):
-        return self.config_resource_details(resource)
+    #def configure_resources_details(self,resource):
+    #    return self.config_resource_details(resource)
 
     def config_resource_details(self,resource):
 
@@ -1463,6 +1457,31 @@ class ResourceCmdHelper:
     # insert 45245
     #######################################################################
 
+    def _insert_tf_version(self,env_vars):
+
+        if env_vars.get("TF_VERSION"):
+            return
+
+        if os.environ.get("TF_VERSION"):
+            env_vars["TF_VERSION"] = os.environ["TF_VERSION"]
+
+        if hasattr(self,"tf_version") and self.tf_version:
+            env_vars["TF_VERSION"] = self.tf_version
+            return
+
+        try:
+            tf_version = self.docker_image.split(":")[-1]
+        except:
+            tf_version = None
+
+        if not tf_version:
+            try:
+                tf_version = env_vars["DOCKER_IMAGE"].split(":")[-1]
+            except:
+                tf_version = "1.5.4"
+
+        env_vars["TF_VERSION"] = tf_version
+
     def _set_build_method(self):
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
@@ -1540,8 +1559,7 @@ class ResourceCmdHelper:
             "APP_DIR":self.app_dir,
         }
 
-        if hasattr(self,"tf_version") and self.tf_version:
-            env_vars["TF_VERSION"] = self.tf_version
+        self._insert_tf_version(env_vars)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
             resource["drift_protection"] = self.drift_protection
