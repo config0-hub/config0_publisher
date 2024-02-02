@@ -49,16 +49,12 @@ class TFCmdOnAWS(object):
             cmds = [
                  f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/{self.envfile}; fi'
              ]
-            #f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
         else:
             envfile_env = os.path.join(self.app_dir,
                                        self.envfile)
             cmds = [
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/build/{envfile_env}.enc'
             ]
-
-            # testtest456
-            #f'echo "#######################################" && cat $TMPDIR/{self.envfile} && echo "#######################################"'
 
         return cmds
 
@@ -96,9 +92,6 @@ class TFCmdOnAWS(object):
 
     def get_tf_apply(self):
 
-        # testtest456
-        #'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
-        #'cd $TMPDIR/build/$APP_DIR && rm -rf .terraform',
         cmds = [
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH init || $TF_PATH init --migrate-state',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
@@ -155,7 +148,7 @@ class AWSBaseBuildParams(object):
         if not self.build_env_vars:
             self.build_env_vars = {}
 
-        self._override_env_var_method()
+        #self._override_env_var_method()
 
         self.tf_bucket_key = None
         self.tf_bucket_path = None
@@ -177,12 +170,12 @@ class AWSBaseBuildParams(object):
     # 123
     # testtest456
     # is this needed?
-    def _override_env_var_method(self):
+    #def _override_env_var_method(self):
 
-        if not self.build_env_vars.get("METHOD"):
-            return
+    #    if not self.build_env_vars.get("METHOD"):
+    #        return
 
-        if self.method == "destroy":
-            self.build_env_vars["METHOD"] = "destroy"
-        elif self.method == "create":
-            self.build_env_vars["METHOD"] = "create"
+    #    if self.method == "destroy":
+    #        self.build_env_vars["METHOD"] = "destroy"
+    #    elif self.method == "create":
+    #        self.build_env_vars["METHOD"] = "create"

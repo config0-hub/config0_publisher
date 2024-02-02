@@ -228,8 +228,7 @@ class ResourceCmdHelper:
             except:
                 self.logger.debug("could not print out debug class vars")
 
-        # testtest456
-        self._print_out_key_class_vars()
+        #self._debug_print_out_key_class_vars()
 
     def _set_json_files(self):
 
@@ -257,7 +256,7 @@ class ResourceCmdHelper:
 
         self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json_file}"')
 
-    def _print_out_key_class_vars(self):
+    def _debug_print_out_key_class_vars(self):
 
         for _k,_v in self.syncvars.class_vars.items():
             try:
