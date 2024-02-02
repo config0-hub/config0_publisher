@@ -93,7 +93,7 @@ class TFCmdOnAWS(object):
     def get_tf_apply(self):
 
         cmds = [
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init || $TF_PATH init --migrate-state',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
             'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
@@ -105,7 +105,6 @@ class TFCmdOnAWS(object):
     def get_tf_destroy(self):
 
         cmds = [
-          'cd $TMPDIR/build/$APP_DIR',
           'cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state',
           'cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
@@ -115,8 +114,7 @@ class TFCmdOnAWS(object):
     def get_tf_validate(self):
 
         cmds = [
-            'cd $TMPDIR/build/$APP_DIR',
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init || $TF_PATH init --migrate-state',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH refresh',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
