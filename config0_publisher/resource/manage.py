@@ -1761,7 +1761,6 @@ class ResourceCmdHelper:
         cinputargs = self._get_aws_exec_cinputargs(method=method)
         _awsbuild = Lambdabuild(**cinputargs)
 
-        # phases aren't used for lambda execution
         #if self.phase == "retrieve":
         #    return _awsbuild.retrieve(**self.get_phase_inputargs())
 
@@ -1771,8 +1770,14 @@ class ResourceCmdHelper:
 
         #if self.phase == "submit":
         #    return _awsbuild.submit(**self.get_phase_inputargs())
+        results = _awsbuild.run()
 
-        return _awsbuild.run()
+        print_json(results)
+        raise Exception("dsfasfd")
+
+        return results
+
+
 
     def create_config0_settings_file(self):
 

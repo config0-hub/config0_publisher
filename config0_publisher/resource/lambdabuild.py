@@ -77,9 +77,6 @@ class LambdaParams(AWSBaseBuildParams):
         self._init_lambda_helper()
         self.lambda_helper.run(**inputargs)
 
-        print_json(self.lambda_helper.results)
-        raise Exception("dsfasfd")
-
         return self.lambda_helper.results
 
 class Lambdabuild(LambdaParams):
