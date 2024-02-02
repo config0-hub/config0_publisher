@@ -1855,6 +1855,12 @@ terraform {{
 
         self._get_runtime_env_vars(method="validate")
         self._set_build_method()
+        # testtest456
+        print(self.build_env_vars)
+        print(self.build_env_vars)
+        print(self.build_env_vars)
+        print(self.build_env_vars)
+        raise Exception("testtest456")
         self._exec_tf(method="validate")
 
         return self.tf_results
