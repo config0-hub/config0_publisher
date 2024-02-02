@@ -927,9 +927,7 @@ class ResourceCmdHelper:
     def config_resource_details(self,resource):
 
         # testtest456
-        values = self._tfstate_to_output2()
-        print_json(values)
-        raise Exception("111111")
+        resource = self._tfstate_to_output2()
 
         if not isinstance(resource,dict) and not isinstance(resource,list):
             self.logger.error("resource needs to be a dictionary or list!")
