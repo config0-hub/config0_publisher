@@ -795,10 +795,11 @@ class ResourceCmdHelper:
             if resource["type"] != self.terraform_type:
                 count += 1
 
-        print(count)
-        print(count)
-        print(count)
-
+        if count > 1:
+            skip_keys = [ "arn",
+                          "id" ]
+        else:
+            skip_keys = None
 
         for resource in self.data["resources"]:
 
@@ -813,6 +814,9 @@ class ResourceCmdHelper:
             for instance in resource["instances"]:
 
                 for _key,_value in resource["instances"][0]["attributes"].items():
+
+                    if _key in skip_keys:
+                        continue
 
                     if not _value:
                         continue
@@ -899,9 +903,6 @@ class ResourceCmdHelper:
             self._insert_tf_add_keys2(values)
         except:
             self.logger.warn("_insert_tf_add_keys failed")
-
-        # testtest456
-        raise Exception(count)
 
         try:
             self._insert_tf_map_keys(values)
