@@ -787,147 +787,9 @@ class ResourceCmdHelper:
 
         return self.config_resource_details(resource)
 
-    # testtest456
-    def _insert_tf_add_keys2(self,values):
-
-        count = 0
-        for resource in self.data["resources"]:
-            if resource["type"] != self.terraform_type:
-                count += 1
-
-        # if more than instance of the terraform type, it's better to parse the statefile
-        # after to allowing querying of resources
-        if count > 1:
-            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
-            if values.get("main") and values.get("name") and values.get("terraform_type") and not values.get("id"):
-                values["id"] = self.get_hash({
-                    "name":values["name"],
-                    "terraform_type":values["terraform_type"],
-                    "main":"True"
-                })
-            return
-
-        for resource in self.data["resources"]:
-
-            if resource["type"] != self.terraform_type:
-                continue
-
-            self.logger.debug("-" * 32)
-            self.logger.debug("instance attribute keys")
-            self.logger.debug(list(resource["instances"][0]["attributes"].keys()))
-            self.logger.debug("-" * 32)
-
-            for instance in resource["instances"]:
-
-                for _key,_value in resource["instances"][0]["attributes"].items():
-
-                    if not _value:
-                        continue
-
-                    if _key in values:
-                        continue
-
-                    if _key in self.tf_exec_skip_keys:
-                        self.logger.debug('tf_exec_skip_keys: tf instance attribute key "{}" skipped'.format(_key))
-                        continue
-
-                    # we add if tf_exec_add_key not set, all, or key is in it
-                    if not self.tf_exec_add_keys:
-                        _added_bc = "tf_exec_add_keys=None"
-                    elif self.tf_exec_add_keys == "all":
-                        _added_bc = "tf_exec_add_keys=all"
-                    elif _key in self.tf_exec_add_keys:
-                        _added_bc = "tf_exec_add_keys/key{} found".format(_key)
-                    else:
-                        _added_bc = None
-
-                    if not _added_bc:
-                        self.logger.debug("tf_exec_add_keys: key {} skipped".format(_key))
-                        continue
-
-                    self.logger.debug('{}: tf key "{}" -> value "{}" added to resource values'.format(_added_bc,
-                                                                                                      _key,
-                                                                                                      _value))
-
-                    if isinstance(_value,list):
-                        try:
-                            values[_key] = ",".join(_value)
-                        except:
-                            values[_key] = _value
-                    elif isinstance(_value,dict):
-                        try:
-                            values[_key] = json.dumps(_value)
-                        except:
-                            values[_key] = _value
-                    else:
-                        values[_key] = _value
-                break
-
-    # testtest456
-    def _tfstate_to_output2(self):
-
-        self.data = self._get_tfstate_file()
-
-        if not self.data:
-            self.logger.debug("u4324: no data to retrieved from statefile")
-            return False
-
-        self.logger.debug("u4324: retrieved data from statefile")
-
-        values = {"terraform_type": self.terraform_type,
-                  "resource_type": self.resource_type,
-                  "source_method": "terraform",
-                  "provider": self.provider,
-                  "main": True}
-
-        self._insert_resource_values(values)
-
-        # special case of ssm_name/secrets
-        if self.ssm_name:
-            values["ssm_name"] = self.ssm_name
-
-        try:
-            self._insert_resource_labels(values)
-        except:
-            self.logger.warn("_insert_resource_labels failed")
-
-        try:
-            self._insert_tf_raw(values)
-        except:
-            self.logger.warn("_insert_tf_raw b64 failed")
-
-        try:
-            self._insert_tf_outputs(values)
-        except:
-            self.logger.warn("_insert_tf_outputs failed")
-
-        # testtest456
-        try:
-            self._insert_tf_add_keys2(values)
-        except:
-            self.logger.warn("_insert_tf_add_keys failed")
-
-        try:
-            self._insert_tf_map_keys(values)
-        except:
-            self.logger.warn("_insert_tf_map_keys failed")
-
-        try:
-            self._insert_standard_resource_labels(values)
-        except:
-            self.logger.warn("_insert_standard resource labels failed")
-
-        try:
-            self._insert_tf_remove_keys(values)
-        except:
-            self.logger.warn("_insert_tf remove keys failed")
-
-        return values
-
     def config_resource_details(self,resource):
 
-        # testtest456
-        resource = self._tfstate_to_output2()
+        resource = self._tfstate_to_output()
 
         if not isinstance(resource,dict) and not isinstance(resource,list):
             self.logger.error("resource needs to be a dictionary or list!")
@@ -948,7 +810,7 @@ class ResourceCmdHelper:
 
                 self.add_resource_tags(_resource)
 
-                if not _resource.get("main"): 
+                if not _resource.get("main"):
                     continue
 
                 try:
@@ -976,38 +838,38 @@ class ResourceCmdHelper:
 
         return self.docker_env_file
 
-    # referenced and related to: dup dhdskyeucnfhrt2634521 
+    # referenced and related to: dup dhdskyeucnfhrt2634521
     def get_env_var(self,variable,default=None,must_exists=None):
-    
+
         _value = os.environ.get(variable)
 
-        if _value: 
+        if _value:
             return _value
 
-        if self.os_env_prefix: 
+        if self.os_env_prefix:
 
             _value = os.environ.get("{}_{}".format(self.os_env_prefix,
                                                    variable))
 
-            if _value: 
+            if _value:
                 return _value
-    
+
             _value = os.environ.get("{}_{}".format(self.os_env_prefix,
                                                    variable.lower()))
 
-            if _value: 
+            if _value:
                 return _value
-    
+
             _value = os.environ.get("{}_{}".format(self.os_env_prefix,
                                                    variable.upper()))
 
-            if _value: 
+            if _value:
                 return _value
-    
-        if default: 
+
+        if default:
             return default
-    
-        if not must_exists: 
+
+        if not must_exists:
             return
 
         raise MissingEnvironmentVariable("{} does not exist".format(variable))
@@ -1020,19 +882,19 @@ class ResourceCmdHelper:
         clobber = kwargs.get("clobber")
         _template_vars = self._get_template_vars(**kwargs)
 
-        if not _template_vars: 
+        if not _template_vars:
             self.logger.debug_highlight("template vars is not set or empty")
             return
 
         self.logger.debug_highlight("template vars {} not set or empty".format(_template_vars))
 
-        if not self.template_dir: 
+        if not self.template_dir:
             self.logger.warn("template_dir not set (None) - skipping templating")
             return
 
         template_files = list_template_files(self.template_dir)
 
-        if not template_files: 
+        if not template_files:
             self.logger.warn("template_files in directory {} empty - skipping templating".format(self.template_dir))
             return
 
@@ -1047,7 +909,7 @@ class ResourceCmdHelper:
                                      _file_stats["directory"],
                                      _file_stats["filename"].split(".ja2")[0])
 
-            if not os.path.exists(file_dir): 
+            if not os.path.exists(file_dir):
                 os.system("mkdir -p {}".format(file_dir))
 
             if os.path.exists(file_path) and not clobber:
