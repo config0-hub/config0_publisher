@@ -100,7 +100,7 @@ class TFCmdOnAWS(object):
         #'cd $TMPDIR/build/$APP_DIR && cat backend.tf',
         #'cd $TMPDIR/build/$APP_DIR && rm -rf .terraform',
         cmds = [
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init || $TF_PATH init --migrate-state',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
             'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
