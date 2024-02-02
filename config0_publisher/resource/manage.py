@@ -795,11 +795,11 @@ class ResourceCmdHelper:
             if resource["type"] != self.terraform_type:
                 count += 1
 
+        # if more than instance of the terraform type, it's better to parse the statefile
+        # after to allowing querying of resources
         if count > 1:
-            skip_keys = [ "arn",
-                          "id" ]
-        else:
-            skip_keys = None
+            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
+            return
 
         for resource in self.data["resources"]:
 
@@ -814,9 +814,6 @@ class ResourceCmdHelper:
             for instance in resource["instances"]:
 
                 for _key,_value in resource["instances"][0]["attributes"].items():
-
-                    if _key in skip_keys:
-                        continue
 
                     if not _value:
                         continue
