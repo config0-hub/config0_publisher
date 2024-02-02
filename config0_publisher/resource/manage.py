@@ -794,6 +794,9 @@ class ResourceCmdHelper:
 
         return self.config_resource_details(resource)
 
+    def configure_resources_details(self,resource):
+        return self.config_resource_details(resource)
+
     def config_resource_details(self,resource):
 
         if not isinstance(resource,dict) and not isinstance(resource,list):
