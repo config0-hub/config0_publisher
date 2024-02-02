@@ -849,7 +849,7 @@ class ResourceCmdHelper:
 
         return values
 
-    def config_resocure_details(self,resource):
+    def config_resource_details(self,resource):
 
         # testtest456
         values = self._tfstate_to_output2()
