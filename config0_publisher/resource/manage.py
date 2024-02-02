@@ -798,6 +798,7 @@ class ResourceCmdHelper:
 
         if isinstance(resource,dict):
 
+            print_json(resource)
             raise Exception("111111")
 
             self.add_resource_tags(resource)
@@ -808,8 +809,6 @@ class ResourceCmdHelper:
                 self.logger.debug("Did not add destroy params")
 
         if isinstance(resource,list):
-
-            raise Exception("000000")
 
             for _resource in resource:
 
