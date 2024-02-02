@@ -106,7 +106,7 @@ class TFCmdOnAWS(object):
 
         cmds = [
           'cd $TMPDIR/build/$APP_DIR',
-          'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
+          'cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state',
           'cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
@@ -116,7 +116,7 @@ class TFCmdOnAWS(object):
 
         cmds = [
             'cd $TMPDIR/build/$APP_DIR',
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init || $TF_PATH init --migrate-state',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH refresh',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
