@@ -125,6 +125,9 @@ class ResourceCmdHelper:
         self._set_build_timeout()
         self._set_aws_region()
 
+        self.printed = None
+        self.final_output = None
+
     def _set_build_timeout(self):
 
         if hasattr(self,"build_timeout") and self.build_timeout:
@@ -1468,10 +1471,10 @@ class ResourceCmdHelper:
 
         # testtest456
         self._eval_phases_tf("create")
-        output = self._eval_failure(method="create")
+        self._eval_failure(method="create")
         self._post_create()
-
-        #print(output)
+        if not self.printed and self.final_output:
+            print(self.final_output)
         return True
 
     def _insert_tf_version(self,env_vars):
@@ -1654,8 +1657,8 @@ class ResourceCmdHelper:
             return
 
         if self.tf_results.get("output"):
-            output = self.tf_results["output"]
-            self.append_log(output)
+            self.final_output = self.tf_results["output"]
+            self.append_log(self.final_output)
             del self.tf_results["output"]
 
         if self.tf_results.get("status") is False:
@@ -1672,7 +1675,7 @@ class ResourceCmdHelper:
             # self.logger.error(failed_message)
             raise Exception(failed_message)
 
-        return output
+        return True
 
     def _get_next_phase(self,method="create",**json_info):
 
@@ -1886,9 +1889,9 @@ terraform {{
 
     def validate(self):
         self._exec_tf_validate()
-        output = self._eval_failure(method="validate")
-
-        print(output)
+        self._eval_failure(method="validate")
+        if not self.printed and self.final_output:
+            print(self.final_output)
         return True
 
     def destroy(self):
@@ -1909,7 +1912,7 @@ terraform {{
         except:
             os.chdir("/tmp")
 
-        output = self._eval_failure(method="destroy")
-
-        print(output)
+        self._eval_failure(method="destroy")
+        if not self.printed and self.final_output:
+            print(self.final_output)
         return True
