@@ -1668,7 +1668,8 @@ class ResourceCmdHelper:
 
         if self.tf_results.get("output"):
             self.final_output = self.tf_results["output"]
-            self.append_log(self.final_output)
+            # testtest456
+            #self.append_log(self.final_output)
             del self.tf_results["output"]
 
         if self.tf_results.get("status") is False:
