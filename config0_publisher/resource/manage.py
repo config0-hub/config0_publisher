@@ -1475,14 +1475,7 @@ class ResourceCmdHelper:
         self._post_create()
 
         if not self.printed and self.final_output:
-            # testtest456
-            print("a"*32)
             print(self.final_output)
-            print("b"*32)
-            print(self.printed)
-            print(self.printed)
-            print(self.printed)
-            print("c"*32)
             self.printed = True
 
         return True
@@ -1668,8 +1661,7 @@ class ResourceCmdHelper:
 
         if self.tf_results.get("output"):
             self.final_output = self.tf_results["output"]
-            # testtest456
-            #self.append_log(self.final_output)
+            self.append_log(self.final_output)
             del self.tf_results["output"]
 
         if self.tf_results.get("status") is False:
