@@ -11,6 +11,12 @@ class TFCmdOnAWS(object):
         self.app_dir = kwargs["app_dir"]
         self.envfile = kwargs["envfile"]
 
+    def get_clean_dirs(self):
+
+        cmds = [
+            f'rm -rf $TMPDIR/$STATEFUL_ID || echo env file already removed',
+        ]
+
     def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
 
         if self.runtime_env == "codebuild":
@@ -54,7 +60,7 @@ class TFCmdOnAWS(object):
             envfile_env = os.path.join(self.app_dir,
                                        self.envfile)
             cmds = [
-                f'rm -rf {envfile_env} || echo env file already removed',
+                f'rm -rf $TMPDIR/$STATEFUL_ID/{envfile_env} || echo env file already removed',
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/$STATEFUL_ID/{self.envfile} -e $TMPDIR/$STATEFUL_ID/build/{envfile_env}.enc'
             ]
 
@@ -89,8 +95,8 @@ class TFCmdOnAWS(object):
         cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
                  'rm -rf $TMPDIR/$STATEFUL_ID/build || echo "stateful already removed"',
                  'mkdir -p $TMPDIR/$STATEFUL_ID/build',
-                 'unzip -o $TMPDIR/$STATEFUL_ID.zip -d $TMPDIR/$STATEFUL_ID/build',
-                 'rm -rf $TMPDIR/$STATEFUL_ID.zip'
+                 'unzip -o $TMPDIR/$STATEFUL_ID/$STATEFUL_ID.zip -d $TMPDIR/$STATEFUL_ID/build',
+                 'rm -rf $TMPDIR/$STATEFUL_ID/$STATEFUL_ID.zip'
         ]
 
         return cmds
@@ -110,8 +116,9 @@ class TFCmdOnAWS(object):
 
     def get_tf_destroy(self):
 
+        #'(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         cmds = [
-          '(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+          'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
           'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
@@ -119,8 +126,9 @@ class TFCmdOnAWS(object):
 
     def get_tf_validate(self):
 
+        #'(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         cmds = [
-            '(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH refresh',
             'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
