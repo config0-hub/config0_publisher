@@ -17,7 +17,6 @@ class TFCmdOnAWS(object):
             f'rm -rf $TMPDIR/config0 || echo "config0 already removed"',
             f'mkdir -p $TMPDIR/config0',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build',
-            f'mkdir -p $TMPDIR/download || echo "download dir already exists"'
         ]
 
         return cmds
@@ -34,9 +33,10 @@ class TFCmdOnAWS(object):
 
         if tf_bucket_path:
             cmds.extend([
-                f'(cd $TMPDIR/download && aws s3 cp {tf_bucket_path} terraform.zip --quiet) || \
-                   cd $TMPDIR/download && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip && \
-                   cd $TMPDIR/download && aws s3 cp terraform.zip {tf_bucket_path} --quiet'
+                f'mkdir -p $TMPDIR/downloads || echo "download dir already exists"',
+                f'(cd $TMPDIR/downloads && aws s3 cp {tf_bucket_path} terraform.zip --quiet) || \
+                   cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip && \
+                   cd $TMPDIR/downloads && aws s3 cp terraform.zip {tf_bucket_path} --quiet'
             ])
         else:
             cmds.extend([
