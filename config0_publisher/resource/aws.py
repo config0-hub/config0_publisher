@@ -40,12 +40,12 @@ class TFCmdOnAWS(object):
             ])
         else:
             cmds.extend([
-                f'cd $TMPDIR/download && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip'
+                f'cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip'
             ])
 
         cmds.extend([
-            'cd $TMPDIR/download && unzip terraform.zip',
-            'cd $TMPDIR/download && mv terraform $TF_PATH > /dev/null || exit 0',
+            'cd $TMPDIR/downloads && unzip terraform.zip',
+            'cd $TMPDIR/downloads && mv terraform $TF_PATH > /dev/null || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
