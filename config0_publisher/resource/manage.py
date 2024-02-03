@@ -1473,8 +1473,11 @@ class ResourceCmdHelper:
         self._eval_phases_tf("create")
         self._eval_failure(method="create")
         self._post_create()
+
         if not self.printed and self.final_output:
             print(self.final_output)
+            self.printed = True
+
         return True
 
     def _insert_tf_version(self,env_vars):
@@ -1890,8 +1893,11 @@ terraform {{
     def validate(self):
         self._exec_tf_validate()
         self._eval_failure(method="validate")
+
         if not self.printed and self.final_output:
             print(self.final_output)
+            self.printed = True
+
         return True
 
     def destroy(self):
@@ -1913,6 +1919,9 @@ terraform {{
             os.chdir("/tmp")
 
         self._eval_failure(method="destroy")
+
         if not self.printed and self.final_output:
             print(self.final_output)
+            self.printed = True
+
         return True
