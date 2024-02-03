@@ -1475,7 +1475,10 @@ class ResourceCmdHelper:
         self._post_create()
 
         if not self.printed and self.final_output:
+            # testtest456
+            print("a"*32)
             print(self.final_output)
+            print("b"*32)
             self.printed = True
 
         return True
