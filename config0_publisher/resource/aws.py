@@ -47,21 +47,25 @@ class TFCmdOnAWS(object):
                                        self.app_dir,
                                        self.envfile)
             cmds = [
-                 f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/{self.envfile}; fi'
+                f'rm -rf {envfile_env} || echo env file already removed',
+                f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/$STATEFUL_ID/{self.envfile}; fi'
              ]
         else:
             envfile_env = os.path.join(self.app_dir,
                                        self.envfile)
             cmds = [
-                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/{self.envfile} -e $TMPDIR/build/{envfile_env}.enc'
+                f'rm -rf {envfile_env} || echo env file already removed',
+                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/$STATEFUL_ID/{self.envfile} -e $TMPDIR/$STATEFUL_ID/build/{envfile_env}.enc'
             ]
 
         return cmds
 
     def get_src_buildenv_vars(self):
 
+        #cmd = f'cd /$TMPDIR/$STATEFUL_ID/; . ./{self.envfile}'
+
         cmds = [
-            f'if [ -f /$TMPDIR/{self.envfile} ]; then cd /$TMPDIR; . ./{self.envfile} ; fi'
+            f'if [ -f /$TMPDIR/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/$STATEFUL_ID/; . ./{self.envfile} ; fi'
         ]
 
         return cmds
@@ -71,10 +75,10 @@ class TFCmdOnAWS(object):
         # this does not work in lambda
         # so we won't use it for now
         cmds = [
-          '(cd $TMPDIR/build/$APP_DIR && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform-tfstate) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
-          'cd $TMPDIR/build && zip -r $TMPDIR/$STATEFUL_ID.zip . ',
-          'cd $TMPDIR/build && aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID',
-          'cd $TMPDIR/build && rm -rf $TMPDIR/$STATEFUL_ID.zip ',
+          '(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform-tfstate) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
+          'cd $TMPDIR/$STATEFUL_ID/build && zip -r $TMPDIR/$STATEFUL_ID.zip . ',
+          'cd $TMPDIR/$STATEFUL_ID/build && aws s3 cp $TMPDIR/$STATEFUL_ID.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID',
+          'cd $TMPDIR/$STATEFUL_ID/build && rm -rf $TMPDIR/$STATEFUL_ID.zip ',
           'echo "# terraform files uploaded s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID" '
         ]
 
@@ -82,9 +86,10 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID.zip --quiet',
-                 'mkdir -p $TMPDIR/build',
-                 'unzip -o $TMPDIR/$STATEFUL_ID.zip -d $TMPDIR/build',
+        cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
+                 'rm -rf $TMPDIR/$STATEFUL_ID/build || echo "stateful already removed"',
+                 'mkdir -p $TMPDIR/$STATEFUL_ID/build',
+                 'unzip -o $TMPDIR/$STATEFUL_ID.zip -d $TMPDIR/$STATEFUL_ID/build',
                  'rm -rf $TMPDIR/$STATEFUL_ID.zip'
         ]
 
@@ -94,11 +99,11 @@ class TFCmdOnAWS(object):
 
         #'(cd $TMPDIR/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         cmds = [
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
-            'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
-            'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi'
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi'
         ]
 
         return cmds
@@ -106,8 +111,8 @@ class TFCmdOnAWS(object):
     def get_tf_destroy(self):
 
         cmds = [
-          '(cd $TMPDIR/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
-          'cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve'
+          '(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+          'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
         return cmds
@@ -115,9 +120,9 @@ class TFCmdOnAWS(object):
     def get_tf_validate(self):
 
         cmds = [
-            '(cd $TMPDIR/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH refresh',
-            'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
+            '(cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH refresh',
+            'cd $TMPDIR/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
 
         return cmds
