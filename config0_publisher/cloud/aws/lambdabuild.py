@@ -136,7 +136,7 @@ class LambdaResourceHelper(AWSCommonConn):
         # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
         self.response = self._trigger_build()
 
-        lambda_status = self.response["StatusCode"]
+        lambda_status = int(self.response["StatusCode"])
 
         payload = json.loads(self.response["Payload"].read().decode())
         lambda_results = json.loads(payload["body"])
@@ -144,12 +144,17 @@ class LambdaResourceHelper(AWSCommonConn):
         self.results["lambda_status"] = lambda_status
         self.results["lambda_results"] = lambda_results
 
-        if lambda_results.get("status") is True:
+        if lambda_results["status"] is True and lambda_status == 200:
             self.results["status"] = lambda_results["status"]
             self.results["exitcode"] = 0
-        else:
+        elif lambda_status != 200:
             self.results["status"] = False
             self.results["exitcode"] = "78"
+            self.results["failed_message"] = "lambda function failed"
+        else:
+            self.results["status"] = False
+            self.results["exitcode"] = "79"
+            self.results["failed_message"] = "execution of cmd in lambda function failed"
 
         self.results["output"] = b64_decode(self.response["LogResult"])
 
