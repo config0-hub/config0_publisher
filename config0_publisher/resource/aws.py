@@ -33,7 +33,7 @@ class TFCmdOnAWS(object):
 
         if tf_bucket_path:
             cmds.extend([
-                f'mkdir -p $TMPDIR/downloads || echo "download dir already exists"',
+                f'mkdir -p $TMPDIR/downloads || echo "download directory exists"',
                 f'(cd $TMPDIR/downloads && aws s3 cp {tf_bucket_path} terraform.zip --quiet) || \
                    cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform.zip && \
                    cd $TMPDIR/downloads && aws s3 cp terraform.zip {tf_bucket_path} --quiet'
