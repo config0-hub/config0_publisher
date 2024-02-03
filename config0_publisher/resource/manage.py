@@ -84,6 +84,9 @@ class ResourceCmdHelper:
         # run_share_dir - share directory with stateful_id - e.g. /var/tmp/share/ABC123
         '''
 
+        # testtest456
+        raise Exception('hoho')
+
         self.classname = 'ResourceCmdHelper'
         self.logger = Config0Logger(self.classname)
         self.logger.debug("Instantiating %s" % self.classname)
@@ -1467,7 +1470,6 @@ class ResourceCmdHelper:
             self._exec_tf_apply()
 
         self._eval_phases_tf("create")
-        self._eval_failure(method="create")
         self._post_create()
 
         return
@@ -1793,8 +1795,6 @@ class ResourceCmdHelper:
         results = _awsbuild.run()
 
         return results
-
-
 
     def create_config0_settings_file(self):
 
