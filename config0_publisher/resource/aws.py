@@ -92,8 +92,9 @@ class TFCmdOnAWS(object):
 
     def get_tf_apply(self):
 
+        #'(cd $TMPDIR/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         cmds = [
-            '(cd $TMPDIR/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+            'cd $TMPDIR/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             'cd $TMPDIR/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
             'cd $TMPDIR/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
