@@ -108,7 +108,7 @@ class Codebuild(CodebuildParams):
 
     def _get_codebuildspec_prebuild(self):
 
-        cmds = self.tfcmds.get_reset_dirs()
+        cmds = self.tfcmds.reset_dirs()
         cmds.extend(self.tfcmds.s3_to_local())
         cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
                                                self.tf_version))

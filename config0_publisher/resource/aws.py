@@ -11,7 +11,7 @@ class TFCmdOnAWS(object):
         self.app_dir = kwargs["app_dir"]
         self.envfile = kwargs["envfile"]
 
-    def get_reset_dirs(self):
+    def reset_dirs(self):
 
         cmds = [
             f'rm -rf $TMPDIR/config0 || echo "config0 already removed"',
