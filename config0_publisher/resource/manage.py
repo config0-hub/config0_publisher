@@ -1479,6 +1479,10 @@ class ResourceCmdHelper:
             print("a"*32)
             print(self.final_output)
             print("b"*32)
+            print(self.printed)
+            print(self.printed)
+            print(self.printed)
+            print("c"*32)
             self.printed = True
 
         return True
