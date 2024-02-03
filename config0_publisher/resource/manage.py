@@ -1470,6 +1470,7 @@ class ResourceCmdHelper:
             self._exec_tf_apply()
 
         self._eval_phases_tf("create")
+        self._eval_failure(method="create")
         self._post_create()
 
         return
