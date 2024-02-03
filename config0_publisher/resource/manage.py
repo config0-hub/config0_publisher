@@ -84,9 +84,6 @@ class ResourceCmdHelper:
         # run_share_dir - share directory with stateful_id - e.g. /var/tmp/share/ABC123
         '''
 
-        # testtest456
-        raise Exception('hoho')
-
         self.classname = 'ResourceCmdHelper'
         self.logger = Config0Logger(self.classname)
         self.logger.debug("Instantiating %s" % self.classname)
@@ -1457,6 +1454,9 @@ class ResourceCmdHelper:
     #######################################################################
 
     def create(self):
+
+        # testtest456
+        raise Exception('hoho')
 
         self.init_phase_run()
 
