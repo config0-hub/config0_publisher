@@ -1869,9 +1869,6 @@ terraform {{
             self._create_docker_env_file()
             self.tf_results = self._exec_docker_local(method=method)
 
-        print_json(self.tf_results)
-        raise Exception("dsfasfd")
-
         return self.tf_results
 
     def _exec_tf_validate(self):
