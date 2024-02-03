@@ -1468,12 +1468,11 @@ class ResourceCmdHelper:
 
         # testtest456
         self._eval_phases_tf("create")
-        self.logger.debug("c"*32)
-        self._eval_failure(method="create")
-        self.logger.debug("d"*32)
+        output = self._eval_failure(method="create")
         self._post_create()
 
-        return
+        print(output)
+        return True
 
     def _insert_tf_version(self,env_vars):
 
@@ -1657,7 +1656,6 @@ class ResourceCmdHelper:
         if self.tf_results.get("output"):
             output = self.tf_results["output"]
             self.append_log(output)
-            print(output)
             del self.tf_results["output"]
 
         if self.tf_results.get("status") is False:
@@ -1674,7 +1672,7 @@ class ResourceCmdHelper:
             # self.logger.error(failed_message)
             raise Exception(failed_message)
 
-        return True
+        return output
 
     def _get_next_phase(self,method="create",**json_info):
 
@@ -1888,7 +1886,10 @@ terraform {{
 
     def validate(self):
         self._exec_tf_validate()
-        return self._eval_failure(method="validate")
+        output = self._eval_failure(method="validate")
+
+        print(output)
+        return True
 
     def destroy(self):
 
@@ -1908,4 +1909,7 @@ terraform {{
         except:
             os.chdir("/tmp")
 
-        return self._eval_failure(method="destroy")
+        output = self._eval_failure(method="destroy")
+
+        print(output)
+        return True
