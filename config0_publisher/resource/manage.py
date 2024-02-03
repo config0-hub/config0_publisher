@@ -1456,7 +1456,7 @@ class ResourceCmdHelper:
     def create(self):
 
         # testtest456
-        raise Exception('hoho')
+        #raise Exception('hoho')
 
         self.init_phase_run()
 
