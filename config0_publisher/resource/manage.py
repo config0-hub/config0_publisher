@@ -1455,9 +1455,6 @@ class ResourceCmdHelper:
 
     def create(self):
 
-        # testtest456
-        #raise Exception('hoho')
-
         self.init_phase_run()
 
         if self.phase == "submit":
@@ -1470,13 +1467,13 @@ class ResourceCmdHelper:
             self._exec_tf_apply()
 
         # testtest456
-        print("a"*32)
+        self.logger.debug("a"*32)
         self._eval_phases_tf("create")
-        print("b"*32)
+        self.logger.debug("b"*32)
         print_json(self.tf_results)
-        print("c"*32)
+        self.logger.debug("c"*32)
         self._eval_failure(method="create")
-        print("d"*32)
+        self.logger.debug("d"*32)
         self._post_create()
 
         return
