@@ -1469,8 +1469,14 @@ class ResourceCmdHelper:
             self._init_create()
             self._exec_tf_apply()
 
+        # testtest456
+        print("a"*32)
         self._eval_phases_tf("create")
+        print("b"*32)
+        print_json(self.tf_results)
+        print("c"*32)
         self._eval_failure(method="create")
+        print("d"*32)
         self._post_create()
 
         return
@@ -1656,11 +1662,9 @@ class ResourceCmdHelper:
 
         if self.tf_results.get("output"):
             output = self.tf_results["output"]
-            del self.tf_results["output"]
             self.append_log(output)
-
-        if output:
             print(output)
+            del self.tf_results["output"]
 
         if self.tf_results.get("status") is False:
             # failed at this point
