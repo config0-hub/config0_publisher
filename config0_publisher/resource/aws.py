@@ -11,11 +11,16 @@ class TFCmdOnAWS(object):
         self.app_dir = kwargs["app_dir"]
         self.envfile = kwargs["envfile"]
 
-    def get_clean_dirs(self):
+    def get_reset_dirs(self):
 
         cmds = [
-            f'rm -rf $TMPDIR/config0 || echo env file already removed',
+            f'rm -rf $TMPDIR/config0 || echo "config0 already removed"',
+            f'mkdir -p $TMPDIR/config0',
+            'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build',
+            f'mkdir -p $TMPDIR/download || echo "download dir already exists"'
         ]
+
+        return cmds
 
     def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
 
@@ -94,7 +99,6 @@ class TFCmdOnAWS(object):
 
         cmds = [ 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
                  'rm -rf $TMPDIR/config0/$STATEFUL_ID/build || echo "stateful already removed"',
-                 'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build',
                  'unzip -o $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip -d $TMPDIR/config0/$STATEFUL_ID/build',
                  'rm -rf $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip'
         ]
