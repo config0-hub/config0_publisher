@@ -1471,7 +1471,7 @@ class ResourceCmdHelper:
         output = self._eval_failure(method="create")
         self._post_create()
 
-        print(output)
+        #print(output)
         return True
 
     def _insert_tf_version(self,env_vars):
@@ -1655,9 +1655,7 @@ class ResourceCmdHelper:
 
         if self.tf_results.get("output"):
             output = self.tf_results["output"]
-
-            # testtest456
-            #self.append_log(output)
+            self.append_log(output)
             del self.tf_results["output"]
 
         if self.tf_results.get("status") is False:
