@@ -697,7 +697,7 @@ class ResourceCmdHelper:
             logfile = "/tmp/{}.log".format(self.stateful_id)
             append = False
 
-        if eval_str_to_join(log):
+        if isinstance(log,list) or eval_str_to_join(log):
             try:
                 _str = "\n".join(log)
             except:
