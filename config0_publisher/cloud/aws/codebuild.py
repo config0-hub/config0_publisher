@@ -34,7 +34,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         AWSCommonConn.__init__(self,
                                default_values=default_values,
-                               set_env_vars=set_env_vars
+                               set_env_vars=set_env_vars,
                                **kwargs)
 
         # codebuild specific settings and variables
