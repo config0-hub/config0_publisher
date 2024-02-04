@@ -144,24 +144,24 @@ class Codebuild(CodebuildParams):
 
         return self._add_cmds(contents,cmds)
 
-def get_buildspec(self):
+    def get_buildspec(self):
 
-    init_contents = self.get_init_contents()
-    prebuild = self._get_codebuildspec_prebuild()
-    build = self._get_codebuildspec_build()
+        init_contents = self.get_init_contents()
+        prebuild = self._get_codebuildspec_prebuild()
+        build = self._get_codebuildspec_build()
 
-    contents = init_contents + prebuild + build
+        contents = init_contents + prebuild + build
 
-    # we only need postbuild if we add files, but
-    # we don't modify anything b/c we use a remote
-    # backend
-    # if self.method == "create":
-    #    postbuild = self._get_codebuildspec_postbuild()
-    #    contents = init_contents + prebuild + build + postbuild
-    # else:
-    #    contents = init_contents + prebuild + build  # if destroy, we skip postbuild
+        # we only need postbuild if we add files, but
+        # we don't modify anything b/c we use a remote
+        # backend
+        # if self.method == "create":
+        #    postbuild = self._get_codebuildspec_postbuild()
+        #    contents = init_contents + prebuild + build + postbuild
+        # else:
+        #    contents = init_contents + prebuild + build  # if destroy, we skip postbuild
 
-    return contents
+        return contents
 
 #    def _get_codebuildspec_postbuild(self):
 #
