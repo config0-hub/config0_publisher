@@ -1262,6 +1262,7 @@ class ResourceCmdHelper:
 
         to_jsonfile(resource,
                     self.config0_resource_json_file)
+
     def successful_output(self,**kwargs):
         self.print_output(**kwargs)
         exit(0)
@@ -1474,9 +1475,10 @@ class ResourceCmdHelper:
         self._eval_failure(method="create")
         self._post_create()
 
-        if not self.printed and self.final_output:
-            print(self.final_output)
-            self.printed = True
+        # testtest456
+        #if not self.printed and self.final_output:
+        #    print(self.final_output)
+        #    self.printed = True
 
         return True
 
