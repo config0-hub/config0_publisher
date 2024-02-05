@@ -16,7 +16,6 @@ class CodebuildResourceHelper(AWSCommonConn):
     def __init__(self,**kwargs):
 
         self.buildspec = kwargs.get("buildspec")
-        set_env_vars = kwargs.get("set_env_vars")
 
         self.build_id = None
         self.project_name = None
@@ -29,12 +28,11 @@ class CodebuildResourceHelper(AWSCommonConn):
             "codebuild_basename":"config0-iac"
         }
 
-        if not set_env_vars:
-            set_env_vars = self.get_set_env_vars()
+        if "set_env_vars" in kwargs:
+            kwargs["set_env_vars"] = self.get_set_env_vars()
 
         AWSCommonConn.__init__(self,
                                default_values=default_values,
-                               set_env_vars=set_env_vars,
                                **kwargs)
 
         # codebuild specific settings and variables
