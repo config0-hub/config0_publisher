@@ -228,7 +228,9 @@ class ResourceCmdHelper:
 
         # testtest456 not sure the below is needed
         self.syncvars.set()
+        print("y8"*32)
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
+        print("y9"*32)
         self._set_json_files()
 
         if os.environ.get("JIFFY_ENHANCED_LOG"):
@@ -412,6 +414,8 @@ class ResourceCmdHelper:
                 _key = _k
             else:
                 _key = _k.upper()
+
+            print(f"n--n _set_env_var evaluating {_key} -> {_v}")
 
             if _v is None:
                 continue
