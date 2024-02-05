@@ -415,16 +415,16 @@ class ResourceCmdHelper:
             else:
                 _key = _k.upper()
 
-            print(f"n--n _set_env_var evaluating {_key} -> {_v}")
-
             if _v is None:
+                print(f"n--n {_key} -> None - skipping")
                 continue
 
             if _key in os.environ and not clobber:
+                print(f"o--o {_key} -> {_v} already set/clobber=False")
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
-               print(f"o--o {_key} -> {_v}")
+               print(f"p--p {_key} -> {_v}")
 
             os.environ[_key] = str(_v)
 
