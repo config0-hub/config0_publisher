@@ -420,7 +420,7 @@ class ResourceCmdHelper:
                 continue
 
             if _key in os.environ and not clobber:
-                print(f"o--o {_key} -> {_v} already set/clobber=False")
+                print(f"o--o {_key} -> {_v} already set as {os.environ[_key]}")
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
