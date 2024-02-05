@@ -18,7 +18,11 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.buildspec = kwargs.get("buildspec")
 
         # testtest456
+        print('0'*32)
         print_json(self.buildspec)
+        print('1'*32)
+        print(self.buildspec)
+        print('2'*32)
         raise Exception('go')
 
         self.build_id = None
