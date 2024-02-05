@@ -216,10 +216,15 @@ class ResourceCmdHelper:
         self._set_docker_settings()
         self._set_mod_env_vars()
         self._get_docker_env_filepath()
+
+        # testtest456
+        print("y5"*32)
         self._set_special_keywords_classvars()  # special keywords ... chrootfiles_dest_dir
+        print("y6"*32)
 
         # execute it final time to synchronize class vars set
         self.set_class_vars()
+        print("y7"*32)
 
         # testtest456 not sure the below is needed
         self.syncvars.set()
