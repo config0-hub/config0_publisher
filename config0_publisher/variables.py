@@ -473,7 +473,6 @@ class EnvVarsToClassVars:
 
     def __init__(self,**kwargs):
 
-
         self.main_env_var_key = kwargs["main_env_var_key"]
         self.app_name = kwargs.get("app_name")
         self.app_dir = kwargs.get("app_dir")
@@ -535,6 +534,7 @@ class EnvVarsToClassVars:
         elif _env_var in self._default_values:
             #print(f"++> {_env_var} is default_values")
             self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we convert to lowercase
+
     def set_default_env_keys(self):
 
         if not self.default_keys:
