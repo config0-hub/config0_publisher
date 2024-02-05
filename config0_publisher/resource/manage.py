@@ -216,7 +216,7 @@ class ResourceCmdHelper:
         self._set_docker_settings()
         self._set_mod_env_vars()
         self._get_docker_env_filepath()
-        self._set_special_keywords_classvars()  # special keywords for chrootfiles_dest_dir
+        self._set_special_keywords_classvars()  # special keywords ... chrootfiles_dest_dir
 
         # execute it final time to synchronize class vars set
         self.set_class_vars()
@@ -287,6 +287,7 @@ class ResourceCmdHelper:
 
             if value not in ["_set_to_run_share_dir", "_set_to_share_dir"]:
                 continue
+
             if not run_share_dir:
                 self.logger.warn(f"could not set {key} run_share_dir")
                 self.syncvars.class_vars[key] = None
@@ -366,8 +367,12 @@ class ResourceCmdHelper:
             default_keys=default_keys,
             default_values=default_values)
 
+        # testtest456
+        print("y0"*32)
         self.syncvars.set(init=True)
+        print("y1"*32)
         self.set_class_vars()
+        print("y2"*32)
 
     def set_class_vars(self,class_vars=None):
 
