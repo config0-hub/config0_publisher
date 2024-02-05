@@ -397,7 +397,7 @@ class ResourceCmdHelper:
 
         for _k,_v in set_env_vars.items():
 
-            if self.os_env_prefix in _k:
+            if self.os_env_prefix and self.os_env_prefix in _k:
                 _key = _k
             else:
                 _key = _k.upper()
@@ -1475,7 +1475,9 @@ class ResourceCmdHelper:
         self._eval_failure(method="create")
         self._post_create()
 
-        # testtest456
+        # this will cause duplication output in log file
+        # leave it uncommented out unless you want to debug
+        # on standard output
         #if not self.printed and self.final_output:
         #    print(self.final_output)
         #    self.printed = True
