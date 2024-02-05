@@ -8,7 +8,7 @@ from io import BytesIO
 from time import sleep
 from time import time
 
-#from config0_publisher.utilities import print_json
+from config0_publisher.utilities import print_json
 from config0_publisher.cloud.aws.common import AWSCommonConn
 
 class CodebuildResourceHelper(AWSCommonConn):
@@ -16,6 +16,10 @@ class CodebuildResourceHelper(AWSCommonConn):
     def __init__(self,**kwargs):
 
         self.buildspec = kwargs.get("buildspec")
+
+        # testtest456
+        print_json(self.buildspec)
+        raise Exception('go')
 
         self.build_id = None
         self.project_name = None
