@@ -113,27 +113,15 @@ class ResourceCmdHelper:
 
         self._set_phases_params()
 
-        print("d0"*32)
-        print(os.environ["chrootfiles_dest_dir".upper()])
-
         # set specified env variables
         self._set_env_vars(env_vars=kwargs.get("env_vars"),
                            clobber=True)
 
-        print("d1"*32)
-        print(os.environ["chrootfiles_dest_dir".upper()])
         self._set_os_env_prefix(**kwargs)
         self._set_app_params(**kwargs)
 
-        print("e0"*32)
-        print(os.environ["chrootfiles_dest_dir".upper()])
         self._init_syncvars(**kwargs)
-        print("e1"*32)
-        print(os.environ["chrootfiles_dest_dir".upper()])
         self._finalize_set_vars()
-        print("e2"*32)
-        print(os.environ["chrootfiles_dest_dir".upper()])
-        raise Exception("jo")
 
         self._set_build_timeout()
         self._set_aws_region()
