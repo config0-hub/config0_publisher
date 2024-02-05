@@ -230,19 +230,14 @@ class ResourceCmdHelper:
         self._get_docker_env_filepath()
 
         # testtest456
-        print("y5"*32)
         self._set_special_keywords_classvars()  # special keywords ... chrootfiles_dest_dir
-        print("y6"*32)
 
         # execute it final time to synchronize class vars set
         self.set_class_vars()
-        print("y7"*32)
 
         # testtest456 not sure the below is needed
         self.syncvars.set()
-        print("y8"*32)
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
-        print("y9"*32)
         self._set_json_files()
 
         if os.environ.get("JIFFY_ENHANCED_LOG"):
@@ -386,12 +381,8 @@ class ResourceCmdHelper:
             default_keys=default_keys,
             default_values=default_values)
 
-        # testtest456
-        print("y0"*32)
         self.syncvars.set(init=True)
-        print("y1"*32)
         self.set_class_vars()
-        print("y2"*32)
 
     def set_class_vars(self,class_vars=None):
 
