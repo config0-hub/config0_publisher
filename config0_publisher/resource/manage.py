@@ -416,8 +416,8 @@ class ResourceCmdHelper:
     def _set_env_vars(self,env_vars=None,clobber=False):
 
         auto_clobber_keys = [
-            "chrootfiles_dest_dir",
-            "working_dir"
+            "CHROOTFILES_DEST_DIR",
+            "WORKING_DIR"
         ]
 
         set_env_vars = env_vars
