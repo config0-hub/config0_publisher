@@ -415,6 +415,11 @@ class ResourceCmdHelper:
 
     def _set_env_vars(self,env_vars=None,clobber=False):
 
+        auto_clobber_keys = [
+            "chrootfiles_dest_dir",
+            "working_dir"
+        ]
+
         set_env_vars = env_vars
 
         if not set_env_vars:
@@ -431,7 +436,9 @@ class ResourceCmdHelper:
                 print(f"n--n {_key} -> None - skipping")
                 continue
 
-            if _key in os.environ and not clobber:
+            if _key in os.environ and _key in auto_clobber_keys:
+                print(f"o--o {_key} -> {_v} already set/will clobber")
+            elif _key in os.environ and not clobber:
                 print(f"o--o {_key} -> {_v} already set as {os.environ[_key]}")
                 continue
 
