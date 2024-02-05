@@ -102,6 +102,7 @@ class ResourceCmdHelper:
         self.os_env_prefix = kwargs.get("os_env_prefix")
         self.app_name = kwargs.get("app_name")
         self.app_dir = kwargs.get("app_dir")
+        self.build_env_vars = kwargs.get("build_env_vars")
 
         self.phases_params_hash = kwargs.get("phases_params_hash")
         self.phases_params = kwargs.get("phases_params")
