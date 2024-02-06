@@ -16,18 +16,6 @@ class CodebuildResourceHelper(AWSCommonConn):
     def __init__(self,**kwargs):
 
         self.buildspec = kwargs.get("buildspec")
-
-        kwargs["build_env_vars"]["S3_BUCKET"] = "app-env.lambda.iac.williaumwu.f3433"
-        kwargs["build_env_vars"]["LAMBDA_PKG_NAME"] = "foo-lambda"
-
-        # testtest456
-        print(self.buildspec)
-        print('8'*32)
-        del kwargs['buildspec']
-        print_json(kwargs)
-        print('9'*32)
-
-
         self.build_id = None
         self.project_name = None
         self.logarn = None
