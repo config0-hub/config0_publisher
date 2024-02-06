@@ -115,9 +115,7 @@ class TFCmdOnAWS(object):
         cmds = [
             'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
             'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan || export FAILED=true',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && if [ ! -z "$FAILED" ]; then cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve; fi',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && if [ ! -z "$FAILED" ]; then echo "terraform apply failed - destroying and exiting with failed" && exit 9; fi'
+            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
 
         return cmds

@@ -549,8 +549,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     # this is a single run and not in phases
     # we use _retrieve instead of retrieve method
-    # testtest456
-    def run(self,sparse_env_vars=False):
+    def run(self,sparse_env_vars=True):
 
         self._submit(sparse_env_vars=sparse_env_vars)
         self._retrieve()
