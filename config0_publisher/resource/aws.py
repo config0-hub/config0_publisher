@@ -34,10 +34,8 @@ class TFCmdOnAWS(object):
         if tf_bucket_path:
             cmds.extend([
                 f'mkdir -p $TMPDIR/downloads || echo "download directory exists"',
-                f'(cd $TMPDIR/downloads && ls terraform_{tf_version} > /dev/null 2>&1) || \
-                (cd $TMPDIR/downloads && aws s3 cp {tf_bucket_path} terraform_{tf_version} --quiet) || \
-                cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && \
-                cd $TMPDIR/downloads && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet'
+                f'(cd $TMPDIR/downloads && ls terraform_{tf_version} > /dev/null 2>&1) || aws s3 cp {tf_bucket_path} terraform_{tf_version} --quiet || \
+                (curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && cd $TMPDIR/downloads && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet'
             ])
         else:
             cmds.extend([
@@ -45,8 +43,7 @@ class TFCmdOnAWS(object):
             ])
 
         cmds.extend([
-            f'cd $TMPDIR/downloads && unzip terraform_{tf_version}',
-            'cd $TMPDIR/downloads && mv terraform $TF_PATH > /dev/null || exit 0',
+            f'cd $TMPDIR/downloads && unzip terraform_{tf_version} && mv terraform $TF_PATH > /dev/null || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
@@ -112,10 +109,12 @@ class TFCmdOnAWS(object):
     def get_tf_apply(self):
 
         #'(cd $TMPDIR/config0/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+        #cmds = def get_src_buildenv_vars(self):
+        
         cmds = [
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan || ($TF_PATH destroy -auto-approve && exit 9)'
+            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
+            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
 
         return cmds
@@ -124,8 +123,8 @@ class TFCmdOnAWS(object):
 
         #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         cmds = [
-          'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
-          'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
+          f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+          f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
         return cmds
@@ -134,9 +133,9 @@ class TFCmdOnAWS(object):
 
         #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         cmds = [
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH refresh',
-            'cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
+            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH refresh',
+            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
 
         return cmds
