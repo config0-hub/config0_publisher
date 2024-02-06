@@ -17,14 +17,15 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         self.buildspec = kwargs.get("buildspec")
 
+        kwargs["build_env_vars"]["S3_BUCKET"] = "app-env.lambda.iac.williaumwu.f3433"
+        kwargs["build_env_vars"]["LAMBDA_PKG_NAME"] = "foo-lambda.zip"
+
         # testtest456
-        print('7'*32)
         print(self.buildspec)
         print('8'*32)
         del kwargs['buildspec']
         print_json(kwargs)
         print('9'*32)
-        raise Exception('yodsyfasdf')
 
 
         self.build_id = None
