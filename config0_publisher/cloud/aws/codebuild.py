@@ -419,7 +419,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return False
 
-    def _trigger_build(self):
+    def _trigger_build(self,sparse_env_vars=True):
 
         projects = self._get_codebuild_projects()
 
@@ -436,7 +436,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.logger.debug_highlight(f"running job on codebuild project {project_name}")
 
             inputargs = {"projectName":project_name,
-                         "environmentVariablesOverride":self._env_vars_to_codebuild_format(),
+                         "environmentVariablesOverride":self._env_vars_to_codebuild_format(sparse=sparse_env_vars),
                          "timeoutInMinutesOverride":timeout,
                          "imageOverride": self.build_image,
                          "computeTypeOverride": self.compute_type,
@@ -466,7 +466,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return new_build
 
-    def _submit(self):
+    def _submit(self,sparse_env_vars=True):
 
         self.phase_result = self.new_phase("submit")
 
@@ -476,7 +476,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.upload_to_s3_stateful()
             self.phase_result["executed"].append("upload_to_s3")
 
-        self._trigger_build()
+        self._trigger_build(sparse_env_vars=sparse_env_vars)
 
         self.phase_result["executed"].append("trigger_codebuild")
         self.phase_result["status"] = True
@@ -549,9 +549,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     # this is a single run and not in phases
     # we use _retrieve instead of retrieve method
-    def run(self):
+    # testtest456
+    def run(self,sparse_env_vars=False):
 
-        self._submit()
+        self._submit(sparse_env_vars=sparse_env_vars)
         self._retrieve()
 
         return self.results
