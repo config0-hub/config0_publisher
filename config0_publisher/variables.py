@@ -513,12 +513,13 @@ class EnvVarsToClassVars:
     def init_env_vars(self,**kwargs):
 
         try:
-            self.main_dict = b64_decode(os.environ[self.main_env_var_key])
+            self.main_vars = b64_decode(os.environ[self.main_env_var_key])
         except:
             return
 
-        self.env_vars = self.main_dict["env_vars"]
+        self.env_vars = self.main_vars["env_vars"]
         self.env_vars_to_class_vars(self.env_vars)
+
     def env_vars_to_class_vars(self,env_vars):
 
         for key,value in env_vars.items():
