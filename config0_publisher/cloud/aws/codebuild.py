@@ -21,6 +21,11 @@ class CodebuildResourceHelper(AWSCommonConn):
         print('7'*32)
         print(self.buildspec)
         print('8'*32)
+        del kwargs['buildspec']
+        print_json(kwargs)
+        print('9'*32)
+        raise Exception('yodsyfasdf')
+
 
         self.build_id = None
         self.project_name = None
