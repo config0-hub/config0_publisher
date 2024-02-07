@@ -1543,59 +1543,29 @@ class ResourceCmdHelper:
             type = resource["type"]
             name = resource["name"]
             if resource["type"] == self.terraform_type:
-                # testtest456
-                self.logger.debug("a"*32)
                 self.logger.debug(f'name: {name}, type: {type} matched found')
-                self.logger.debug("b"*32)
                 count += 1
 
         # if more than instance of the terraform type, it's better to parse the statefile
         # after to allowing querying of resources
         if count > 1:
-            # testtest456
-            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
-            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
-            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
-            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
-            self.logger.debug(f"count {count}")
-            self.logger.debug(f"count {count}")
-            self.logger.debug(f"count {count}")
-            self.logger.debug(f"count {count}")
-            self.logger.debug(f"count {count}")
+            self.logger.warn(f"more than one instance terraform type {self.terrraform_type}/count {count} - skipping key insertion to avoid clobbering/duplicates")
             if values.get("main") and values.get("name") and values.get("terraform_type") and not values.get("id"):
                 values["id"] = self.get_hash({
                     "name": values["name"],
                     "terraform_type": values["terraform_type"],
                     "main": "True"
                 })
-
-            # testtest456
-            #raise Exception('yo')
             return
-
-        # testtest456
-        self.logger.debug(f"count {count}")
-        self.logger.debug(f"count {count}")
-        self.logger.debug(f"count {count}")
-        self.logger.debug(f"count {count}")
-        self.logger.debug(f"count {count}")
-        self.logger.debug(f"count {count}")
-
-        # testtest456
-        #raise Exception('yo2')
-        #raise Exception('yo2')
 
         for resource in self.data["resources"]:
 
-            if resource["type"] != self.terraform_type:
-                continue
+            if resource["type"] == self.terraform_type:
 
-            self.logger.debug("-" * 32)
-            self.logger.debug("instance attribute keys")
-            self.logger.debug(list(resource["instances"][0]["attributes"].keys()))
-            self.logger.debug("-" * 32)
-
-            for instance in resource["instances"]:
+                self.logger.debug("-" * 32)
+                self.logger.debug("instance attribute keys")
+                self.logger.debug(list(resource["instances"][0]["attributes"].keys()))
+                self.logger.debug("-" * 32)
 
                 for _key,_value in resource["instances"][0]["attributes"].items():
 
