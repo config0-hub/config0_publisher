@@ -1554,7 +1554,13 @@ class ResourceCmdHelper:
                     "terraform_type": values["terraform_type"],
                     "main": "True"
                 })
+
+            # testtest456
+            raise Exception('yo')
             return
+
+        # testtest456
+        raise Exception('yo2')
 
         for resource in self.data["resources"]:
 
