@@ -1546,8 +1546,11 @@ class ResourceCmdHelper:
         # if more than instance of the terraform type, it's better to parse the statefile
         # after to allowing querying of resources
         if count > 1:
-            self.logger.debug(
-                "more than one instance of this terraform type - skipping key insertion to avoid clobbering")
+            # testtest456
+            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
+            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
+            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
+            self.logger.debug("more than one instance of this terraform type - skipping key insertion to avoid clobbering")
             if values.get("main") and values.get("name") and values.get("terraform_type") and not values.get("id"):
                 values["id"] = self.get_hash({
                     "name": values["name"],
@@ -1556,13 +1559,20 @@ class ResourceCmdHelper:
                 })
 
             # testtest456
-            raise Exception('yo')
-            raise Exception('yo')
+            #raise Exception('yo')
             return
 
         # testtest456
-        raise Exception('yo2')
-        raise Exception('yo2')
+        self.logger.debug(f"count {count}")
+        self.logger.debug(f"count {count}")
+        self.logger.debug(f"count {count}")
+        self.logger.debug(f"count {count}")
+        self.logger.debug(f"count {count}")
+        self.logger.debug(f"count {count}")
+
+        # testtest456
+        #raise Exception('yo2')
+        #raise Exception('yo2')
 
         for resource in self.data["resources"]:
 
