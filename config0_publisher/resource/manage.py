@@ -1540,15 +1540,13 @@ class ResourceCmdHelper:
 
         count = 0
         for resource in self.data["resources"]:
-            if resource["type"] != self.terraform_type:
+            type = resource["type"]
+            name = resource["name"]
+            if resource["type"] == self.terraform_type:
                 # testtest456
                 self.logger.debug("a"*32)
-                self.logger.debug(f'{resource.get("name")}')
+                self.logger.debug(f'name: {name}, type: {type} matched found')
                 self.logger.debug("b"*32)
-                self.logger.debug(f'{resource.get("type")}')
-                self.logger.debug("c"*32)
-                self.logger.debug(f'{self.terraform_type}')
-                self.logger.debug("d"*32)
                 count += 1
 
         # if more than instance of the terraform type, it's better to parse the statefile
