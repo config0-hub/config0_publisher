@@ -1557,9 +1557,11 @@ class ResourceCmdHelper:
 
             # testtest456
             raise Exception('yo')
+            raise Exception('yo')
             return
 
         # testtest456
+        raise Exception('yo2')
         raise Exception('yo2')
 
         for resource in self.data["resources"]:
