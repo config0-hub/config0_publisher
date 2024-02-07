@@ -1536,6 +1536,82 @@ class ResourceCmdHelper:
         else:
             self.build_method = "local"
 
+    def _insert_tf_add_keys(self,values):
+
+        count = 0
+        for resource in self.data["resources"]:
+            if resource["type"] != self.terraform_type:
+                count += 1
+
+        # if more than instance of the terraform type, it's better to parse the statefile
+        # after to allowing querying of resources
+        if count > 1:
+            self.logger.debug(
+                "more than one instance of this terraform type - skipping key insertion to avoid clobbering")
+            if values.get("main") and values.get("name") and values.get("terraform_type") and not values.get("id"):
+                values["id"] = self.get_hash({
+                    "name": values["name"],
+                    "terraform_type": values["terraform_type"],
+                    "main": "True"
+                })
+            return
+
+        for resource in self.data["resources"]:
+
+            if resource["type"] != self.terraform_type:
+                continue
+
+            self.logger.debug("-" * 32)
+            self.logger.debug("instance attribute keys")
+            self.logger.debug(list(resource["instances"][0]["attributes"].keys()))
+            self.logger.debug("-" * 32)
+
+            for instance in resource["instances"]:
+
+                for _key,_value in resource["instances"][0]["attributes"].items():
+
+                    if not _value:
+                        continue
+
+                    if _key in values:
+                        continue
+
+                    if _key in self.tf_exec_skip_keys:
+                        self.logger.debug('tf_exec_skip_keys: tf instance attribute key "{}" skipped'.format(_key))
+                        continue
+
+                    # we add if tf_exec_add_key not set, all, or key is in it
+                    if not self.tf_exec_add_keys:
+                        _added_bc = "tf_exec_add_keys=None"
+                    elif self.tf_exec_add_keys == "all":
+                        _added_bc = "tf_exec_add_keys=all"
+                    elif _key in self.tf_exec_add_keys:
+                        _added_bc = "tf_exec_add_keys/key{} found".format(_key)
+                    else:
+                        _added_bc = None
+
+                    if not _added_bc:
+                        self.logger.debug("tf_exec_add_keys: key {} skipped".format(_key))
+                        continue
+
+                    self.logger.debug('{}: tf key "{}" -> value "{}" added to resource values'.format(_added_bc,
+                                                                                                      _key,
+                                                                                                      _value))
+
+                    if isinstance(_value,list):
+                        try:
+                            values[_key] = ",".join(_value)
+                        except:
+                            values[_key] = _value
+                    elif isinstance(_value,dict):
+                        try:
+                            values[_key] = json.dumps(_value)
+                        except:
+                            values[_key] = _value
+                    else:
+                        values[_key] = _value
+                break
+
     def _get_tfstate_file(self):
         """
         This method gets the Terraform state file.
