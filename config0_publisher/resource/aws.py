@@ -72,7 +72,8 @@ class TFCmdOnAWS(object):
             ]
 
             # testtest456
-            cmds.append(f'echo "################"; cat $TMPDIR/config0/$STATEFUL_ID/{envfile_env} ; echo "##################"')
+            #cmds.append(f'echo "################"; cat $TMPDIR/config0/$STATEFUL_ID/{envfile_env} ; echo "##################"')
+            cmds.append(f'cat $TMPDIR/config0/$STATEFUL_ID/{envfile_env}')
 
         return cmds
 
