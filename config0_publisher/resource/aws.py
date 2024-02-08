@@ -71,9 +71,8 @@ class TFCmdOnAWS(object):
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc'
             ]
 
-            # testtest456
-            #cmds.append(f'echo "################"; cat $TMPDIR/config0/$STATEFUL_ID/{envfile_env} ; echo "##################"')
-            cmds.append(f'cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}')
+        cmds.append(f'[ -n "$SSM_NAME" ] && echo && ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile}')
+        cmds.append(f'cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}')
 
         return cmds
 
