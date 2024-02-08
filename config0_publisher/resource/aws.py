@@ -72,7 +72,7 @@ class TFCmdOnAWS(object):
             ]
 
             # testtest456
-            cmds.append(f'"################"; cat {envfile_env}; echo "##################')
+            cmds.append(f'echo "################"; cat {envfile_env}; echo "##################')
 
         return cmds
 
