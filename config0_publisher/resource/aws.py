@@ -80,8 +80,10 @@ class TFCmdOnAWS(object):
 
         #cmd = f'cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile}'
 
+        #f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
+
         cmds = [
-            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
+            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi && echo $GITHUB_TOKEN)'
         ]
 
         return cmds
