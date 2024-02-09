@@ -116,11 +116,12 @@ class TFCmdOnAWS(object):
 
         #'(cd $TMPDIR/config0/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
         #cmds = def get_src_buildenv_vars(self):
-        
+        #f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
+
         cmds = [
             f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
             f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
+            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply) || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
 
         return cmds
