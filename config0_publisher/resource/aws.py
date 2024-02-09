@@ -78,8 +78,7 @@ class TFCmdOnAWS(object):
 
     def get_src_buildenv_vars(self):
 
-        #cmd = f'cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile}'
-
+        # testtest456
         #f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
 
         cmds = [
@@ -114,14 +113,10 @@ class TFCmdOnAWS(object):
 
     def get_tf_apply(self):
 
-        #'(cd $TMPDIR/config0/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
-        #cmds = def get_src_buildenv_vars(self):
-        #f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
-
         cmds = [
             f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
             f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply -auto-approve) || ($TF_PATH destroy -auto-approve && exit 9)'
+            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
 
         return cmds
@@ -190,16 +185,3 @@ class AWSBaseBuildParams(object):
         if self.tmp_bucket:
             self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
             self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
-
-    # 123
-    # testtest456
-    # is this needed?
-    #def _override_env_var_method(self):
-
-    #    if not self.build_env_vars.get("METHOD"):
-    #        return
-
-    #    if self.method == "destroy":
-    #        self.build_env_vars["METHOD"] = "destroy"
-    #    elif self.method == "create":
-    #        self.build_env_vars["METHOD"] = "create"
