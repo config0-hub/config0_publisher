@@ -78,11 +78,8 @@ class TFCmdOnAWS(object):
 
     def get_src_buildenv_vars(self):
 
-        # testtest456
-        #f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
-
         cmds = [
-            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi && echo $GITHUB_TOKEN)'
+            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
         ]
 
         return cmds
