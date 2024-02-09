@@ -121,7 +121,7 @@ class TFCmdOnAWS(object):
         cmds = [
             f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
             f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply) || ($TF_PATH destroy -auto-approve && exit 9)'
+            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply -auto-approve) || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
 
         return cmds
