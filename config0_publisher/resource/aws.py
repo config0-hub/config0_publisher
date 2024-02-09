@@ -79,7 +79,8 @@ class TFCmdOnAWS(object):
     def get_src_buildenv_vars(self):
 
         cmds = [
-            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
+            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)',
+            f'(echo "###  $TMPDIR/config0/$STATEFUL_ID  ###")'
         ]
 
         return cmds
