@@ -3,13 +3,12 @@
 import logging
 import re
 import os
-import boto3
-import gzip
-from io import BytesIO
-from time import sleep
-from time import time
-
-from config0_publisher.loggerly import Config0Logger
+#import boto3
+#import gzip
+#from io import BytesIO
+#from time import sleep
+#from time import time
+#from config0_publisher.loggerly import Config0Logger
 
 class SetClassVarsHelper:
 
@@ -47,27 +46,34 @@ class SetClassVarsHelper:
 
             if env_var in self.kwargs:
                 self._vars_set[env_var] = self.kwargs[env_var]
-                exec('self.{}="{}"'.format(env_var,
-                                         self.kwargs[env_var]))
-                continue
-
-            if env_var.upper() in self.env_vars:
+                _expression = f'self.{env_var}="{self.kwargs[env_var]}"'
+            elif env_var.upper() in self.env_vars:
                 self._vars_set[env_var] = self.env_vars[env_var.upper()]
-                exec('self.{}="{}"'.format(env_var,
-                                           self.env_vars[env_var.upper()]))
-                continue
-
-            if env_var.upper() in os.environ:
+                _expression = f'self.{env_var}="{self.env_vars[env_var.upper()]}"'
+            elif env_var.upper() in os.environ:
                 self._vars_set[env_var] = os.environ[env_var.upper()]
-                exec('self.{}="{}"'.format(env_var,
-                                           os.environ[env_var.upper()]))
+                _expression = f'self.{env_var}="{os.environ[env_var.upper()]}"'
+            elif env_var.lower() in self.default_values:
+                self._vars_set[env_var.lower()] = self.default_values[env_var.lower()]
+                _expression = f'self.{env_var.lower()}="{self.default_values[env_var.lower()]}"'
+            else:
+                _expression = None
+
+            if _expression:
+                # testtest456
+                print("0"*32)
+                print("0"*32)
+                print(f"_expression {_expression}")
+                print("0"*32)
+                print("0"*32)
+                exec(_expression)
                 continue
 
-            if env_var.lower() in self.default_values:
-                self._vars_set[env_var.lower()] = self.default_values[env_var.lower()]
-                exec('self.{}="{}"'.format(env_var.lower(),
-                                           self.default_values[env_var.lower()]))
-                continue
+            print("1"*32)
+            print(f"env_var {env_var}")
+            print("2"*32)
+            print(f"_expression {_expression}")
+            print("3"*32)
 
             if must_exists:
                 raise Exception("variable {} needs to be set".format(env_var))
