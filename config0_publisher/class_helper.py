@@ -37,6 +37,24 @@ class SetClassVarsHelper:
         # track the class vars set with this
         self._vars_set = {}
 
+    def _set_class_default_vars(self):
+
+        if not self.default_values:
+            return
+
+        for key,value in self.default_values.items():
+
+            if key in self._vars_set:
+                continue
+
+            # testtest456
+            print("5"*32)
+            print("5"*32)
+            print(f"key={key} value={value}")
+            print("5"*32)
+            print("5"*32)
+            self._vars_set[key] = value
+
     def set_class_vars_srcs(self):
 
         if not self.set_env_vars:
@@ -82,3 +100,5 @@ class SetClassVarsHelper:
                 self._vars_set[env_var] = None
                 print("set None for variable {}".format(env_var))
                 exec('self.{}=None'.format(env_var))
+
+        self._set_class_default_vars()
