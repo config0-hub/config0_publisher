@@ -60,7 +60,7 @@ class SetClassVarsHelper:
         if not self.set_env_vars:
             return
 
-        env_vars_keys = self.set_env_vars.keys()
+        env_vars_keys = list(self.set_env_vars.keys())
         print(env_vars_keys)
         print(env_vars_keys)
         print(env_vars_keys)
