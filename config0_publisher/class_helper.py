@@ -61,14 +61,6 @@ class SetClassVarsHelper:
             return
 
         env_vars_keys = list(self.set_env_vars.keys())
-        print(env_vars_keys)
-        print(env_vars_keys)
-        print(env_vars_keys)
-        print(type(env_vars_keys))
-        print(type(env_vars_keys))
-        print(len(env_vars_keys))
-        print(len(env_vars_keys))
-        raise
 
         if self.default_values:
             env_vars_keys.extend(self.default_values.keys())
