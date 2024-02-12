@@ -51,20 +51,16 @@ class TFCmdOnAWS(object):
         return cmds
     def get_decrypt_buildenv_vars(self,openssl=True):
 
-        if openssl:
-            envfile_env = os.path.join(self.run_share_dir,
-                                       self.app_dir,
-                                       self.envfile)
+        envfile_env = os.path.join(self.app_dir,
+                                   self.envfile)
 
+        if openssl:
             cmds = [
-                f'rm -rf {envfile_env} || echo "env file already removed"',
-                f'if [ -f {envfile_env}.enc ]; then cat {envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
+                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
+                f'if [ -f $TMPDIR/config0/$STATEFUL_ID/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/{envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
              ]
 
         else:
-            envfile_env = os.path.join(self.app_dir,
-                                       self.envfile)
-
             cmds = [
                 f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
