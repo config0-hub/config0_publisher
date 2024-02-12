@@ -77,9 +77,11 @@ class TFCmdOnAWS(object):
 
     def get_src_buildenv_vars(self):
 
-        cmds = [
-            f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
-        ]
+        return f'if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi'
+
+        #cmds = [
+        #    f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
+        #]
 
         #'echo "$TMPDIR/config0/$STATEFUL_ID"'
 
@@ -111,10 +113,12 @@ class TFCmdOnAWS(object):
 
     def get_tf_apply(self):
 
+        base_cmd = self.get_src_buildenv_vars()
+
         cmds = [
-            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
-            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
-            f'{self.get_src_buildenv_vars()[0]} && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
+            f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+            f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
+            f'({base_cmd}) && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
 
         return cmds
@@ -122,9 +126,12 @@ class TFCmdOnAWS(object):
     def get_tf_destroy(self):
 
         #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+
+        base_cmd = self.get_src_buildenv_vars()
+
         cmds = [
-          f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
-          f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
+          f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+          f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
         return cmds
@@ -132,10 +139,13 @@ class TFCmdOnAWS(object):
     def get_tf_validate(self):
 
         #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
+
+        base_cmd = self.get_src_buildenv_vars()
+
         cmds = [
-            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
-            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH refresh',
-            f'{self.get_src_buildenv_vars()[0]} && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
+            f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
+            f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH refresh',
+            f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -detailed-exitcode'
         ]
 
         return cmds

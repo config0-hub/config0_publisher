@@ -112,12 +112,12 @@ class Codebuild(CodebuildParams):
         cmds.extend(self.tfcmds.s3_to_local())
         cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
                                                self.tf_version))
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars())
-        cmds.extend(self.tfcmds.get_src_buildenv_vars())
 
         if self.ssm_name:
-            cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
-            cmds.append('. ./exports.env')
+            cmds.append('echo $SSM_VALUE | base64 -d >> $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}')
+
+        base_cmd = self.tfcmds.get_src_buildenv_vars()
+        cmds.append(base_cmd)
 
         contents = '''
   pre_build:
