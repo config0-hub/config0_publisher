@@ -43,13 +43,6 @@ env:
     TMPDIR: /tmp
     TF_PATH: /usr/local/bin/terraform
 '''
-        if self.ssm_name:
-            ssm_params_content = '''
-  parameter-store:
-    SSM_VALUE: $SSM_NAME
-'''
-            contents = contents + ssm_params_content
-
         final_contents = '''
 phases:
 '''
@@ -114,10 +107,6 @@ class Codebuild(CodebuildParams):
                                                self.tf_version))
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars())
         cmds.extend(self.tfcmds.get_src_buildenv_vars())
-
-        #if self.ssm_name:
-        #    cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
-        #    cmds.append('. ./exports.env')
 
         contents = '''
   pre_build:

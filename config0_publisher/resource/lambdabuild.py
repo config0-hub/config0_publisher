@@ -101,11 +101,6 @@ class Lambdabuild(LambdaParams):
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=False))
         cmds.extend(self.tfcmds.get_src_buildenv_vars())
 
-        # testtest456
-        if self.ssm_name:
-            cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
-            cmds.append('. ./exports.env')
-
         return cmds
 
     def _get_build_cmds(self):
