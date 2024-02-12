@@ -16,7 +16,7 @@ class TFCmdOnAWS(object):
         cmds = [
             f'rm -rf $TMPDIR/config0 || echo "config0 already removed"',
             f'mkdir -p $TMPDIR/config0',
-            'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build',
+            'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
 
         return cmds
@@ -34,17 +34,16 @@ class TFCmdOnAWS(object):
         if tf_bucket_path:
             cmds.extend([
                 f'mkdir -p $TMPDIR/downloads || echo "download directory exists"',
-                f'([ ! -f "$TMPDIR/downloads/terraform_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/downloads/terraform_{tf_version} --quiet ) || \
-                (cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet)'
+                f'([ ! -f "$TMPDIR/downloads/terraform_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/downloads/terraform_{tf_version} --quiet ) || (cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet)'
             ])
         else:
             cmds.extend([
                 f'mkdir -p $TMPDIR/downloads || echo "download directory exists"',
-                f'(cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet)'
+                f'cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet'
             ])
 
         cmds.extend([
-            f'cd $TMPDIR/downloads && unzip terraform_{tf_version} && mv terraform $TF_PATH > /dev/null || exit 0',
+            f'(cd $TMPDIR/downloads && unzip terraform_{tf_version} && mv terraform $TF_PATH > /dev/null) || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
