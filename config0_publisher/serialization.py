@@ -149,13 +149,16 @@ def uncompress(zdata):
     return zlib.decompress(zdata)  
 
 # dup 452346236234
-def to_envfile(obj,b64=True):
+def to_envfile(obj,b64=True,include_export=True):
 
     # Create a StringIO object
     file_buffer = io.StringIO()
 
     for _k,_v in list(obj.items()):
-        file_buffer.write("export {}={}\n".format(_k,_v))
+        if include_export:
+            file_buffer.write("export {}={}\n".format(_k,_v))
+        else:
+            file_buffer.write("{}={}\n".format(_k,_v))
 
     if not b64:
         return file_buffer.getvalue()

@@ -60,7 +60,8 @@ class TFConstructor(object):
 
         if self.ssm_format == ".env":
             return self.stack.to_envfile(self.ssm_obj,
-                                         b64=True)
+                                         b64=True,
+                                         include_export=False)
 
         return self.stack.b64_encode(self.ssm_obj)
 
