@@ -114,7 +114,7 @@ class Codebuild(CodebuildParams):
                                                self.tf_version))
 
         if self.ssm_name:
-            cmds.append('echo $SSM_VALUE | base64 -d >> $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}')
+            cmds.append(self.tfcmds.get_codebuild_ssm_concat())
 
         base_cmd = self.tfcmds.get_src_buildenv_vars()
         cmds.append(base_cmd)

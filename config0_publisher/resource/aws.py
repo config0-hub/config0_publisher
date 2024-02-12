@@ -75,6 +75,10 @@ class TFCmdOnAWS(object):
 
         return cmds
 
+    def get_codebuild_ssm_concat(self):
+
+        return 'echo $SSM_VALUE | base64 -d >> $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}'
+
     def get_src_buildenv_vars(self):
 
         return f'if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi'
