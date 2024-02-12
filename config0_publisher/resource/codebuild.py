@@ -112,6 +112,7 @@ class Codebuild(CodebuildParams):
         cmds.extend(self.tfcmds.s3_to_local())
         cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
                                                self.tf_version))
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=True))
 
         if self.ssm_name:
             cmds.append(self.tfcmds.get_codebuild_ssm_concat())
