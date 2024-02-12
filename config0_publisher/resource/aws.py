@@ -78,7 +78,7 @@ class TFCmdOnAWS(object):
 
         cmds = [
             f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)',
-            'echo "###  $TMPDIR/config0/$STATEFUL_ID  ###"'
+            'echo "$TMPDIR/config0/$STATEFUL_ID"'
         ]
 
         return cmds
