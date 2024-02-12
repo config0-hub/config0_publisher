@@ -59,7 +59,8 @@ class LambdaResourceHelper(AWSCommonConn):
         sparse_keys = [ "STATEFUL_ID",
                         "REMOTE_STATEFUL_BUCKET",
                         "TMPDIR",
-                        "APP_DIR" ]
+                        "APP_DIR",
+                        "SSM_NAME" ]
 
         if self.init_env_vars:
             env_vars = self.init_env_vars

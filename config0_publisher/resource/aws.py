@@ -67,10 +67,11 @@ class TFCmdOnAWS(object):
 
             cmds = [
                 f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
-                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc'
+                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
+                f'(ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not specified"'
             ]
 
-        cmds.append(f'(ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not specified"')
+            # for lambda function, we use the ssm_get python cli
 
         return cmds
 
