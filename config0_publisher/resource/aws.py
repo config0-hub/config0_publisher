@@ -57,7 +57,7 @@ class TFCmdOnAWS(object):
         if openssl:
             cmds = [
                 f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
-                f'if [ -f $TMPDIR/config0/$STATEFUL_ID/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/{envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
+                f'if [ -f $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
              ]
 
         else:
