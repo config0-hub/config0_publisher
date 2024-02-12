@@ -1470,6 +1470,76 @@ class ResourceCmdHelper:
     # insert 45245
     #######################################################################
 
+    def _insert_tf_map_keys(self,values):
+
+        self.logger.debug("#" * 32)
+        self.logger.debug("tfstate_to_output: tf_exec_map_keys")
+        self.logger.json(self.tf_exec_map_keys)
+        self.logger.debug("#" * 32)
+
+        if not self.tf_exec_map_keys:
+            return
+
+        for _insertkey,_refkey in self.tf_exec_map_keys.items():
+
+            '''
+            # _insertkey = "p1"
+            # _refkey = "q1"
+
+            # _insertkey = values
+            # _refkey = {"a":"b","c":"d"}
+            # values["values"]["a"] = values["b"]
+            '''
+
+            if values.get(_insertkey):
+                self.logger.warn("mapped key {} already exists - clobbering".format(_insertkey))
+
+            # see if _refkey is a subkey
+            if isinstance(_refkey,dict):
+
+                if not values.get(_insertkey):
+                    values[_insertkey] = {}
+
+                for _sub_insertkey,_sub_refkey in _refkey.items():
+
+                    if not values.get(_sub_refkey):
+                        self.logger.debug('mapped key sub_insertkey {} sub_refkey {} not found'.format(_sub_insertkey,
+                                                                                                       _sub_refkey))
+                    # revisit 432523543245
+                    # ref 432523543245
+                    # do we want to nest 2 levels deep?
+                    if "," in values[_sub_refkey]:
+                        _sub_insertkey2,_subrefkey2 = values[_sub_refkey].split(",")
+
+                        if _sub_insertkey2 not in self.do_not_display:
+                            self.logger.debug('mapped key ["{}"]["{}"]["{}"] -> value "{}"'.format(_insertkey,
+                                                                                                   _sub_insertkey,
+                                                                                                   _sub_insertkey2,
+                                                                                                   values[
+                                                                                                       _sub_refkey.strip()][
+                                                                                                       _subrefkey2.strip()]))
+
+                        values[_insertkey][_sub_insertkey] = values[_sub_refkey.strip()][_subrefkey2.strip()]
+
+                    else:
+                        if _sub_insertkey not in self.do_not_display:
+                            self.logger.debug('mapped key ["{}"]["{}"] -> value "{}"'.format(_insertkey,
+                                                                                             _sub_insertkey,
+                                                                                             values[
+                                                                                                 _sub_refkey.strip()]))
+
+                        values[_insertkey][_sub_insertkey] = values[_sub_refkey]
+
+            elif values.get(_refkey):
+                if _refkey not in self.do_not_display:
+                    self.logger.debug('mapped key ["{}"] -> value "{}"'.format(_insertkey,_refkey))
+
+                values[_insertkey] = values[_refkey]
+
+            elif not values.get(_refkey):
+                self.logger.warn('mapped key not found insertkey "{}" refkey "{}"'.format(_insertkey,
+                                                                                          _refkey))
+
     def create(self):
 
         self.init_phase_run()

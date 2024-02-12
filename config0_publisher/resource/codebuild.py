@@ -115,9 +115,9 @@ class Codebuild(CodebuildParams):
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars())
         cmds.extend(self.tfcmds.get_src_buildenv_vars())
 
-        if self.ssm_name:
-            cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
-            cmds.append('. ./exports.env')
+        #if self.ssm_name:
+        #    cmds.append('echo $SSM_VALUE | base64 -d > exports.env && chmod 755 exports.env')
+        #    cmds.append('. ./exports.env')
 
         contents = '''
   pre_build:
