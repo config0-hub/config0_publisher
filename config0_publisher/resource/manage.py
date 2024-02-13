@@ -1532,7 +1532,7 @@ class ResourceCmdHelper:
 
             elif values.get(_refkey):
                 if _refkey not in self.do_not_display:
-                    self.logger.debug('mapped key ["{}"] -> value "{}"'.format(_insertkey,_refkey))
+                    self.logger.debug('4523465: mapped key ["{}"] -> value "{}"'.format(_insertkey,_refkey))
 
                 values[_insertkey] = values[_refkey]
 
