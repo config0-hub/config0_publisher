@@ -73,19 +73,13 @@ class TFCmdOnAWS(object):
 
     def get_codebuild_ssm_concat(self):
 
+        if not os.environ.get("DEBUG_STATEFUL"):
+            return f'echo $SSM_VALUE | base64 -d >> $TMPDIR/config0/$STATEFUL_ID/{self.envfile}'
+
         return f'echo $SSM_VALUE | base64 -d >> $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}'
 
     def get_src_buildenv_vars_cmd(self):
-
         return f'if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi'
-
-        #cmds = [
-        #    f'(if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi)'
-        #]
-
-        #'echo "$TMPDIR/config0/$STATEFUL_ID"'
-
-        return cmds
 
     def local_to_s3(self):
 
@@ -125,8 +119,6 @@ class TFCmdOnAWS(object):
 
     def get_tf_destroy(self):
 
-        #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
-
         base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
@@ -137,8 +129,6 @@ class TFCmdOnAWS(object):
         return cmds
 
     def get_tf_validate(self):
-
-        #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
 
         base_cmd = self.get_src_buildenv_vars_cmd()
 
@@ -190,6 +180,8 @@ class AWSBaseBuildParams(object):
         except:
             self.tmp_bucket = os.environ.get("TMP_BUCKET")
 
-        if self.tmp_bucket:
-            self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
-            self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
+        if not self.tmp_bucket:
+            return
+
+        self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
+        self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
