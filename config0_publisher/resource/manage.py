@@ -217,7 +217,6 @@ class ResourceCmdHelper:
         self._set_mod_env_vars()
         self._get_docker_env_filepath()
 
-        # testtest456
         self._set_special_keywords_classvars()  # special keywords ... chrootfiles_dest_dir
 
         # execute it final time to synchronize class vars set
@@ -1492,7 +1491,7 @@ class ResourceCmdHelper:
             '''
 
             if values.get(_insertkey):
-                self.logger.warn("mapped key {} already exists - clobbering".format(_insertkey))
+                self.logger.warn(f"mapped key {_insertkey} already exists - clobbering")
 
             # see if _refkey is a subkey
             if isinstance(_refkey,dict):
@@ -1503,8 +1502,8 @@ class ResourceCmdHelper:
                 for _sub_insertkey,_sub_refkey in _refkey.items():
 
                     if not values.get(_sub_refkey):
-                        self.logger.debug('mapped key sub_insertkey {} sub_refkey {} not found'.format(_sub_insertkey,
-                                                                                                       _sub_refkey))
+                        self.logger.debug(
+                            f'mapped ref_key not found {_sub_refkey} for sub_insertkey {_sub_insertkey}')
                     # revisit 432523543245
                     # ref 432523543245
                     # do we want to nest 2 levels deep?
@@ -1512,33 +1511,29 @@ class ResourceCmdHelper:
                         _sub_insertkey2,_subrefkey2 = values[_sub_refkey].split(",")
 
                         if _sub_insertkey2 not in self.do_not_display:
-                            self.logger.debug('mapped key ["{}"]["{}"]["{}"] -> value "{}"'.format(_insertkey,
-                                                                                                   _sub_insertkey,
-                                                                                                   _sub_insertkey2,
-                                                                                                   values[
-                                                                                                       _sub_refkey.strip()][
-                                                                                                       _subrefkey2.strip()]))
+                            self.logger.debug('mapped key ["{}"]["{}"]["{}"] -> _sub_refky "{}"'.format(_insertkey,
+                                                                                                        _sub_insertkey,
+                                                                                                        _sub_insertkey2,
+                                                                                                        values[_sub_refkey.strip()][_subrefkey2.strip()]))
 
                         values[_insertkey][_sub_insertkey] = values[_sub_refkey.strip()][_subrefkey2.strip()]
 
                     else:
                         if _sub_insertkey not in self.do_not_display:
-                            self.logger.debug('mapped key ["{}"]["{}"] -> value "{}"'.format(_insertkey,
-                                                                                             _sub_insertkey,
-                                                                                             values[
-                                                                                                 _sub_refkey.strip()]))
+                            self.logger.debug('mapped key ["{}"]["{}"] -> _sub_refkey "{}"'.format(_insertkey,
+                                                                                                   _sub_insertkey,
+                                                                                                   values[_sub_refkey.strip()]))
 
                         values[_insertkey][_sub_insertkey] = values[_sub_refkey]
 
             elif values.get(_refkey):
                 if _refkey not in self.do_not_display:
-                    self.logger.debug('4523465: mapped key ["{}"] -> value "{}"'.format(_insertkey,_refkey))
+                    self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
 
                 values[_insertkey] = values[_refkey]
 
             elif not values.get(_refkey):
-                self.logger.warn('mapped key not found insertkey "{}" refkey "{}"'.format(_insertkey,
-                                                                                          _refkey))
+                self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
 
     def create(self):
 
@@ -1553,7 +1548,6 @@ class ResourceCmdHelper:
             self._init_create()
             self._exec_tf_apply()
 
-        # testtest456
         self._eval_phases_tf("create")
         self._eval_failure(method="create")
         self._post_create()
