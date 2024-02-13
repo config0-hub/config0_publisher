@@ -117,7 +117,7 @@ class Codebuild(CodebuildParams):
         if self.ssm_name:
             cmds.append(self.tfcmds.get_codebuild_ssm_concat())
 
-        base_cmd = self.tfcmds.get_src_buildenv_vars()
+        base_cmd = self.tfcmds.get_src_buildenv_vars_cmd()
         cmds.append(base_cmd)
 
         contents = '''

@@ -99,7 +99,7 @@ class Lambdabuild(LambdaParams):
         cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
                                                self.tf_version))
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=False))
-        cmds.extend(self.tfcmds.get_src_buildenv_vars())
+        cmds.append(self.tfcmds.get_src_buildenv_vars_cmd())
 
         return cmds
 

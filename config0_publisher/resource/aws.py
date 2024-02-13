@@ -75,7 +75,7 @@ class TFCmdOnAWS(object):
 
         return f'echo $SSM_VALUE | base64 -d >> $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}'
 
-    def get_src_buildenv_vars(self):
+    def get_src_buildenv_vars_cmd(self):
 
         return f'if [ -f /$TMPDIR/config0/$STATEFUL_ID/{self.envfile} ]; then cd /$TMPDIR/config0/$STATEFUL_ID/; . ./{self.envfile} ; fi'
 
@@ -113,7 +113,7 @@ class TFCmdOnAWS(object):
 
     def get_tf_apply(self):
 
-        base_cmd = self.get_src_buildenv_vars()
+        base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
             f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
@@ -127,7 +127,7 @@ class TFCmdOnAWS(object):
 
         #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
 
-        base_cmd = self.get_src_buildenv_vars()
+        base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
           f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
@@ -140,7 +140,7 @@ class TFCmdOnAWS(object):
 
         #'(cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init --migrate-state  -force-copy)',
 
-        base_cmd = self.get_src_buildenv_vars()
+        base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
             f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init',
