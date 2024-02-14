@@ -138,8 +138,12 @@ class AWSCommonConn(SetClassVarsHelper):
         self.zipfile = os.path.join("/tmp",
                                     self.stateful_id)
 
-        if not hasattr(self,'aws_region') or not self.aws_region:
-            self.aws_region = kwargs.get("aws_region","us-east-1")
+        # we hard wire to us-east-1 to avoid
+        # any environmental variable changes the region
+        self.aws_region = "us-east-1"
+
+        #if not hasattr(self,'aws_region') or not self.aws_region:
+        #    self.aws_region = kwargs.get("aws_region","us-east-1")
 
         # record these variables
         self.results["inputargs"].update(self._vars_set)
