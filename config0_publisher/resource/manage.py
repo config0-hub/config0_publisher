@@ -1407,6 +1407,7 @@ class ResourceCmdHelper:
         required_keys = []
 
         _keys = kwargs.get("keys")
+
         if not _keys: 
             return 
 
@@ -1418,12 +1419,15 @@ class ResourceCmdHelper:
         if status: 
             return True
 
-        self.logger.aggmsg("These keys need to be set:",new=True)
+        self.logger.aggmsg("These keys missing and need to be set:",new=True)
+        #self.logger.aggmsg("")
+        #self.logger.aggmsg(f"{required_keys}")
+        #self.logger.aggmsg("")
+        self.logger.aggmsg("")
+        self.logger.aggmsg(f"\tkeys found include: {self.inputargs.keys()}")
         self.logger.aggmsg("")
 
         for key in required_keys:
-
-            self.logger.aggmsg(f"\tkeys found include: {self.inputargs.keys()}")
 
             if self.os_env_prefix:
                 self.logger.aggmsg("\t{} or Environmental Variable {}/{}_{}".format(key,
