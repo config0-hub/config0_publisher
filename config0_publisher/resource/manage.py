@@ -1424,7 +1424,7 @@ class ResourceCmdHelper:
         #self.logger.aggmsg(f"{required_keys}")
         #self.logger.aggmsg("")
         self.logger.aggmsg("")
-        self.logger.aggmsg(f"\tkeys found include: {self.inputargs.keys()}")
+        self.logger.aggmsg(f"\tkeys found include: {list(self.inputargs.keys())}")
         self.logger.aggmsg("")
 
         for key in required_keys:
