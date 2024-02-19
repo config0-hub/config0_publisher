@@ -231,6 +231,7 @@ def decrypt_str(password, encrypted_str):
     # Convert byte code to string
     return unpadded_data.decode()
 
+# dup 435245632532465
 def encrypt_str_openssl(password, str_obj):
 
     cmd = f'echo -n "{str_obj}" | openssl enc -e -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:{password} -base64'
@@ -243,6 +244,7 @@ def encrypt_str_openssl(password, str_obj):
 
     return encrypted_output.strip().decode()
 
+# dup 435245632532465
 def decrypt_str_openssl(password, encrypted_text):
 
     cmd = f'echo "{encrypted_text}" | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:{password} -base64'
