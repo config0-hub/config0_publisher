@@ -356,7 +356,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         for project in response['projects']:
 
-            if self.codebuild_basename not in project:
+            self.logger.debug(f"evaluating codebuild project {project}")
+
+            if self.codebuild_basename not in project or self.codebuild != project:
+                self.logger.debug(f"codebuild project {project} not a match")
                 continue
 
             response = self.codebuild_client.list_builds_for_project(projectName=project,
@@ -396,10 +399,13 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         for retry in range(3):
 
-            try:
-                empty_queue_projects = self._get_avail_codebuild_projects()
-            except:
-                empty_queue_projects = False
+            # testtest456
+            empty_queue_projects = self._get_avail_codebuild_projects()
+
+            #try:
+            #    empty_queue_projects = self._get_avail_codebuild_projects()
+            #except:
+            #    empty_queue_projects = False
 
             if empty_queue_projects:
                 return empty_queue_projects
