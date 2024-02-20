@@ -358,7 +358,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             self.logger.debug(f"evaluating codebuild project {project}")
 
-            if self.codebuild_basename not in project or self.codebuild != project:
+            if self.codebuild_basename not in project:
                 self.logger.debug(f"codebuild project {project} not a match")
                 continue
 
@@ -399,13 +399,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         for retry in range(3):
 
-            # testtest456
-            empty_queue_projects = self._get_avail_codebuild_projects()
-
-            #try:
-            #    empty_queue_projects = self._get_avail_codebuild_projects()
-            #except:
-            #    empty_queue_projects = False
+            try:
+                empty_queue_projects = self._get_avail_codebuild_projects()
+            except:
+                empty_queue_projects = False
 
             if empty_queue_projects:
                 return empty_queue_projects
@@ -417,9 +414,11 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _trigger_build(self,sparse_env_vars=True):
 
         projects = self._get_codebuild_projects()
+        self.project_name = None
 
         if not projects:
-            raise Exception("could not find a codebuild project that has availability capacity")
+            self.logger.warn(f"cannot find matching project - using codebuild_basename {self.codebuild_basename}")
+            projects = [ self.codebuild_basename ]
 
         try:
             timeout = int(self.build_timeout/60)
@@ -447,11 +446,14 @@ class CodebuildResourceHelper(AWSCommonConn):
                 self.logger.warn(f"could not start build on codebuild {project_name}\n\n{msg}")
                 continue
 
+            self.project_name = project_name
+
             break
 
-        self.project_name = project_name
-        self.build_id = new_build['build']['id']
+        if not self.project_name:
+            raise Exception("could not trigger codebuild execution")
 
+        self.build_id = new_build['build']['id']
         self.results["inputargs"]["build_id"] = self.build_id
         self.results["inputargs"]["project_name"] = project_name
 
@@ -488,6 +490,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             if self._check_build_status():
                 return True
             sleep(wait_int)
+
         return
 
     def retrieve(self,**kwargs):
