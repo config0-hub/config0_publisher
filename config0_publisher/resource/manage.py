@@ -1556,12 +1556,10 @@ class ResourceCmdHelper:
         self._eval_failure(method="create")
         self._post_create()
 
-        print(self.final_output)
-
         # this may cause duplication output in log file
-        #if not self.printed and self.final_output:
-        #    print(self.final_output)
-        #    self.printed = True
+        if not self.printed and self.final_output:
+            print(self.final_output)
+            self.printed = True
 
         return True
 
@@ -1834,6 +1832,7 @@ class ResourceCmdHelper:
             # this should also be removed further upstream
             # but included to be explicit
             self.delete_phases_to_json_file()
+            print(self.final_output)
 
             # self.logger.error(failed_message)
             raise Exception(failed_message)
@@ -2054,11 +2053,9 @@ terraform {{
         self._exec_tf_validate()
         self._eval_failure(method="validate")
 
-        print(self.final_output)
-
-        #if not self.printed and self.final_output:
-        #    print(self.final_output)
-        #    self.printed = True
+        if not self.printed and self.final_output:
+            print(self.final_output)
+            self.printed = True
 
         return True
 
