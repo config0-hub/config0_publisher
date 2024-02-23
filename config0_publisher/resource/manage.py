@@ -1556,10 +1556,12 @@ class ResourceCmdHelper:
         self._eval_failure(method="create")
         self._post_create()
 
+        print(self.final_output)
+
         # this may cause duplication output in log file
-        if not self.printed and self.final_output:
-            print(self.final_output)
-            self.printed = True
+        #if not self.printed and self.final_output:
+        #    print(self.final_output)
+        #    self.printed = True
 
         return True
 
