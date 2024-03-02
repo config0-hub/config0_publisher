@@ -57,6 +57,7 @@ class TFCmdOnAWS(object):
         ])
 
         cmds.extend([
+            f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
             f'ls $TF_PATH',
             f'[[ ! -e $TF_PATH ]] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
             f'[[ ! -e $TF_PATH ]] && exit 8',
