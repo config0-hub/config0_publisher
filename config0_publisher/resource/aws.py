@@ -29,9 +29,8 @@ class TFCmdOnAWS(object):
 
         cmds = [ 
             f'[ ! -e {dl_dir} ] || rm -rf {dl_dir}',
-            f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}',
-            f'touch "{f_dne}"',
-            f'[ ! -e "$TF_PATH" ] || rm -rf "{f_dne}"'
+            f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}'
+            f'touch "{f_dne}"'
             ]
 
         if self.runtime_env == "codebuild":
@@ -41,24 +40,21 @@ class TFCmdOnAWS(object):
 
         if tf_bucket_path:
             cmds.extend([
-                f'([ ! -e {f_dne} ] || (aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet && rm -rf {f_dne})'
+                f'([ ! -e {f_dne} ] || aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}'
             ])
 
         cmds.extend([
             f'[ ! -e {f_dne} ] || echo "downloading from source"',
-            f'[ ! -e {f_dne} ] || (cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version})'
+            f'[ ! -e {f_dne} ] || cd {dl_dir} && (curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne})',
         ])
 
         cmds.extend([
-            f'[ ! -e {f_dne} ] || (aws s3 cp {dl_dir}/{tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne})',
             f'[ ! -e {f_dne} ] || (echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9)'
         ])
 
         cmds.extend([
             f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
             f'ls $TF_PATH',
-            f'cd {dl_dir} && [ ! -e $TF_PATH ] && unzip {tf_name}_{tf_version}',
-            f'cd {dl_dir} && [ ! -e $TF_PATH ] && mv {tf_name} $TF_PATH',
             f'[ ! -e $TF_PATH ] && exit 8',
             'chmod 777 $TF_PATH'
             ]
