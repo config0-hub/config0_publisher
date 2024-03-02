@@ -29,13 +29,14 @@ class TFCmdOnAWS(object):
 
         cmds = [ 
             f'[[ ! -e {dl_dir} ]] || (for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && rm "$file" || echo "could not remove $file" ; done)',
-            f'[ ! -e {dl_dir} ] || mkdir -p {dl_dir}',
+            f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}',
             f' ls {dl_dir}',
             f' ls {dl_dir}',
             f' ls {dl_dir}',
             f' ls {dl_dir}',
-            f'mkdir -p "{dl_dir}" > /dev/null 2>&1 || echo "{dl_dir} already exists"',
             f'touch "{f_dne}"',
+            f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || echo "exists 1" && exit" 9',
+            f'[[ ! -e "$TF_PATH" ]] || (rm -rf "{f_dne}" || echo "exists 2" && exit 9',
             f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || rm -rf "{f_dne}"',
             f'[[ ! -e "$TF_PATH" ]] || (rm -rf "{f_dne}" || echo "{f_dne} already removed")'
             ]
