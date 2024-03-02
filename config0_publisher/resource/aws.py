@@ -27,7 +27,7 @@ class TFCmdOnAWS(object):
         dl_dir = '$TMPDIR/downloads'
 
         cmds = [ 
-            f'rm -rf {dl_dir} /dev/null 2>&1 || echo "directory {dl_dir} does not exists"',
+            f'rm -rf {dl_dir} > /dev/null 2>&1 || echo "directory {dl_dir} does not exists"',
             f'mkdir -p {dl_dir}',
             f'touch "{f_dne}"'
             ]
@@ -42,15 +42,15 @@ class TFCmdOnAWS(object):
                 f'if [ -f {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
             ])
 
-        #cmds.extend([
-        #    f'if [ -e {f_dne} ]; then echo "downloading from source"; fi',
-        #    f'if [ -e {f_dne} ]; then cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version}; fi',
-        #    f'if [ -e {f_dne} ]; then cd {dl_dir} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne}; fi'
-        #])
+        cmds.extend([
+            f'if [ -f {f_dne} ]; then echo "downloading from source"; fi',
+            f'if [ -f {f_dne} ]; then cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version}; fi',
+            f'if [ -f {f_dne} ]; then cd {dl_dir} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne}; fi'
+        ])
 
-        #cmds.extend([
-        #    f'if [ -e {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
-        #])
+        cmds.extend([
+            f'if [ -f {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
+        ])
 
         cmds.extend([
             f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
