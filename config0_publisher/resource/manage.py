@@ -2053,9 +2053,9 @@ terraform {{
         self._exec_tf_validate()
         self._eval_failure(method="validate")
 
-        #if not self.printed and self.final_output:
-        #    print(self.final_output)
-        #    self.printed = True
+        if not self.printed and self.final_output:
+            print(self.final_output)
+            self.printed = True
 
         return True
 

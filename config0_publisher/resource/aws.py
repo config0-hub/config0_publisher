@@ -174,10 +174,10 @@ class AWSBaseBuildParams(object):
         self.tf_bucket_key = None
         self.tf_bucket_path = None
 
+        self.app_name = "terraform"
         self.tf_version = self.build_env_vars.get("TF_VERSION",
                                                   "1.5.4")
         self._set_tmp_tf_bucket_loc()
-        self.app_name = "terraform"
 
     def _set_tmp_tf_bucket_loc(self):
 
