@@ -27,7 +27,7 @@ class TFCmdOnAWS(object):
         dl_dir = '$TMPDIR/downloads'
 
         cmds = [ 
-            f'[ ! -d "{dl_dir}" ] && mkdir -p "{dl_dir}"',
+            f'mkdir -p "{dl_dir}" > /dev/null 2>&1 || echo "{dl_dir} already exists"',
             f'for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && (rm "$file" || echo "could not remove $file") ; done',
             f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" && ! -e "$TF_PATH" ]] && touch {f_dne}"'
             ]
