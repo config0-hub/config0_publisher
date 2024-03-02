@@ -1604,9 +1604,6 @@ class ResourceCmdHelper:
         else:
             self.build_method = "local"
 
-        # testtest456
-        self.build_method = "lambda"
-
     def _insert_tf_add_keys(self,values):
 
         count = 0
