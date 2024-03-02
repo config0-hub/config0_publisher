@@ -16,7 +16,8 @@ class TFCmdOnAWS(object):
         cmds = [
             '[ -d "$TMPDIR" ] && echo "hello111"',
             '[ -d "$TMPDIR/config0" ] || echo "hello"',
-            '[ -d "$TMPDIR/config0" ] && rm "$TMPDIR/config0"',
+            'mkdir -p $TMPDIR/config0',
+            '[ -d "$TMPDIR/config0" ] && rm rf "$TMPDIR/config0"',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
 
