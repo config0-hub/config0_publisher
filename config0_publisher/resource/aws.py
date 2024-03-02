@@ -29,7 +29,7 @@ class TFCmdOnAWS(object):
 
         cmds = [ 
             f'[ ! -e {dl_dir} ] || rm -rf {dl_dir}',
-            f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}'
+            f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}',
             f'touch "{f_dne}"'
             ]
 
