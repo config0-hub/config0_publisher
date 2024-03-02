@@ -13,10 +13,8 @@ class TFCmdOnAWS(object):
 
     def reset_dirs(self):
 
-        #     'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "$TMPDIR/config0 does not exists"',
-        #    '[ ! -e $TMPDIR/config0 ] || rm -rf $TMPDIR/config0',
         cmds = [
-            '(ls $TMPDIR/config0 > /dev/null 2>&1 && rm -rf $TMPDIR/config0) || echo "directory $TMPDIR/config0 does not exists',
+            'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "directory $TMPDIR/config0 does not exists',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
 
@@ -29,8 +27,8 @@ class TFCmdOnAWS(object):
         dl_dir = '$TMPDIR/downloads'
 
         cmds = [ 
-            f'[ ! -e {dl_dir} ] || rm -rf {dl_dir}',
-            f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}',
+            f'rm -rf {dl_dir} /dev/null 2>&1 || echo "directory {dl_dir} does not exists',
+            f'mkdir -p {dl_dir}',
             f'touch "{f_dne}"'
             ]
 
@@ -41,16 +39,16 @@ class TFCmdOnAWS(object):
 
         if tf_bucket_path:
             cmds.extend([
-                f'([ ! -e {f_dne} ] || aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}'
+                f'(if [ -e {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
             ])
 
         cmds.extend([
-            f'[ ! -e {f_dne} ] || echo "downloading from source"',
-            f'[ ! -e {f_dne} ] || cd {dl_dir} && (curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne})',
+            f'if [ -e {f_dne} ]; then echo "downloading from source"; fi',
+            f'if [ -e {f_dne} ]; then cd {dl_dir} && (curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne}); fi',
         ])
 
         cmds.extend([
-            f'[ ! -e {f_dne} ] || (echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9)'
+            f'if [ -e {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
         ])
 
         cmds.extend([
