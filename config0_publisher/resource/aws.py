@@ -50,12 +50,12 @@ class TFCmdOnAWS(object):
         ])
 
         cmds.extend([
-            f'[ -e {f_dne} ] && echo "CRITICAL: \n################\n # download {tf_name}_{tf_version} failed!\n################" && exit 9'
+            f'[ -e {f_dne} ] && echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9'
         ])
 
         cmds.extend([
             f'[ ! -e $TF_PATH ] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
-            f'[ ! -e $TF_PATH ] && exit 8'
+            f'[ ! -e $TF_PATH ] && exit 8',
             'chmod 777 $TF_PATH'
             ]
         )

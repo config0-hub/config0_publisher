@@ -105,8 +105,6 @@ class Lambdabuild(LambdaParams):
             print("*"*32)
             print(cmd)
 
-        raise Exception("sdfasd")
-
         return cmds
 
     def _get_build_cmds(self):
