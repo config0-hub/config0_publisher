@@ -14,53 +14,42 @@ class TFCmdOnAWS(object):
     def reset_dirs(self):
 
         cmds = [
-            'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "directory $TMPDIR/config0 does not exists"',
-            'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
+            f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"',
+            f'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build',
+            f'rm -rf $TMPDIR/downloads > /dev/null 2>&1 || echo "downloads already removed"',
+            f'mkdir -p $TMPDIR/downloads"'
         ]
 
         return cmds
 
     def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
 
-        tf_name = "terraform"
-        f_dne = '$TMPDIR/{}.download'.format(tf_name)
-        dl_dir = '$TMPDIR/downloads'
-
-        cmds = [ 
-            f'rm -rf {dl_dir} > /dev/null 2>&1 || echo "directory {dl_dir} does not exists"',
-            f'mkdir -p {dl_dir}',
-            f'touch "{f_dne}"'
-            ]
-
         if self.runtime_env == "codebuild":
-            cmds.extend([
-              'which zip > /dev/null 2>&1 || (apt-get update && apt-get install -y unzip zip)',
-            ])
+            cmds = [
+              'which zip || apt-get update',
+              'which zip || apt-get install -y unzip zip',
+            ]
+        else:
+            cmds = [f'echo "downloading terraform {tf_version}"']
 
         if tf_bucket_path:
             cmds.extend([
-                f'if [ -f {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
+                f'mkdir -p $TMPDIR/downloads > /dev/null 2>&1 || echo "download directory exists"',
+                f'([ ! -f "$TMPDIR/downloads/terraform_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/downloads/terraform_{tf_version} --quiet ) || (cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet)'
+            ])
+        else:
+            cmds.extend([
+                f'mkdir -p $TMPDIR/downloads > /dev/null 2>&1 || echo "download directory exists"',
+                f'cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet'
             ])
 
         cmds.extend([
-            f'if [ -f {f_dne} ]; then echo "downloading from source"; fi',
-            f'if [ -f {f_dne} ]; then cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version}; fi',
-            f'if [ -f {f_dne} ]; then cd {dl_dir} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne}; fi'
-        ])
-
-        cmds.extend([
-            f'if [ -f {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
-        ])
-
-        cmds.extend([
-            f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
-            f'ls $TF_PATH > /dev/null 2>&1 || exit 8',
+            f'(cd $TMPDIR/downloads && unzip terraform_{tf_version} && mv terraform $TF_PATH > /dev/null) || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
 
         return cmds
-
     def get_decrypt_buildenv_vars(self,openssl=True):
 
         envfile_env = os.path.join(self.app_dir,
@@ -68,15 +57,15 @@ class TFCmdOnAWS(object):
 
         if openssl:
             cmds = [
-                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
+                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
                 f'if [ -f $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
              ]
 
         else:
             cmds = [
-                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
+                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
-                f'([[ -n "$SSM_NAME" ]] && ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not given/downloaded"'
+                f'(ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not specified"'
             ]
 
             # for lambda function, we use the ssm_get python cli
@@ -108,16 +97,14 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        #'DIRECTORY="$TMPDIR/config0"; for dir in "$DIRECTORY"/*/; do [[ "$dir" != "$DIRECTORY/$STATEFUL_ID/" ]] && echo "Deleting directory: $dir" && rm -rf "$dir"; done'
-        #'rm -rf $TMPDIR/config0/$STATEFUL_ID/build || echo "stateful already removed"',
+        self.reset_dirs()
 
-        cmds = self.reset_dirs()
-
-        cmds.extend([ 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
+        cmds = [ 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
                  'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
+                 'rm -rf $TMPDIR/config0/$STATEFUL_ID/build > /dev/null 2>&1 || echo "stateful already removed"',
                  'unzip -o $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip -d $TMPDIR/config0/$STATEFUL_ID/build',
                  'rm -rf $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip'
-        ])
+        ]
 
         return cmds
 
