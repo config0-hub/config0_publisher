@@ -47,7 +47,6 @@ class TFCmdOnAWS(object):
             ])
 
         cmds.extend([
-            f'echo "downloading from source"',
             f'[[ ! -e {f_dne} ]] || echo "downloading from source"',
             f'[[ ! -e {f_dne} ]] || (cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version})',
             f'[[ ! -e {f_dne} ]] || (aws s3 cp {dl_dir}/{tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne})'
@@ -58,6 +57,7 @@ class TFCmdOnAWS(object):
         ])
 
         cmds.extend([
+            f'ls $TF_PATH',
             f'[[ ! -e $TF_PATH ]] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
             f'[[ ! -e $TF_PATH ]] && exit 8',
             'chmod 777 $TF_PATH'
