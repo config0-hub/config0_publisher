@@ -14,8 +14,7 @@ class TFCmdOnAWS(object):
     def reset_dirs(self):
 
         cmds = [
-            f'rm -rf $TMPDIR/config0 || echo "config0 already removed"',
-            f'mkdir -p $TMPDIR/config0',
+            '[ -d "$TMPDIR/config0" ] && rm -rf "$TMPDIR/config0"',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
 
@@ -23,32 +22,46 @@ class TFCmdOnAWS(object):
 
     def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
 
-        if self.runtime_env == "codebuild":
-            cmds = [
-              'which zip || apt-get update',
-              'which zip || apt-get install -y unzip zip',
+        tf_name = "terraform"
+        f_dne = '$TMPDIR/{}.download'.format(tf_name)
+        dl_dir = '$TMPDIR/downloads'
+
+        cmds = [ 
+            f'[ ! -d "{dl_dir}" ] && mkdir -p "{dl_dir}"',
+            f'for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && rm "$file"; done',
+            f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" && ! -e "$TF_PATH" ]] && touch {f_dne}"'
             ]
-        else:
-            cmds = [f'echo "downloading terraform {tf_version}"']
+
+        if self.runtime_env == "codebuild":
+            cmds.extend([
+              'which zip > /dev/null 2>&1 || (apt-get update && apt-get install -y unzip zip)',
+            ])
 
         if tf_bucket_path:
+
             cmds.extend([
-                f'mkdir -p $TMPDIR/downloads || echo "download directory exists"',
-                f'([ ! -f "$TMPDIR/downloads/terraform_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/downloads/terraform_{tf_version} --quiet ) || (cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet)'
-            ])
-        else:
-            cmds.extend([
-                f'mkdir -p $TMPDIR/downloads || echo "download directory exists"',
-                f'cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/terraform_{tf_version}_linux_amd64.zip -o terraform_{tf_version} && aws s3 cp terraform_{tf_version} {tf_bucket_path} --quiet'
+                f'([ -e {f_dne} ] && aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet ) && rm -rf {f_dne}'
             ])
 
         cmds.extend([
-            f'(cd $TMPDIR/downloads && unzip terraform_{tf_version} && mv terraform $TF_PATH > /dev/null) || exit 0',
+            f'[ -e {f_dne} ] && echo "downloading from source"',
+            f'[ -e {f_dne} ] && (cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version}',
+            f'[ -e {f_dne} ] && aws s3 cp {dl_dir}/{tf_name}_{tf_version} {tf_bucket_path} --quiet) && rm -rf {f_dne}'
+        ])
+
+        cmds.extend([
+            f'[ -e {f_dne} ] && echo "CRITICAL: \n################\n # download {tf_name}_{tf_version} failed!\n################" && exit 9'
+        ])
+
+        cmds.extend([
+            f'[ ! -e $TF_PATH ] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
+            f'[ ! -e $TF_PATH ] && exit 8'
             'chmod 777 $TF_PATH'
             ]
         )
 
         return cmds
+
     def get_decrypt_buildenv_vars(self,openssl=True):
 
         envfile_env = os.path.join(self.app_dir,
