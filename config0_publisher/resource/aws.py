@@ -33,14 +33,16 @@ class TFCmdOnAWS(object):
         else:
             cmds = [f'echo "downloading {self.app_name}_{tf_version}"']
 
+        cmds.extend([
+            f'mkdir -p $TMPDIR/downloads > /dev/null 2>&1 || echo "download directory exists"'
+        ])
+
         if tf_bucket_path:
             cmds.extend([
-                f'mkdir -p $TMPDIR/downloads > /dev/null 2>&1 || echo "download directory exists"',
                 f'([ ! -f "$TMPDIR/downloads/{self.app_name}_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/downloads/{self.app_name}_{tf_version} --quiet ) || (cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet)'
             ])
         else:
             cmds.extend([
-                f'mkdir -p $TMPDIR/downloads > /dev/null 2>&1 || echo "download directory exists"',
                 f'cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet'
             ])
 
