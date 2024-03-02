@@ -31,7 +31,7 @@ class TFCmdOnAWS(object):
             f'[ ! -e {dl_dir} ] || rm -rf {dl_dir}',
             f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}',
             f'touch "{f_dne}"',
-            f'[ ! -e "$TF_PATH" ] || (rm -rf "{f_dne}"'
+            f'[ ! -e "$TF_PATH" ] || rm -rf "{f_dne}"'
             ]
 
         if self.runtime_env == "codebuild":
