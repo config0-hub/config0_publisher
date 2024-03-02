@@ -35,7 +35,7 @@ class TFCmdOnAWS(object):
             f' ls {dl_dir}',
             f' ls {dl_dir}',
             f'touch "{f_dne}"',
-            f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || echo "exists 1" && exit" 9',
+            f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || echo "exists 1" && exit 9',
             f'[[ ! -e "$TF_PATH" ]] || (rm -rf "{f_dne}" || echo "exists 2" && exit 9',
             f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || rm -rf "{f_dne}"',
             f'[[ ! -e "$TF_PATH" ]] || (rm -rf "{f_dne}" || echo "{f_dne} already removed")'
