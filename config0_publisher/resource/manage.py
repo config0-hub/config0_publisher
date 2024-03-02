@@ -1557,6 +1557,8 @@ class ResourceCmdHelper:
         self._post_create()
 
         # this may cause duplication output in log file
+        # testtest456 - if codebuild doesn't show up in UI, then revert
+        #if not self.printed and self.final_output:
         if not self.printed and self.final_output and not self.build_method == "codebuild":
             print(self.final_output)
             self.printed = True
@@ -1601,6 +1603,9 @@ class ResourceCmdHelper:
                 self.build_method = "lambda"
         else:
             self.build_method = "local"
+
+        # testtest456
+        self.build_method = "lambda"
 
     def _insert_tf_add_keys(self,values):
 
