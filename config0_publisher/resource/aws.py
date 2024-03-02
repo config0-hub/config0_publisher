@@ -43,14 +43,12 @@ class TFCmdOnAWS(object):
             ])
 
         cmds.extend([
-            f'if [ -e {f_dne} ]; then echo "downloading from source"; fi',
-            f'if [ -e {f_dne} ]; then cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version}; fi',
-            f'if [ -e {f_dne} ]; then cd {dl_dir} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne}; fi'
+            f'if [ -e {f_dne} ]; then echo "downloading from source"; fi'
         ])
 
-        cmds.extend([
-            f'if [ -e {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
-        ])
+        #cmds.extend([
+        #    f'if [ -e {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
+        #])
 
         cmds.extend([
             f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
