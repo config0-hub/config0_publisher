@@ -14,7 +14,7 @@ class TFCmdOnAWS(object):
     def reset_dirs(self):
 
         cmds = [
-            'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "directory $TMPDIR/config0 does not exists',
+            'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "directory $TMPDIR/config0 does not exists"',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
 
@@ -37,14 +37,16 @@ class TFCmdOnAWS(object):
               'which zip > /dev/null 2>&1 || (apt-get update && apt-get install -y unzip zip)',
             ])
 
-        if tf_bucket_path:
-            cmds.extend([
-                f'if [ -e {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
-            ])
+        #if tf_bucket_path:
+        #    cmds.extend([
+        #        f'if [ -e {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
+        #    ])
 
-        cmds.extend([
-            f'if [ -e {f_dne} ]; then echo "downloading from source"; fi'
-        ])
+        #cmds.extend([
+        #    f'if [ -e {f_dne} ]; then echo "downloading from source"; fi',
+        #    f'if [ -e {f_dne} ]; then cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version}; fi',
+        #    f'if [ -e {f_dne} ]; then cd {dl_dir} && aws s3 cp {tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne}; fi'
+        #])
 
         #cmds.extend([
         #    f'if [ -e {f_dne} ]; then echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9; fi'
