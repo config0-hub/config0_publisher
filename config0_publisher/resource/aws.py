@@ -27,7 +27,7 @@ class TFCmdOnAWS(object):
         dl_dir = '$TMPDIR/downloads'
 
         cmds = [ 
-            f'rm -rf {dl_dir} /dev/null 2>&1 || echo "directory {dl_dir} does not exists',
+            f'rm -rf {dl_dir} /dev/null 2>&1 || echo "directory {dl_dir} does not exists"',
             f'mkdir -p {dl_dir}',
             f'touch "{f_dne}"'
             ]
@@ -37,10 +37,10 @@ class TFCmdOnAWS(object):
               'which zip > /dev/null 2>&1 || (apt-get update && apt-get install -y unzip zip)',
             ])
 
-        #if tf_bucket_path:
-        #    cmds.extend([
-        #        f'if [ -e {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
-        #    ])
+        if tf_bucket_path:
+            cmds.extend([
+                f'if [ -f {f_dne} ]; then aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet) && rm -rf {f_dne}; fi'
+            ])
 
         #cmds.extend([
         #    f'if [ -e {f_dne} ]; then echo "downloading from source"; fi',
