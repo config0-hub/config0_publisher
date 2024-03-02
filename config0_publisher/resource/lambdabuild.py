@@ -94,8 +94,7 @@ class Lambdabuild(LambdaParams):
                                  envfile="build_env_vars.env")
     def _get_prebuild_cmds(self):
 
-        cmds = self.tfcmds.reset_dirs()
-        cmds.extend(self.tfcmds.s3_to_local())
+        cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
                                                self.tf_version))
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=False))

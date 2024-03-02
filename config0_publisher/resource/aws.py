@@ -77,7 +77,7 @@ class TFCmdOnAWS(object):
             cmds = [
                 f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} || echo "env file already removed"',
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
-                f'(ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not specified"'
+                f'([[ -n "$SSM_NAME" ]] && ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not given/downloaded"'
             ]
 
             # for lambda function, we use the ssm_get python cli
@@ -109,12 +109,16 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        cmds = [ 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
+        #'DIRECTORY="$TMPDIR/config0"; for dir in "$DIRECTORY"/*/; do [[ "$dir" != "$DIRECTORY/$STATEFUL_ID/" ]] && echo "Deleting directory: $dir" && rm -rf "$dir"; done'
+        #'rm -rf $TMPDIR/config0/$STATEFUL_ID/build || echo "stateful already removed"',
+
+        cmds = self.reset_dirs()
+
+        cmds.extend([ 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
                  'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
-                 'rm -rf $TMPDIR/config0/$STATEFUL_ID/build || echo "stateful already removed"',
                  'unzip -o $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip -d $TMPDIR/config0/$STATEFUL_ID/build',
                  'rm -rf $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip'
-        ]
+        ])
 
         return cmds
 
