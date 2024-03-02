@@ -174,8 +174,10 @@ class AWSBaseBuildParams(object):
         self.tf_bucket_key = None
         self.tf_bucket_path = None
 
-        self.tf_version = self.build_env_vars.get("TF_VERSION","1.5.4")
+        self.tf_version = self.build_env_vars.get("TF_VERSION",
+                                                  "1.5.4")
         self._set_tmp_tf_bucket_loc()
+        self.app_name = "terraform"
 
     def _set_tmp_tf_bucket_loc(self):
 
@@ -187,5 +189,5 @@ class AWSBaseBuildParams(object):
         if not self.tmp_bucket:
             return
 
-        self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
+        self.tf_bucket_key = f"downloads/{self.app_name}/{self.tf_version}"
         self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
