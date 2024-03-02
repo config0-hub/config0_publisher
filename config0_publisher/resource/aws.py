@@ -58,7 +58,8 @@ class TFCmdOnAWS(object):
         cmds.extend([
             f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
             f'ls $TF_PATH',
-            f'[ ! -e $TF_PATH ] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
+            f'cd {dl_dir} && [ ! -e $TF_PATH ] && unzip {tf_name}_{tf_version}',
+            f'cd {dl_dir} && [ ! -e $TF_PATH ] && mv {tf_name} $TF_PATH',
             f'[ ! -e $TF_PATH ] && exit 8',
             'chmod 777 $TF_PATH'
             ]
