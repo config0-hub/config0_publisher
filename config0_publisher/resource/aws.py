@@ -14,9 +14,7 @@ class TFCmdOnAWS(object):
     def reset_dirs(self):
 
         cmds = [
-            '[ -d "$TMPDIR" ] && echo "hello111"',
-            '[ -d "$TMPDIR/config0" ] || echo "hello"',
-            'mkdir -p $TMPDIR/config0',
+            'rm -rf $TMPDIR/config0 || echo "$TMPDIR/config0 does not exists',
             '[ -d "$TMPDIR/config0" ] && rm -rf "$TMPDIR/config0"',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
