@@ -14,8 +14,7 @@ class TFCmdOnAWS(object):
     def reset_dirs(self):
 
         cmds = [
-            'rm -rf $TMPDIR/config0 || echo "$TMPDIR/config0 does not exists"',
-            '[ -d "$TMPDIR/config0" ] && rm -rf "$TMPDIR/config0"',
+            'rm -rf $TMPDIR/config0 > /dev/null > 2>&1 || echo "$TMPDIR/config0 does not exists"',
             'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build'
         ]
 
@@ -29,7 +28,7 @@ class TFCmdOnAWS(object):
 
         cmds = [ 
             f'[ ! -d "{dl_dir}" ] && mkdir -p "{dl_dir}"',
-            f'for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && rm "$file"; done',
+            f'for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && (rm "$file" || echo "could not remove $file") ; done',
             f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" && ! -e "$TF_PATH" ]] && touch {f_dne}"'
             ]
 
