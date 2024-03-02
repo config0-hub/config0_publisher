@@ -100,6 +100,13 @@ class Lambdabuild(LambdaParams):
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=False))
         cmds.append(self.tfcmds.get_src_buildenv_vars_cmd())
 
+        # testtest456
+        for cmd in cmds:
+            print("*"*32)
+            print(cmd)
+
+        raise Exception("sdfasd")
+
         return cmds
 
     def _get_build_cmds(self):
