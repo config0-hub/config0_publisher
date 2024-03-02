@@ -28,17 +28,17 @@ class TFCmdOnAWS(object):
         dl_dir = '$TMPDIR/downloads'
 
         cmds = [ 
-            f'[[ ! -e {dl_dir} ]] || (for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && rm "$file" || echo "could not remove $file" ; done)',
+            f'[ ! -e {dl_dir} ] || (for file in {dl_dir}/{tf_name}_*; do [[ $file != "{dl_dir}/{tf_name}_{tf_version}" ]] && echo "Deleting file: $file" && rm "$file" || echo "could not remove $file" ; done)',
             f'[ ! -e {dl_dir} ] && mkdir -p {dl_dir}',
             f' ls {dl_dir}',
             f' ls {dl_dir}',
             f' ls {dl_dir}',
             f' ls {dl_dir}',
             f'touch "{f_dne}"',
-            f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || echo "exists 1" && exit 9',
-            f'[[ ! -e "$TF_PATH" ]] || (rm -rf "{f_dne}" || echo "exists 2" && exit 9',
-            f'[[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ]] || rm -rf "{f_dne}"',
-            f'[[ ! -e "$TF_PATH" ]] || (rm -rf "{f_dne}" || echo "{f_dne} already removed")'
+            f'[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ] || echo "exists 1" && exit 9',
+            f'[ ! -e "$TF_PATH" ] || (rm -rf "{f_dne}" || echo "exists 2" && exit 9',
+            f'[ ! -e "{dl_dir}/{tf_name}_{tf_version}" ] || rm -rf "{f_dne}"',
+            f'[ ! -e "$TF_PATH" ] || (rm -rf "{f_dne}" || echo "{f_dne} already removed")'
             ]
 
         if self.runtime_env == "codebuild":
@@ -49,24 +49,24 @@ class TFCmdOnAWS(object):
         if tf_bucket_path:
 
             cmds.extend([
-                f'([[ ! -e {f_dne} ]] || (aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet ) && rm -rf {f_dne})'
+                f'([ ! -e {f_dne} ] || (aws s3 cp {tf_bucket_path} {dl_dir}/{tf_name}_{tf_version} --quiet ) && rm -rf {f_dne})'
             ])
 
         cmds.extend([
-            f'[[ ! -e {f_dne} ]] || echo "downloading from source"',
-            f'[[ ! -e {f_dne} ]] || (cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version})',
-            f'[[ ! -e {f_dne} ]] || (aws s3 cp {dl_dir}/{tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne})'
+            f'[ ! -e {f_dne} ] || echo "downloading from source"',
+            f'[ ! -e {f_dne} ] || (cd {dl_dir} && curl -L -s https://releases.hashicorp.com/{tf_name}/{tf_version}/{tf_name}_{tf_version}_linux_amd64.zip -o {tf_name}_{tf_version})',
+            f'[ ! -e {f_dne} ] || (aws s3 cp {dl_dir}/{tf_name}_{tf_version} {tf_bucket_path} --quiet && rm -rf {f_dne})'
         ])
 
         cmds.extend([
-            f'[[ ! -e {f_dne} ]] || (echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9)'
+            f'[ ! -e {f_dne} ] || (echo "CRITICAL: download {tf_name}_{tf_version} failed!" && exit 9)'
         ])
 
         cmds.extend([
             f'cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH',
             f'ls $TF_PATH',
-            f'[[ ! -e $TF_PATH ]] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
-            f'[[ ! -e $TF_PATH ]] && exit 8',
+            f'[ ! -e $TF_PATH ] && (cd {dl_dir} && unzip {tf_name}_{tf_version} && mv {tf_name} $TF_PATH > /dev/null)',
+            f'[ ! -e $TF_PATH ] && exit 8',
             'chmod 777 $TF_PATH'
             ]
         )
