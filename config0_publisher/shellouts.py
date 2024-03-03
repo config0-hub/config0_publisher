@@ -340,6 +340,7 @@ class ShellOutExecute(object):
                              "universal_newlines": True,
                              "stdout":subprocess.PIPE,
                              "stderr": subprocess.STDOUT}
+
     def run(self):
 
         self.logger.debug_highlight("ShellOutExecute:::method: run")
@@ -424,6 +425,7 @@ class ShellOutExecute(object):
             self.results["status"] = True
 
         self._eval_execute()
+
     def _popen_communicate(self,process):
 
         out, err = process.communicate()
