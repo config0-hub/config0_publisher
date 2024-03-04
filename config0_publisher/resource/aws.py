@@ -11,14 +11,15 @@ class TFCmdOnAWS(object):
         self.app_dir = kwargs["app_dir"]
         self.envfile = kwargs["envfile"]
         self.app_name = "terraform"
+        self.dl_subdir = "config0/downloads"
 
     def reset_dirs(self):
 
         cmds = [
             f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"',
             f'mkdir -p $TMPDIR/config0/$STATEFUL_ID/build',
-            f'rm -rf $TMPDIR/downloads > /dev/null 2>&1 || echo "downloads already removed"',
-            f'mkdir -p $TMPDIR/downloads"'
+            f'mkdir -p $TMPDIR/{self.dl_subdir}',
+            f'echo "##############"; df -h; echo "##############"'
         ]
 
         return cmds
@@ -33,21 +34,17 @@ class TFCmdOnAWS(object):
         else:
             cmds = [f'echo "downloading {self.app_name}_{tf_version}"']
 
-        cmds.extend([
-            f'mkdir -p $TMPDIR/downloads > /dev/null 2>&1 || echo "download directory exists"'
-        ])
-
         if tf_bucket_path:
             cmds.extend([
-                f'([ ! -f "$TMPDIR/downloads/{self.app_name}_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/downloads/{self.app_name}_{tf_version} --quiet ) || (cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet)'
+                f'([ ! -f "$TMPDIR/{self.dl_subdir}/{self.app_name}_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/{self.dl_subdir}/{self.app_name}_{tf_version} --quiet ) || (cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet)'
             ])
         else:
             cmds.extend([
-                f'cd $TMPDIR/downloads && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet'
+                f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet'
             ])
 
         cmds.extend([
-            f'(cd $TMPDIR/downloads && unzip {self.app_name}_{tf_version} && mv {self.app_name} $TF_PATH > /dev/null) || exit 0',
+            f'(cd $TMPDIR/{self.dl_subdir} && unzip {self.app_name}_{tf_version} && mv {self.app_name} $TF_PATH > /dev/null) || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
