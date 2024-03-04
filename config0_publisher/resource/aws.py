@@ -97,14 +97,15 @@ class TFCmdOnAWS(object):
 
     def s3_to_local(self):
 
-        self.reset_dirs()
+        cmds = self.reset_dirs()
 
-        cmds = [ 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
-                 'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
-                 'rm -rf $TMPDIR/config0/$STATEFUL_ID/build > /dev/null 2>&1 || echo "stateful already removed"',
-                 'unzip -o $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip -d $TMPDIR/config0/$STATEFUL_ID/build',
-                 'rm -rf $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip'
-        ]
+        cmds.extend([
+            'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
+            'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip --quiet',
+            'rm -rf $TMPDIR/config0/$STATEFUL_ID/build > /dev/null 2>&1 || echo "stateful already removed"',
+            'unzip -o $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip -d $TMPDIR/config0/$STATEFUL_ID/build',
+            'rm -rf $TMPDIR/config0/$STATEFUL_ID/$STATEFUL_ID.zip'
+        ])
 
         return cmds
 
