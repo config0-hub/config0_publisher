@@ -727,21 +727,21 @@ class ResourceCmdHelper:
                 file.write("#"*32)
                 file.write("\n# append log\n")
                 file.write("#"*32)
-                file.write("")
+                file.write("\n")
                 file.write(output)
-                file.write("")
+                file.write("\n")
                 file.write("#"*32)
-                file.write("")
+                file.write("\n")
         else:
             with open(logfile, "w") as file:
                 file.write("#"*32)
                 file.write("\n# append log\n")
                 file.write("#"*32)
-                file.write("")
+                file.write("\n")
                 file.write(output)
-                file.write("")
+                file.write("\n")
                 file.write("#"*32)
-                file.write("")
+                file.write("\n")
 
         return logfile
 
