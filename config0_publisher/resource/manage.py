@@ -1474,6 +1474,498 @@ class ResourceCmdHelper:
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
+    #######################################################################
+    # testtest456 - move to resource_wrapper after testing
+    # insert 45245
+    #######################################################################
+
+    def _insert_tf_map_keys(self,values):
+
+        self.logger.debug("#" * 32)
+        self.logger.debug("tfstate_to_output: tf_exec_map_keys")
+        self.logger.json(self.tf_exec_map_keys)
+        self.logger.debug("#" * 32)
+
+        if not self.tf_exec_map_keys:
+            return
+
+        for _insertkey,_refkey in self.tf_exec_map_keys.items():
+
+            '''
+            # _insertkey = "p1"
+            # _refkey = "q1"
+
+            # _insertkey = values
+            # _refkey = {"a":"b","c":"d"}
+            # values["values"]["a"] = values["b"]
+            '''
+
+            if values.get(_insertkey):
+                self.logger.warn(f"mapped key {_insertkey} already exists - clobbering")
+
+            # see if _refkey is a subkey
+            if isinstance(_refkey,dict):
+
+                if not values.get(_insertkey):
+                    values[_insertkey] = {}
+
+                for _sub_insertkey,_sub_refkey in _refkey.items():
+
+                    if not values.get(_sub_refkey):
+                        self.logger.debug(
+                            f'mapped ref_key not found {_sub_refkey} for sub_insertkey {_sub_insertkey}')
+                    # revisit 432523543245
+                    # ref 432523543245
+                    # do we want to nest 2 levels deep?
+                    if "," in values[_sub_refkey]:
+                        _sub_insertkey2,_subrefkey2 = values[_sub_refkey].split(",")
+
+                        if _sub_insertkey2 not in self.do_not_display:
+                            self.logger.debug('mapped key ["{}"]["{}"]["{}"] -> _sub_refky "{}"'.format(_insertkey,
+                                                                                                        _sub_insertkey,
+                                                                                                        _sub_insertkey2,
+                                                                                                        values[_sub_refkey.strip()][_subrefkey2.strip()]))
+
+                        values[_insertkey][_sub_insertkey] = values[_sub_refkey.strip()][_subrefkey2.strip()]
+
+                    else:
+                        if _sub_insertkey not in self.do_not_display:
+                            self.logger.debug('mapped key ["{}"]["{}"] -> _sub_refkey "{}"'.format(_insertkey,
+                                                                                                   _sub_insertkey,
+                                                                                                   values[_sub_refkey.strip()]))
+
+                        values[_insertkey][_sub_insertkey] = values[_sub_refkey]
+
+            elif values.get(_refkey):
+                if _refkey not in self.do_not_display:
+                    self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
+
+                values[_insertkey] = values[_refkey]
+
+            elif not values.get(_refkey):
+                self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
+
+    def create(self):
+
+        self.init_phase_run()
+
+        if self.phase == "submit":
+            self._init_create()
+            self._exec_tf_apply()
+        elif self.phase == "retrieve":
+            self._exec_tf_apply()
+        else:
+            self._init_create()
+            self._exec_tf_apply()
+
+        self._eval_phases_tf("create")
+        self._eval_failure(method="create")
+        self._post_create()
+
+        # this may cause duplication output in log file
+        # testtest456 - if codebuild doesn't show up in UI, then revert
+        #if not self.printed and self.final_output:
+        if not self.printed and self.final_output and not self.build_method == "codebuild":
+            print(self.final_output)
+            self.printed = True
+
+        return True
+
+    def _insert_tf_version(self,env_vars):
+
+        if env_vars.get("TF_VERSION"):
+            return
+
+        if os.environ.get("TF_VERSION"):
+            env_vars["TF_VERSION"] = os.environ["TF_VERSION"]
+
+        if hasattr(self,"tf_version") and self.tf_version:
+            env_vars["TF_VERSION"] = self.tf_version
+            return
+
+        try:
+            tf_version = self.docker_image.split(":")[-1]
+        except:
+            tf_version = None
+
+        if not tf_version:
+            try:
+                tf_version = env_vars["DOCKER_IMAGE"].split(":")[-1]
+            except:
+                tf_version = "1.5.4"
+
+        env_vars["TF_VERSION"] = tf_version
+
+    def _set_build_method(self):
+
+        if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
+            self.build_method = "codebuild"
+        elif os.environ.get("USE_LAMBDA"):  # shorter than 900 seconds
+            self.build_method = "lambda"
+        elif os.environ.get("USE_AWS",True):  # select codebuild or lambda
+            if int(self.build_timeout) > 600:
+                self.build_method = "codebuild"
+            else:
+                self.build_method = "lambda"
+        else:
+            self.build_method = "local"
+
+    def _insert_tf_add_keys(self,values):
+
+        count = 0
+        for resource in self.data["resources"]:
+            type = resource["type"]
+            name = resource["name"]
+            if resource["type"] == self.terraform_type:
+                self.logger.debug(f'name: {name}, type: {type} matched found')
+                count += 1
+
+        # if more than instance of the terraform type, it's better to parse the statefile
+        # after to allowing querying of resources
+        if count > 1:
+            self.logger.warn(f"more than one instance terraform type {self.terrraform_type}/count {count} - skipping key insertion to avoid clobbering/duplicates")
+            if values.get("main") and values.get("name") and values.get("terraform_type") and not values.get("id"):
+                values["id"] = self.get_hash({
+                    "name": values["name"],
+                    "terraform_type": values["terraform_type"],
+                    "main": "True"
+                })
+            return
+
+        for resource in self.data["resources"]:
+
+            if resource["type"] == self.terraform_type:
+
+                self.logger.debug("-" * 32)
+                self.logger.debug("instance attribute keys")
+                self.logger.debug(list(resource["instances"][0]["attributes"].keys()))
+                self.logger.debug("-" * 32)
+
+                for _key,_value in resource["instances"][0]["attributes"].items():
+
+                    if not _value:
+                        continue
+
+                    if _key in values:
+                        continue
+
+                    if _key in self.tf_exec_skip_keys:
+                        self.logger.debug('tf_exec_skip_keys: tf instance attribute key "{}" skipped'.format(_key))
+                        continue
+
+                    # we add if tf_exec_add_key not set, all, or key is in it
+                    if not self.tf_exec_add_keys:
+                        _added_bc = "tf_exec_add_keys=None"
+                    elif self.tf_exec_add_keys == "all":
+                        _added_bc = "tf_exec_add_keys=all"
+                    elif _key in self.tf_exec_add_keys:
+                        _added_bc = "tf_exec_add_keys/key{} found".format(_key)
+                    else:
+                        _added_bc = None
+
+                    if not _added_bc:
+                        self.logger.debug("tf_exec_add_keys: key {} skipped".format(_key))
+                        continue
+
+                    self.logger.debug('{}: tf key "{}" -> value "{}" added to resource values'.format(_added_bc,
+                                                                                                      _key,
+                                                                                                      _value))
+
+                    if isinstance(_value,list):
+                        try:
+                            values[_key] = ",".join(_value)
+                        except:
+                            values[_key] = _value
+                    elif isinstance(_value,dict):
+                        try:
+                            values[_key] = json.dumps(_value)
+                        except:
+                            values[_key] = _value
+                    else:
+                        values[_key] = _value
+                break
+
+    def _get_tfstate_file(self):
+        """
+        This method gets the Terraform state file.
+        """
+
+        #bucket = "{self.remote_stateful_bucket}"
+        #key = "{self.stateful_id}.tfstate"
+
+        if os.path.exists(self.tf_exec_state_file):
+            tfstate_file = self.tf_exec_state_file
+
+            with open(tfstate_file) as json_file:
+                data = json.load(json_file)
+
+        else:
+            cmd = f'aws s3 cp s3://{self.remote_stateful_bucket}/{self.stateful_id}.tfstate /tmp/{self.stateful_id}.tfstate'
+
+            self.execute(cmd,
+                         output_to_json=False,
+                         exit_error=True)
+
+            tfstate_file = f"/tmp/{self.stateful_id}.tfstate"
+
+            # read output file
+            with open(tfstate_file) as json_file:
+                data = json.load(json_file)
+
+            os.system(f'rm -rf {tfstate_file}')
+
+        if not data:
+            msg = "tfstate_to_output: there is no data from {}".format(os.path.join(os.getcwd(),
+                                                                                    self.tf_exec_state_file))
+            self.logger.debug(msg)
+            return
+
+        return data
+
+    def add_mod_params(self,resource):
+
+        '''
+        - we typically load the modifications parameters along with created resource like a
+        VPC or database
+
+        - the resource is therefore self contained, whereby it specifies to the
+        system how it can be validated/destroyed.
+
+        - for terraform, we include things like the docker image used to
+        validate/destroy the resource and any environmental variables
+        '''
+
+        # Create mod params resource arguments and reference
+        resource["mod_params"] = {"shelloutconfig":self.shelloutconfig}
+
+        # environmental variables to include during destruction
+        env_vars = {
+            "DOCKER_EXEC_ENV": self.docker_image,
+            "DOCKER_RUNTIME": self.docker_image,
+            "REMOTE_STATEFUL_BUCKET":self.remote_stateful_bucket,
+            "STATEFUL_ID": self.stateful_id,
+            "BUILD_TIMEOUT": self.build_timeout,
+            "APP_DIR":self.app_dir,
+        }
+
+        self._insert_tf_version(env_vars)
+
+        if hasattr(self,"drift_protection") and self.drift_protection:
+            resource["drift_protection"] = self.drift_protection
+
+        resource["mod_params"]["env_vars"] = env_vars
+
+        if env_vars.get("STATEFUL_ID"):
+            resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
+
+        if self.mod_execgroup:
+            resource["mod_params"]["execgroup"] = self.mod_execgroup
+
+        if self.destroy_env_vars:
+            resource["destroy_params"] = {
+                "env_vars": dict({"METHOD": "destroy"},
+                                 **self.destroy_env_vars)
+            }
+        else:
+            resource["destroy_params"] = {
+                "env_vars": {"METHOD": "destroy"}
+            }
+
+        if self.validate_env_vars:
+            resource["validate_params"] = {
+                "env_vars":dict({"METHOD":"validate"},
+                                **self.validate_env_vars)
+            }
+        else:
+            resource["validate_params"] = {
+                "env_vars":{"METHOD":"validate"}
+            }
+
+        return resource
+
+    def _eval_phases_tf(self,method):
+
+        # add feature
+        # can add failure count in the future
+
+        try:
+            build_expire_at = self.tf_results["inputargs"]["build_expire_at"]
+        except:
+            build_expire_at = None
+
+        # this is implemented in phases
+        if self.phases_params_hash or self.phases_params:
+            if self.phases_params_hash:
+                json_values = {
+                        "results":self.tf_results,
+                        "status":self.tf_results.get("status"),
+                        "phases_params_hash":self.phases_params_hash
+                    }
+            elif self.phases_params:
+                json_values = {
+                        "results":self.tf_results,
+                        "status":self.tf_results.get("status"),
+                        "phases_params_hash":b64_encode(self.phases_params),
+                    }
+
+            if build_expire_at:
+                json_values["build_expire_at"] = build_expire_at
+
+            self.write_phases_to_json_file(json_values)
+
+        return True
+
+    def _eval_failure(self,method=None):
+
+        output = None
+
+        if not hasattr(self,"tf_results"):
+            return
+
+        if not self.tf_results:
+            return
+
+        if self.tf_results.get("output"):
+            self.final_output = self.tf_results["output"]
+            self.append_log(self.final_output)
+            del self.tf_results["output"]
+
+        if self.tf_results.get("status") is False:
+            # failed at this point
+            if self.tf_results.get("failed_message"):
+                failed_message = self.tf_results.get("failed_message")
+            else:
+                failed_message = f"Terraform apply {method} failed here {self.run_share_dir}!"
+
+            # this should also be removed further upstream
+            # but included to be explicit
+            self.delete_phases_to_json_file()
+            print(self.final_output)
+
+            # self.logger.error(failed_message)
+            raise Exception(failed_message)
+
+        return True
+
+    def _get_next_phase(self,method="create",**json_info):
+
+        results = json_info["results"]
+        method_phases_params = b64_decode(json_info["phases_params_hash"])[method]
+
+        completed = []
+
+        for phase_info in results["phases_info"]:
+            if phase_info.get("status"):
+                completed.append(phase_info["name"])
+
+        for phase_param in method_phases_params:
+            if phase_param["name"] in completed:
+                self.logger.debug(f'phase "{phase_param["name"]}" completed')
+                continue
+            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
+            return phase_param
+
+        os.system(f"rm -rf {self.run_share_dir}")
+
+        self.logger.error("Cannot determine next phase to run - reset")
+        raise Exception("Cannot determine next phase to run")
+
+    def set_cur_phase(self):
+
+        '''
+        self.phases_params_hash = None
+        self.phases_params = None
+        self.phases_info = None
+        self.phase = None  # can be "run" since will only one phase
+        self.current_phase None
+        '''
+
+        self.jsonfile_to_phases_info()
+
+        if self.phases_info and self.phases_info.get("inputargs"):
+            self.set_class_vars(self.phases_info["inputargs"])
+
+        if self.phases_info and self.phases_info.get("phases_params_hash"):
+            self.phases_params_hash = self.phases_info["phases_params_hash"]
+        else:
+            self.phases_params_hash = os.environ.get("PHASES_PARAMS_HASH")
+
+        if not self.phases_info and not self.phases_params_hash:
+            self.logger.debug("Phase are not implemented")
+            return
+
+        if not self.phases_params_hash and self.phases_params:
+            self.phases_params_hash = b64_encode(self.phases_params)
+        elif not self.phases_params and self.phases_params_hash:
+            self.phases_params = b64_decode(self.phases_params_hash)
+
+        if self.phases_info:
+            self.current_phase = self._get_next_phase(self.method,
+                                                      **self.phases_info)
+        elif self.phases_params_hash:
+            self.logger.json(self.phases_params)
+            self.current_phase = self.phases_params[self.method][0]  # first phase
+
+        self.phase = self.current_phase["name"]
+
+    #################################
+
+    def _get_aws_exec_cinputargs(self,method="create"):
+
+        cinputargs = {
+            "method":method,
+            "build_timeout":self.build_timeout,
+            "run_share_dir":self.run_share_dir,
+            "app_dir":self.app_dir,
+            "remote_stateful_bucket":self.remote_stateful_bucket,
+            "aws_region":self.aws_region
+        }
+
+        if self.build_env_vars:
+            cinputargs["build_env_vars"] = self.build_env_vars
+
+        if self.ssm_name:
+            cinputargs["ssm_name"] = self.ssm_name
+
+        if self.phases_info:
+            cinputargs["phases_info"] = self.phases_info
+
+        return cinputargs
+
+    def _exec_codebuild(self,method="create"):
+
+        cinputargs = self._get_aws_exec_cinputargs(method=method)
+        _awsbuild = Codebuild(**cinputargs)
+
+        if self.phase == "retrieve":
+            return _awsbuild.retrieve(**self.get_phase_inputargs())
+
+        # submit and run required env file
+        self.create_build_envfile()
+
+        if self.phase == "submit":
+            return _awsbuild.submit(**self.get_phase_inputargs())
+
+        return _awsbuild.run()
+
+    def _exec_lambdabuild(self,method="create"):
+
+        cinputargs = self._get_aws_exec_cinputargs(method=method)
+        _awsbuild = Lambdabuild(**cinputargs)
+
+        #if self.phase == "retrieve":
+        #    return _awsbuild.retrieve(**self.get_phase_inputargs())
+
+        # submit and run required env file
+        if method == "create":
+            self.create_build_envfile(openssl=False)
+
+        #if self.phase == "submit":
+        #    return _awsbuild.submit(**self.get_phase_inputargs())
+        results = _awsbuild.run()
+
+        return results
+
     def create_config0_settings_file(self):
 
         try:
@@ -1491,6 +1983,28 @@ class ResourceCmdHelper:
 
         with open(_file, "w") as file:
             file.write(value)
+
+    def create_remote_tf_bkend(self):
+
+        _file = os.path.join(
+            self.run_share_dir,
+            self.app_dir,
+            "backend.tf"
+        )
+
+        contents = f"""\
+terraform {{
+  backend "s3" {{
+    bucket = "{self.remote_stateful_bucket}"
+    key    = "{self.stateful_id}.tfstate"
+    region = "{self.aws_region}"
+  }}
+}}
+
+"""
+
+        with open(_file, "w") as file:
+            file.write(contents)
 
     def create_build_envfile(self,openssl=True):
         '''
@@ -1515,22 +2029,66 @@ class ResourceCmdHelper:
 
         return True
 
+    def _exec_tf(self,method):
 
+        if self.build_method == "codebuild":
+            self.tf_results = self._exec_codebuild(method=method)
+        elif self.build_method == "lambda":
+            self.tf_results = self._exec_lambdabuild(method=method)
+        else:  # execute locally
+            self._create_docker_env_file()
+            self.tf_results = self._exec_docker_local(method=method)
 
+        return self.tf_results
 
+    def _exec_tf_validate(self):
 
+        self._get_runtime_env_vars(method="validate")
+        self._set_build_method()
+        self._exec_tf(method="validate")
 
+        return self.tf_results
 
+    def _exec_tf_destroy(self):
 
+        self._get_runtime_env_vars(method="destroy")
+        self._set_build_method()
+        self._exec_tf(method="destroy")
 
+        return self.tf_results
 
+    def validate(self):
+        self._exec_tf_validate()
+        self._eval_failure(method="validate")
 
+        if not self.printed and self.final_output:
+            print(self.final_output)
+            self.printed = True
 
+        return True
 
+    def destroy(self):
 
+        self.init_phase_run()
 
+        if self.phase == "submit":
+            self._exec_tf_destroy()
+        elif self.phase == "retrieve":
+            self._exec_tf_destroy()
+        else:
+            self._exec_tf_destroy()
 
+        self._eval_phases_tf("destroy") # see if phases
 
+        try:
+            os.chdir(self.cwd)
+        except:
+            os.chdir("/tmp")
 
+        self._eval_failure(method="destroy")
 
+        if not self.printed and self.final_output:
+            print(self.final_output)
+            self.printed = True
 
+        return True
