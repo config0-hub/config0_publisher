@@ -1660,4 +1660,3 @@ class ResourceCmdHelper:
 
         with open(_file, "w") as file:
             file.write(value)
-
