@@ -222,8 +222,7 @@ class ResourceCmdHelper:
         # execute it final time to synchronize class vars set
         self.set_class_vars()
 
-        # testtest456
-        # not sure the below is needed
+        # testtest456 not sure the below is needed
         self.syncvars.set()
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
         self._set_json_files()
@@ -1252,67 +1251,6 @@ class ResourceCmdHelper:
 
         rm_rf(self.config0_phases_json_file)
 
-    def _get_next_phase(self,method="create",**json_info):
-
-        results = json_info["results"]
-        method_phases_params = b62_decode(json_info["phases_params_hash"])[method]
-
-        completed = []
-
-        for phase_info in results["phases_info"]:
-            if phase_info.get("status"):
-                completed.append(phase_info["name"])
-
-        for phase_param in method_phases_params:
-            if phase_param["name"] in completed:
-                self.logger.debug(f'phase "{phase_param["name"]}" completed')
-                continue
-            self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
-            return phase_param
-
-        os.system(f"rm -rf {self.run_share_dir}")
-
-        self.logger.error("Cannot determine next phase to run - reset")
-        raise Exception("Cannot determine next phase to run")
-
-    def set_cur_phase(self):
-
-        '''
-        self.phases_params_hash = None
-        self.phases_params = None
-        self.phases_info = None
-        self.phase = None  # can be "run" since will only one phase
-        self.current_phase None
-        '''
-
-        self.jsonfile_to_phases_info()
-
-        if self.phases_info and self.phases_info.get("inputargs"):
-            self.set_class_vars(self.phases_info["inputargs"])
-
-        if self.phases_info and self.phases_info.get("phases_params_hash"):
-            self.phases_params_hash = self.phases_info["phases_params_hash"]
-        else:
-            self.phases_params_hash = os.environ.get("PHASES_PARAMS_HASH")
-
-        if not self.phases_info and not self.phases_params_hash:
-            self.logger.debug("Phase are not implemented")
-            return
-
-        if not self.phases_params_hash and self.phases_params:
-            self.phases_params_hash = b64_encode(self.phases_params)
-        elif not self.phases_params and self.phases_params_hash:
-            self.phases_params = b64_decode(self.phases_params_hash)
-
-        if self.phases_info:
-            self.current_phase = self._get_next_phase(self.method,
-                                                      **self.phases_info)
-        elif self.phases_params_hash:
-            self.logger.json(self.phases_params)
-            self.current_phase = self.phases_params[self.method][0]  # first phase
-
-        self.phase = self.current_phase["name"]
-
     def write_phases_to_json_file(self,content_json):
 
         if not hasattr(self,"config0_phases_json_file"):
@@ -1536,62 +1474,6 @@ class ResourceCmdHelper:
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
-    def _get_aws_exec_cinputargs(self,method="create"):
-
-        cinputargs = {
-            "method":method,
-            "build_timeout":self.build_timeout,
-            "run_share_dir":self.run_share_dir,
-            "app_dir":self.app_dir,
-            "remote_stateful_bucket":self.remote_stateful_bucket,
-            "aws_region":self.aws_region
-        }
-
-        if self.build_env_vars:
-            cinputargs["build_env_vars"] = self.build_env_vars
-
-        if self.ssm_name:
-            cinputargs["ssm_name"] = self.ssm_name
-
-        if self.phases_info:
-            cinputargs["phases_info"] = self.phases_info
-
-        return cinputargs
-
-    def _exec_codebuild(self,method="create"):
-
-        cinputargs = self._get_aws_exec_cinputargs(method=method)
-        _awsbuild = Codebuild(**cinputargs)
-
-        if self.phase == "retrieve":
-            return _awsbuild.retrieve(**self.get_phase_inputargs())
-
-        # submit and run required env file
-        self.create_build_envfile()
-
-        if self.phase == "submit":
-            return _awsbuild.submit(**self.get_phase_inputargs())
-
-        return _awsbuild.run()
-
-    def _exec_lambdabuild(self,method="create"):
-
-        cinputargs = self._get_aws_exec_cinputargs(method=method)
-        _awsbuild = Lambdabuild(**cinputargs)
-
-        #if self.phase == "retrieve":
-        #    return _awsbuild.retrieve(**self.get_phase_inputargs())
-
-        # submit and run required env file
-        if method == "create":
-            self.create_build_envfile(openssl=False)
-
-        #if self.phase == "submit":
-        #    return _awsbuild.submit(**self.get_phase_inputargs())
-        results = _awsbuild.run()
-
-        return results
-
     def create_config0_settings_file(self):
 
         try:
@@ -1632,3 +1514,23 @@ class ResourceCmdHelper:
                            envfile=envfile)
 
         return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
