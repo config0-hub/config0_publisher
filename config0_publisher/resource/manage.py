@@ -21,8 +21,6 @@ from config0_publisher.serialization import b64_encode
 from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
 from config0_publisher.shellouts import rm_rf
-from config0_publisher.resource.codebuild import Codebuild
-from config0_publisher.resource.lambdabuild import Lambdabuild
 from config0_publisher.variables import EnvVarsToClassVars
 #from config0_publisher.variables import SyncClassVarsHelper
 
