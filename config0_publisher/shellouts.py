@@ -311,8 +311,6 @@ class ShellOutExecute(object):
             self.logger.debug("Could not convert output to json")
             return
 
-        self.logger.debug("output to json/dict")
-
         self.results["output"] = output
 
         return True
@@ -328,7 +326,6 @@ class ShellOutExecute(object):
             self._convert_output_to_json()
 
         if self.output_queue:
-            self.logger.debug("attempting to place results in the output_queue")
             try:
                 self.output_queue.put(self.results)
             except:
@@ -488,7 +485,6 @@ class ShellOutExecute(object):
                                                                   self.cmd))
 
         self.set_env_vars()
-
         self.popen()
 
         return self.results
