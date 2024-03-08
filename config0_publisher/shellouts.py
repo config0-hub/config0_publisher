@@ -343,7 +343,8 @@ class ShellOutExecute(object):
 
     def run(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: run")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: run")
 
         self.set_env_vars()
         self.set_popen_kwargs()
@@ -438,7 +439,8 @@ class ShellOutExecute(object):
 
     def popen(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: popen")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: popen")
 
         self.set_popen_kwargs()
         self.popen_kwargs["bufsize"] = 0
@@ -451,7 +453,8 @@ class ShellOutExecute(object):
 
     def popen2(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: popen2")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: popen2")
 
         process = subprocess.Popen(self.cmd,
                                    shell=True,
@@ -465,7 +468,8 @@ class ShellOutExecute(object):
 
     def execute6(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: execute6")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: execute6")
 
         self.logger.debug("from directory {} - command {}".format(os.getcwd(),
                                                                   self.cmd))
@@ -477,7 +481,8 @@ class ShellOutExecute(object):
 
     def execute3(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: execute3")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: execute3")
 
         self.logger.debug("from directory {} - command {}".format(os.getcwd(),
                                                                   self.cmd))
@@ -490,7 +495,8 @@ class ShellOutExecute(object):
 
     def system(self, direct_return=True):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: system")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: system")
 
         cmd = self._get_system_cmd()
         _return_code = os.system(cmd)
@@ -510,7 +516,8 @@ class ShellOutExecute(object):
 
     def execute3a(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: execute3a")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: execute3a")
 
         self.results["exitcode"] = self.system(direct_return=True)
         self.results["output"] = open(self.logfile, "r").read()
@@ -521,7 +528,8 @@ class ShellOutExecute(object):
 
     def execute5(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: execute5")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: execute5")
 
         exitcode = self.system(direct_return=True)
 
@@ -538,7 +546,9 @@ class ShellOutExecute(object):
 
     def execute7(self):
 
-        self.logger.debug_highlight("ShellOutExecute:::method: execute7")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug_highlight("ShellOutExecute:::method: execute7")
+
         self.run()
 
         return self.results
