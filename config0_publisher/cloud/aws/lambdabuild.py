@@ -54,7 +54,8 @@ class LambdaResourceHelper(AWSCommonConn):
     def _env_vars_to_lambda_format(self,sparse=True):
 
         skip_keys = [ "AWS_ACCESS_KEY_ID",
-                      "AWS_SECRET_ACCESS_KEY" ]
+                      "AWS_SECRET_ACCESS_KEY",
+                      "AWS_SESSION_TOKEN" ]
 
         sparse_keys = [ "STATEFUL_ID",
                         "REMOTE_STATEFUL_BUCKET",

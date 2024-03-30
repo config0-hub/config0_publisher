@@ -50,14 +50,22 @@ class EC2_connections(object):
         self.aws_default_region = os.environ["AWS_DEFAULT_REGION"]
         self.aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
         self.aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
+        self.aws_sesssion_token = os.environ.get("AWS_SESSION_TOKEN")
 
     def _set_conn(self):
 
         '''simple method to establish a connection to a region'''
 
-        self.conn = boto.ec2.connect_to_region(self.aws_default_region,
-                                               aws_access_key_id=self.aws_access_key_id,
-                                               aws_secret_access_key=self.aws_secret_access_key)
+        inputargs = {
+            "region_name": self.aws_default_region,
+            "aws_access_key_id":self.aws_access_key_id,
+            "aws_secret_access_key":self.aws_secret_access_key
+        }
+
+        if self.aws_sesssion_token:
+            inputargs["aws_session_token"] = self.aws_sesssion_token
+
+        self.conn = boto.ec2.connect_to_region(**inputargs)
 
         return self.conn
 
