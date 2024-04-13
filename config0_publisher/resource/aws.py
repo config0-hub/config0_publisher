@@ -52,6 +52,12 @@ class TFCmdOnAWS(object):
         return cmds
     def get_decrypt_buildenv_vars(self,openssl=True):
 
+        '''
+        # for lambda function, we use the ssm_get python cli
+        #'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile}'
+        #'[ -n "$SSM_NAME" ] && echo "SSM_NAME: $SSM_NAME" || echo "SSM_NAME not set"'
+        '''
+
         envfile_env = os.path.join(self.app_dir,
                                    self.envfile)
 
@@ -67,11 +73,6 @@ class TFCmdOnAWS(object):
                 f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
                 f'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} || echo "WARNING: \nSSM_NAME: $SSM_NAME\n not set or problems fetching it"'
             ]
-
-            #'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile}'
-            #'[ -n "$SSM_NAME" ] && echo "SSM_NAME: $SSM_NAME" || echo "SSM_NAME not set"'
-            #f'(ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} > /dev/null 2>&1 && cat $TMPDIR/config0/$STATEFUL_ID/{self.envfile}) || echo "ssm_name not specified"'
-            # for lambda function, we use the ssm_get python cli
 
         return cmds
 
