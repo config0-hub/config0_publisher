@@ -37,7 +37,7 @@ class TFConstructor(object):
         self.ssm_format = kwargs.get("ssm_format", ".env")
         self.ssm_obj = kwargs.get("ssm_obj")
         self.ssm_name = kwargs.get("ssm_name")
-        self.ssm_prefix = "/config0-iac"
+        self.ssm_prefix = "/config0-iac/saas/users"
 
         self.output_prefix_key = None
         self.include_keys = []
