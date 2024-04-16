@@ -115,7 +115,9 @@ class TFConstructor(object):
         if not hasattr(self.stack,"docker_runtime") or not self.stack.docker_runtime:
             include.append("docker_runtime")
             if self.docker_runtime:
-                self.stack.set_variable("docker_runtime",self.docker_runtime,types="str")
+                self.stack.set_variable("docker_runtime",
+                                        self.docker_runtime,
+                                        types="str")
             else:
                 self.stack.parse.add_required(key="docker_runtime",
                                               default="elasticdev/terraform-run-env:1.3.7",
