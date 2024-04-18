@@ -235,6 +235,7 @@ class ResourceCmdHelper:
         #self._debug_print_out_key_class_vars()
 
     ##################################################################
+    # testtest789
     # ref 3241245124321
     # move back to resource_wrapper - testing now opentofu
     # insert 34523452
@@ -255,6 +256,13 @@ class ResourceCmdHelper:
         return tf_binary,tf_version
 
     def _insert_tf_env_vars(self,env_vars):
+
+        # testtest789
+        print(env_vars["TF_RUNTIME"])
+        print(env_vars["TF_RUNTIME"])
+        print(env_vars["TF_RUNTIME"])
+        print(env_vars["TF_RUNTIME"])
+        raise Exception('yoyo5555')
 
         try:
             tf_binary = self.tf_configs["tf_binary"]
