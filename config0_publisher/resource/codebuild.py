@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
-from config0_publisher.resource.aws import AWSBaseBuildParams
+from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.aws import TFCmdOnAWS
 
 
-class CodebuildParams(AWSBaseBuildParams):
+class CodebuildParams(TFAwsBaseBuildParams):
 
     def __init__(self,**kwargs):
 
-        AWSBaseBuildParams.__init__(self,**kwargs)
+        TFAwsBaseBuildParams.__init__(self,**kwargs)
 
         self.classname = "CodebuildParams"
+
         self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
+
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
-        self.run_share_dir = kwargs["run_share_dir"]
-        self.app_dir = kwargs["app_dir"]
 
     def _set_inputargs(self):
 
@@ -36,12 +36,12 @@ class CodebuildParams(AWSBaseBuildParams):
 
     def get_init_contents(self):
 
-        contents = '''
+        contents = f'''
 version: 0.2
 env:
   variables:
     TMPDIR: /tmp
-    TF_PATH: /usr/local/bin/terraform
+    TF_PATH: /usr/local/bin/{self.tf_binary}
 '''
         if self.ssm_name:
             ssm_params_content = '''
@@ -97,7 +97,11 @@ class Codebuild(CodebuildParams):
         self.tfcmds = TFCmdOnAWS(runtime_env="codebuild",
                                  run_share_dir=self.run_share_dir,
                                  app_dir=self.app_dir,
-                                 envfile="build_env_vars.env")
+                                 envfile="build_env_vars.env",
+                                 tf_binary=self.tf_binary,
+                                 tf_version=self.tf_version,
+                                 arch="linux_amd64"
+                                 )
 
     def _add_cmds(self,contents,cmds):
 
@@ -109,8 +113,7 @@ class Codebuild(CodebuildParams):
     def _get_codebuildspec_prebuild(self):
 
         cmds = self.tfcmds.s3_to_local()
-        cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
-                                               self.tf_version))
+        cmds.extend(self.tfcmds.get_tf_install())
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=True))
 
         if self.ssm_name:

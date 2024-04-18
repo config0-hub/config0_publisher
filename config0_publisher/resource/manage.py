@@ -91,6 +91,7 @@ class ResourceCmdHelper:
         # this can be over written by the inheriting class
         self.template_dir = None
         self.resources_dir = None
+
         self.docker_env_file = None
 
         self.inputargs = {}
@@ -318,9 +319,10 @@ class ResourceCmdHelper:
             "tmpdir",
             "method",
             "share_dir",
-            "docker_runtime",
-            "docker_exec_env",
             "docker_image",
+            "tf_runtime",
+            "tf_binary",
+            "tf_version",
             "mod_execgroup",
             "destroy_env_vars",
             "validate_env_vars"
@@ -340,9 +342,10 @@ class ResourceCmdHelper:
             "destroy_env_vars": None,
             "validate_env_vars": None,
             "mod_execgroup": None,
-            "docker_runtime": None,
-            "docker_exec_env": None,
             "docker_image": None,
+            "tf_runtime":None,
+            "tf_binary":None,
+            "tf_version":None,
             "tmpdir": "/tmp",
             "exec_base_dir": os.getcwd()
         }
@@ -488,24 +491,21 @@ class ResourceCmdHelper:
 
     def _set_docker_settings(self):
 
+        # docker image explicitly set
         if self.docker_image:
             return
 
-        if self.docker_runtime:
-            self.docker_image = self.docker_runtime
-            self.syncvars.class_vars["docker_image"] = self.docker_image
+        # we set default by app_name
+        if not self.app_name:
             return
 
-        if self.docker_exec_env:
-            self.docker_image = self.docker_exec_env
-            self.syncvars.class_vars["docker_image"] = self.docker_image
-            return 
-
-        if not self.app_name:
-            return 
+        # terraform typically does not
+        # use docker runtime
+        if self.app_name == "terraform":
+            return
 
         # docker image noet set but app_name is set
-        self.docker_image = "elasticdev/{}-run-env".format(self.app_name)
+        self.docker_image = "config0/{}-run-env".format(self.app_name)
         self.syncvars.class_vars["docker_image"] = self.docker_image
 
     def _mkdir(self,dir_path):
@@ -1494,67 +1494,6 @@ class ResourceCmdHelper:
                            envfile=envfile)
 
         return True
-
-    def add_mod_params(self,resource):
-
-        '''
-        - we typically load the modifications parameters along with created resource like a
-        VPC or database
-
-        - the resource is therefore self contained, whereby it specifies to the
-        system how it can be validated/destroyed.
-
-        - for terraform, we include things like the docker image used to
-        validate/destroy the resource and any environmental variables
-        '''
-
-        # Create mod params resource arguments and reference
-        resource["mod_params"] = {"shelloutconfig":self.shelloutconfig}
-
-        # environmental variables to include during destruction
-        env_vars = {
-            "DOCKER_EXEC_ENV": self.docker_image,
-            "DOCKER_RUNTIME": self.docker_image,
-            "REMOTE_STATEFUL_BUCKET":self.remote_stateful_bucket,
-            "STATEFUL_ID": self.stateful_id,
-            "BUILD_TIMEOUT": self.build_timeout,
-            "APP_DIR":self.app_dir,
-        }
-
-        self._insert_tf_version(env_vars)
-
-        if hasattr(self,"drift_protection") and self.drift_protection:
-            resource["drift_protection"] = self.drift_protection
-
-        resource["mod_params"]["env_vars"] = env_vars
-
-        if env_vars.get("STATEFUL_ID"):
-            resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
-
-        if self.mod_execgroup:
-            resource["mod_params"]["execgroup"] = self.mod_execgroup
-
-        if self.destroy_env_vars:
-            resource["destroy_params"] = {
-                "env_vars": dict({"METHOD": "destroy"},
-                                 **self.destroy_env_vars)
-            }
-        else:
-            resource["destroy_params"] = {
-                "env_vars": {"METHOD": "destroy"}
-            }
-
-        if self.validate_env_vars:
-            resource["validate_params"] = {
-                "env_vars":dict({"METHOD":"validate"},
-                                **self.validate_env_vars)
-            }
-        else:
-            resource["validate_params"] = {
-                "env_vars":{"METHOD":"validate"}
-            }
-
-        return resource
 
     def eval_failure(self,results,method):
 

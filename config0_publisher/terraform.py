@@ -31,7 +31,7 @@ class TFConstructor(object):
         self.resource_name = kwargs["resource_name"]
         self.resource_type = kwargs["resource_type"]
         self.terraform_type = kwargs["terraform_type"]
-        self.docker_runtime = kwargs.get("docker_runtime")
+        self.tf_runtime = kwargs.get("tf_runtime")
         self.include_raw = kwargs.get("include_raw",True)
 
         self.ssm_format = kwargs.get("ssm_format", ".env")
@@ -112,15 +112,15 @@ class TFConstructor(object):
 
         include = []
 
-        if not hasattr(self.stack,"docker_runtime") or not self.stack.docker_runtime:
-            include.append("docker_runtime")
-            if self.docker_runtime:
-                self.stack.set_variable("docker_runtime",
-                                        self.docker_runtime,
+        if not hasattr(self.stack,"tf_runtime") or not self.stack.tf_runtime:
+            include.append("docker_image")
+            if self.docker_image:
+                self.stack.set_variable("docker_image",
+                                        self.docker_image,
                                         types="str")
             else:
-                self.stack.parse.add_required(key="docker_runtime",
-                                              default="elasticdev/terraform-run-env:1.3.7",
+                self.stack.parse.add_required(key="docker_image",
+                                              default="terraform:1.5.4",
                                               types="str")
 
         if not hasattr(self.stack,"stateful_id"):
@@ -165,7 +165,7 @@ class TFConstructor(object):
                                           default=True,
                                           types="bool,str")
 
-        self.stack.parse.tag_key(key="docker_runtime",
+        self.stack.parse.tag_key(key="docker_image",
                                  tags="resource,db,execgroup_inputargs,tf_runtime")
 
         self.stack.parse.tag_key(key="remote_stateful_bucket",
@@ -329,8 +329,8 @@ class TFConstructor(object):
         overide_values["runtime_env_vars_hash"] = self._get_runtime_env_vars()
 
         # user provided overides
-        if self.docker_runtime:
-            overide_values["docker_runtime"] = self.docker_runtime
+        if self.docker_image:
+            overide_values["docker_image"] = self.docker_image
 
         # this is really ssm name
         if self.ssm_name:

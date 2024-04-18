@@ -3,6 +3,7 @@
 import os
 
 class TFCmdOnAWS(object):
+
     def __init__(self,**kwargs):
 
         self.classname = "TFCmdOnAWS"
@@ -12,6 +13,9 @@ class TFCmdOnAWS(object):
         self.envfile = kwargs["envfile"]
         self.app_name = "terraform"
         self.dl_subdir = "config0/downloads"
+        self.tf_binary = kwargs["tf_binary"]
+        self.tf_version = kwargs["tf_version"]
+        self.arch = kwargs["arch"]
 
     def reset_dirs(self):
 
@@ -24,7 +28,11 @@ class TFCmdOnAWS(object):
 
         return cmds
 
-    def get_tf_install(self,tf_bucket_path,tf_version="1.3.7"):
+    def get_tf_install(self):
+
+        '''
+        https://github.com/opentofu/opentofu/releases/download/v1.6.2/tofu_1.6.2_linux_amd64.zip
+        '''
 
         if self.runtime_env == "codebuild":
             cmds = [
@@ -32,19 +40,21 @@ class TFCmdOnAWS(object):
               'which zip || apt-get install -y unzip zip',
             ]
         else:
-            cmds = [f'echo "downloading {self.app_name}_{tf_version}"']
+            cmds = [f'echo "downloading {self.tf_binary}_{self.tf_version}"']
 
-        if tf_bucket_path:
-            cmds.extend([
-                f'([ ! -f "$TMPDIR/{self.dl_subdir}/{self.app_name}_{tf_version}" ] && aws s3 cp {tf_bucket_path} $TMPDIR/{self.dl_subdir}/{self.app_name}_{tf_version} --quiet ) || (cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet)'
-            ])
-        else:
-            cmds.extend([
-                f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{tf_version}/{self.app_name}_{tf_version}_linux_amd64.zip -o {self.app_name}_{tf_version} && aws s3 cp {self.app_name}_{tf_version} {tf_bucket_path} --quiet'
-            ])
+        bucket_install = f'([ ! -f "$TMPDIR/{self.dl_subdir}/{self.tf_binary}_{self.tf_version}" ] && aws s3 cp {self.tf_bucket_path} $TMPDIR/{self.dl_subdir}/{self.tf_binary}_{self.tf_version} --quiet )'
+        terraform_direct = f'(cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{self.tf_version}/{self.tf_binary}_{self.tf_version}_{self.arch}.zip -o {self.tf_binary}_{self.tf_version} && aws s3 cp {self.tf_binary}_{self.tf_version} {self.tf_bucket_path} --quiet)'
+        opentofu_direct = f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{self.tf_version}/{self.tf_binary}_{self.tf_version}_{self.arch}.zip -o {self.tf_binary}_{self.tf_version} && aws s3 cp {self.tf_binary}_{self.tf_version} {self.tf_bucket_path} --quiet'
+
+        if self.tf_binary == "terraform":
+            _install_cmd = f'{bucket_install} || {terraform_direct}'
+        else:  # opentofu
+            _install_cmd = f'{bucket_install} || {opentofu_direct}'
+
+        cmds.append(_install_cmd)
 
         cmds.extend([
-            f'(cd $TMPDIR/{self.dl_subdir} && unzip {self.app_name}_{tf_version} && mv {self.app_name} $TF_PATH > /dev/null) || exit 0',
+            f'(cd $TMPDIR/{self.dl_subdir} && unzip {self.tf_binary}_{self.tf_version} && mv {self.tf_binary} $TF_PATH > /dev/null) || exit 0',
             'chmod 777 $TF_PATH'
             ]
         )
@@ -148,11 +158,11 @@ class TFCmdOnAWS(object):
 
         return cmds
 
-class AWSBaseBuildParams(object):
+class TFAwsBaseBuildParams(object):
 
     def __init__(self,**kwargs):
 
-        self.classname = "AWSBaseBuildParams"
+        self.classname = "TFAwsBaseBuildParams"
 
         self.method = kwargs.get("method","create")
 
@@ -175,12 +185,15 @@ class AWSBaseBuildParams(object):
 
         #self._override_env_var_method()
 
-        self.tf_bucket_key = None
-        self.tf_bucket_path = None
-
         self.app_name = "terraform"
-        self.tf_version = self.build_env_vars.get("TF_VERSION",
-                                                  "1.5.4")
+
+        self.tf_binary = kwargs["tf_binary"]
+        self.tf_version = kwargs["tf_version"]
+        self.tf_runtime = kwargs["tf_runtime"]
+
+        self.run_share_dir = kwargs["run_share_dir"]
+        self.app_dir = kwargs["app_dir"]
+
         self._set_tmp_tf_bucket_loc()
 
     def _set_tmp_tf_bucket_loc(self):

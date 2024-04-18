@@ -1,25 +1,24 @@
 #!/usr/bin/env python
 
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
-from config0_publisher.resource.aws import AWSBaseBuildParams
+from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.aws import TFCmdOnAWS
 from config0_publisher.utilities import print_json
 
 
-class LambdaParams(AWSBaseBuildParams):
+class LambdaParams(TFAwsBaseBuildParams):
 
     def __init__(self,**kwargs):
 
-        AWSBaseBuildParams.__init__(self,**kwargs)
+        TFAwsBaseBuildParams.__init__(self,**kwargs)
 
         self.classname = "LambdaParams"
+
         self.lambda_basename = kwargs.get("lambda_basename",
                                           "config0-iac")
+
         self.lambda_role = kwargs.get("lambda_role",
                                       "config0-assume-poweruser")
-
-        self.run_share_dir = kwargs["run_share_dir"]
-        self.app_dir = kwargs["app_dir"]
 
     def _set_inputargs(self):
 
@@ -42,7 +41,7 @@ class LambdaParams(AWSBaseBuildParams):
 
         env_vars = {
             "TMPDIR":"/tmp",
-            "TF_PATH":"/tmp/config0/bin/terraform",
+            "TF_PATH":f"/tmp/config0/bin/{self.tf_binary}",
             "METHOD":self.method
         }
 
@@ -91,12 +90,16 @@ class Lambdabuild(LambdaParams):
         self.tfcmds = TFCmdOnAWS(runtime_env="lambda",
                                  run_share_dir=self.run_share_dir,
                                  app_dir=self.app_dir,
-                                 envfile="build_env_vars.env")
+                                 envfile="build_env_vars.env",
+                                 tf_binary=self.tf_binary,
+                                 tf_version=self.tf_version,
+                                 arch="linux_amd64"
+                                 )
+
     def _get_prebuild_cmds(self):
 
         cmds = self.tfcmds.s3_to_local()
-        cmds.extend(self.tfcmds.get_tf_install(self.tf_bucket_path,
-                                               self.tf_version))
+        cmds.extend(self.tfcmds.get_tf_install())
         cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=False))
         cmds.append(self.tfcmds.get_src_buildenv_vars_cmd())
 
