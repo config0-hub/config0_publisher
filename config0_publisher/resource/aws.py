@@ -51,7 +51,7 @@ class TFCmdOnAWS(object):
         if self.tf_binary == "terraform":
             distro = "terraform"
         else:
-            distro = "opentofu"
+            distro = "tofu"
 
         bucket_install = f'([ ! -f "$TMPDIR/{self.dl_subdir}/{distro}_{self.tf_version}" ] && aws s3 cp {self.tf_bucket_path} $TMPDIR/{self.dl_subdir}/{distro}_{self.tf_version} --quiet )'
         terraform_direct = f'(cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{self.tf_version}/{distro}_{self.tf_version}_{self.arch}.zip -o {distro}_{self.tf_version} && aws s3 cp {distro}_{self.tf_version} {self.tf_bucket_path} --quiet)'
@@ -226,4 +226,5 @@ class TFAwsBaseBuildParams(object):
             self.tf_bucket_key = f"downloads/opentofu/{self.tf_version}"
         else:
             self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
+
         self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
