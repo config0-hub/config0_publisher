@@ -167,10 +167,10 @@ class TFConstructor(object):
                                           types="bool,str")
 
         self.stack.parse.tag_key(key="docker_image",
-                                 tags="resource,db,execgroup_inputargs,tf_runtime")
+                                 tags="resource,db,execgroup_inputargs,tf_exec_env")
 
         self.stack.parse.tag_key(key="remote_stateful_bucket",
-                                 tags="resource,db,execgroup_inputargs,tf_runtime")
+                                 tags="resource,db,execgroup_inputargs,tf_exec_env")
 
         self.stack.parse.tag_key(key="use_remote_state",
                                  tags="execgroup_inputargs")
@@ -195,7 +195,7 @@ class TFConstructor(object):
                                     self.stack.random_id())
 
         self.stack.parse.tag_key(key="stateful_id",
-                                 tags="resource,db,execgroup_inputargs,tf_runtime")
+                                 tags="resource,db,execgroup_inputargs,tf_exec_env")
 
     def _add_to_list(self,existing_keys,keys=None):
 
@@ -287,7 +287,7 @@ class TFConstructor(object):
     def _get_runtime_env_vars(self):
 
         # docker env vars during execution
-        env_vars = self.stack.get_tagged_vars(tag="tf_runtime",
+        env_vars = self.stack.get_tagged_vars(tag="tf_exec_env",
                                               output="dict",
                                               uppercase=True)
 

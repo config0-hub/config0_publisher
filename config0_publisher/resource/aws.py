@@ -198,7 +198,6 @@ class TFAwsBaseBuildParams(object):
 
         self.tf_binary = kwargs["tf_binary"]
         self.tf_version = kwargs["tf_version"]
-        self.tf_runtime = kwargs["tf_runtime"]
 
         self.run_share_dir = kwargs["run_share_dir"]
         self.app_dir = kwargs["app_dir"]
