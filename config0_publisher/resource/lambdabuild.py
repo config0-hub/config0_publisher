@@ -91,8 +91,8 @@ class Lambdabuild(LambdaParams):
                                  run_share_dir=self.run_share_dir,
                                  app_dir=self.app_dir,
                                  envfile="build_env_vars.env",
-                                 tf_binary="tofu",
-                                 tf_version="1.6.2",
+                                 tf_binary=self.tf_binary,
+                                 tf_version=self.tf_version,
                                  tf_bucket_path=self.tf_bucket_path,
                                  arch="linux_amd64"
                                  )

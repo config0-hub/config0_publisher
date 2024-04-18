@@ -53,9 +53,9 @@ class TFCmdOnAWS(object):
         opentofu_direct = f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{self.tf_version}/{distro}_{self.tf_version}_{self.arch}.zip -o {distro}_{self.tf_version} && aws s3 cp {distro}_{self.tf_version} {self.tf_bucket_path} --quiet'
 
         if self.tf_binary == "terraform":
-            _install_cmd = f'{bucket_install} || {terraform_direct}'
+            _install_cmd = f'{bucket_install} || (echo "terraform/opentofu not found in local s3 bucket" && {terraform_direct}'
         else:  # opentofu
-            _install_cmd = f'{bucket_install} || {opentofu_direct}'
+            _install_cmd = f'{bucket_install} || (echo "terraform/opentofu not found in local s3 bucket" && {opentofu_direct}'
 
         cmds.append(_install_cmd)
 
@@ -197,9 +197,6 @@ class TFAwsBaseBuildParams(object):
         self.tf_binary = kwargs["tf_binary"]
         self.tf_version = kwargs["tf_version"]
         self.tf_runtime = kwargs["tf_runtime"]
-
-        # testtest789
-        self.tf_runtime = "terraform:1.5.4"
 
         self.run_share_dir = kwargs["run_share_dir"]
         self.app_dir = kwargs["app_dir"]
