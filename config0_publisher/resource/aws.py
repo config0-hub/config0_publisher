@@ -92,6 +92,10 @@ class TFCmdOnAWS(object):
                 'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
                 'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
                 'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
+                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
+                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
+                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
+                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
                 f'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} || echo "WARNING: SSM_NAME: $SSM_NAME not set or problems fetching it"'
             ]
 
