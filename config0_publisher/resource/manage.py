@@ -257,7 +257,7 @@ class ResourceCmdHelper:
 
     def _insert_tf_env_vars(self,env_vars):
 
-        print_json(self.tf.configs)
+        print_json(self.tf_configs)
         raise Exception('jo')
 
         try:
