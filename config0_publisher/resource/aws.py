@@ -222,5 +222,8 @@ class TFAwsBaseBuildParams(object):
         if not self.tmp_bucket:
             return
 
-        self.tf_bucket_key = f"downloads/{self.app_name}/{self.tf_version}"
+        if self.tf_binary in ["opentofu", "tofu"]:
+            self.tf_bucket_key = f"downloads/opentofu/{self.tf_version}"
+        else:
+            self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
         self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
