@@ -237,8 +237,17 @@ class ResourceCmdHelper:
     ##################################################################
     # ref 3241245124321
     # move back to resource_wrapper - testing now opentofu
+    # insert 34523452
     ##################################################################
     def _insert_tf_env_vars(self,env_vars):
+
+        # testtest789
+        print(self.tf_runtime)
+        print(self.tf_runtime)
+        print(self.tf_runtime)
+        print(self.tf_runtime)
+        print(self.tf_runtime)
+        raise Exception("d"*32)
 
         if self.tf_runtime:
             tf_binary,tf_version = self.tf_runtime.split(":")
