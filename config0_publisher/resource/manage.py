@@ -947,27 +947,28 @@ class ResourceCmdHelper:
     def config_resource_details(self,resource):
 
         if not isinstance(resource,dict) and not isinstance(resource,list):
-
-            # testtest789
-            raise Exception('hello1')
-
             self.logger.error("resource needs to be a dictionary or list!")
             return False
-
-        # testtest789
-        raise Exception('hello2')
-
 
         if isinstance(resource,dict):
 
             self.add_resource_tags(resource)
+
+            # testtest789
+            print('hello1'*32)
 
             try:
                 self.add_mod_params(resource)
             except:
                 self.logger.debug("Did not add mod params")
 
+            # testtest789
+            raise Exception('hello1')
+
         if isinstance(resource,list):
+
+            # testtest789
+            raise Exception('hello2')
 
             for _resource in resource:
 
