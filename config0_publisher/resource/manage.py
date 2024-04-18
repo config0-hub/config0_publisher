@@ -239,43 +239,41 @@ class ResourceCmdHelper:
     # move back to resource_wrapper - testing now opentofu
     # insert 34523452
     ##################################################################
+    def _get_tf_binary_version(self):
+
+        try:
+            tf_binary,tf_version = self.tf_configs["tf_runtime"].split(":")
+        except:
+            return "terraform","1.5.4"
+
+        if tf_binary == "opentofu":
+            tf_binary = "tofu"
+
+        if tf_binary not in ["tofu","terraform"]:
+            return "terraform","1.5.4"
+
+        return tf_binary,tf_version
+
     def _insert_tf_env_vars(self,env_vars):
 
-        print("d0"*32)
-        print(self.tf_runtime)
-        print_json(self.tf_configs)
-        print("d1"*32)
-        print(self.tf_configs.get("tf_runtime"))
-        print("d2"*32)
-        raise
+        try:
+            tf_binary = self.tf_configs["tf_binary"]
+            tf_version = self.tf_configs["tf_version"]
+        except:
+            tf_binary = None
+            tf_version = None
 
-        if self.tf_runtime:
-            tf_binary,tf_version = self.tf_runtime.split(":")
-        else:
-            tf_binary = "terraform"
-            tf_version = "1.5.4"
-
-        if not env_vars.get("TF_VERSION") and os.environ.get("TF_VERSION"):
-            env_vars["TF_VERSION"] = os.environ["TF_VERSION"]
-
-        if not env_vars.get("TF_VERSION") and self.tf_version:
-            env_vars["TF_VERSION"] = self.tf_version
-
-        if not env_vars.get("TF_BINARY") and os.environ.get("TF_BINARY") == "tofu":
-            env_vars["TF_BINARY"] = "tofu"
-
-        if not env_vars.get("TF_BINARY") and self.tf_binary == "tofu":
-            env_vars["TF_BINARY"] = "tofu"
-
-        if not env_vars.get("TF_BINARY"):
-            env_vars["TF_BINARY"] = tf_binary
+        if not tf_binary or not tf_version:
+            tf_binary,tf_version = self._get_tf_binary_version()
 
         if not env_vars.get("TF_VERSION"):
             env_vars["TF_VERSION"] = tf_version
 
-        env_vars["TF_RUNTIME"] = f'{env_vars["TF_BINARY"]}:{env_vars["TF_VERSION"]}'
+        if not env_vars.get("TF_BINARY"):
+            env_vars["TF_BINARY"] = tf_binary
 
         # synchronize to keep things consistent
+        env_vars["TF_RUNTIME"] = f'{env_vars["TF_BINARY"]}:{env_vars["TF_VERSION"]}'
         self.tf_version = env_vars["TF_VERSION"]
         self.tf_binary = env_vars["TF_BINARY"]
         self.tf_runtime = env_vars["TF_RUNTIME"]
