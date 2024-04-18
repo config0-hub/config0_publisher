@@ -234,6 +234,50 @@ class ResourceCmdHelper:
 
         #self._debug_print_out_key_class_vars()
 
+    ##################################################################
+    # ref 3241245124321
+    # move back to resource_wrapper - testing now opentofu
+    ##################################################################
+    def _insert_tf_env_vars(self,env_vars):
+
+        if self.tf_runtime:
+            tf_binary,tf_version = self.tf_runtime.split(":")
+        else:
+            tf_binary = "terraform"
+            tf_version = "1.5.4"
+
+        if not env_vars.get("TF_VERSION") and os.environ.get("TF_VERSION"):
+            env_vars["TF_VERSION"] = os.environ["TF_VERSION"]
+
+        if not env_vars.get("TF_VERSION") and self.tf_version:
+            env_vars["TF_VERSION"] = self.tf_version
+
+        if not env_vars.get("TF_BINARY") and os.environ.get("TF_BINARY") == "tofu":
+            env_vars["TF_BINARY"] = "tofu"
+
+        if not env_vars.get("TF_BINARY") and self.tf_binary == "tofu":
+            env_vars["TF_BINARY"] = "tofu"
+
+        if not env_vars.get("TF_BINARY"):
+            env_vars["TF_BINARY"] = tf_binary
+
+        if not env_vars.get("TF_VERSION"):
+            env_vars["TF_VERSION"] = tf_version
+
+        env_vars["TF_RUNTIME"] = f'{env_vars["TF_BINARY"]}:{env_vars["TF_VERSION"]}'
+
+        self.tf_version = env_vars["TF_VERSION"]
+        self.tf_binary = env_vars["TF_BINARY"]
+        self.tf_runtime = env_vars["TF_RUNTIME"]
+
+        # testtest789
+        print("a"*32)
+        print_json(env_vars)
+        print("b"*32)
+        raise Exception("c"*32)
+
+    ##################################################################
+
     def _set_json_files(self):
 
         if not hasattr(self,"config0_resource_json_file") or not self.config0_resource_json_file:
