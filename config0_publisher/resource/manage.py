@@ -944,16 +944,19 @@ class ResourceCmdHelper:
 
         return self.config_resource_details(resource)
 
-    # testtest789
-    # the below may not be used
     def config_resource_details(self,resource):
 
-        # testtest789
-        raise Exception('hello')
-
         if not isinstance(resource,dict) and not isinstance(resource,list):
+
+            # testtest789
+            raise Exception('hello1')
+
             self.logger.error("resource needs to be a dictionary or list!")
             return False
+
+        # testtest789
+        raise Exception('hello2')
+
 
         if isinstance(resource,dict):
 
