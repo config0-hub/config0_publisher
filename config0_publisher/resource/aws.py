@@ -61,7 +61,7 @@ class TFCmdOnAWS(object):
         cmds.append(_install_cmd)
 
         cmds.extend([
-            f'mkdir -p {self.tf_path_dir} || echo "trouble making tf_path_dir {self.tf_path_dir}',
+            f'mkdir -p {self.tf_path_dir} || echo "trouble making tf_path_dir {self.tf_path_dir}"',
             f'(cd $TMPDIR/{self.dl_subdir} && unzip {self.tf_binary}_{self.tf_version} && mv {self.tf_binary} {self.tf_path_dir}/{self.tf_binary} > /dev/null) || exit 0',
             f'chmod 777 {self.tf_path_dir}/{self.tf_binary}'])
 
