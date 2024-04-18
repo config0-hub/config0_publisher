@@ -291,6 +291,8 @@ class ResourceCmdHelper:
         #if self.phase == "submit":
         #    return _awsbuild.submit(**self.get_phase_inputargs())
 
+    # testtest789
+    # the below may not be used
     def add_mod_params(self,resource):
 
         '''
@@ -318,18 +320,6 @@ class ResourceCmdHelper:
         }
 
         self._insert_tf_env_vars(env_vars)
-
-        # testtest789
-        print("s0"*32)
-        env_vars["NAME"] = "jimmy"
-        print_json(env_vars)
-        print("s1"*32)
-        print(self.tf_runtime)
-        print("s2"*32)
-        print(self.tf_binary)
-        print("s3"*32)
-        print(self.tf_version)
-        print("s4"*32)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
             resource["drift_protection"] = self.drift_protection
@@ -954,6 +944,8 @@ class ResourceCmdHelper:
 
         return self.config_resource_details(resource)
 
+    # testtest789
+    # the below may not be used
     def config_resource_details(self,resource):
 
         if not isinstance(resource,dict) and not isinstance(resource,list):
@@ -964,10 +956,13 @@ class ResourceCmdHelper:
 
             self.add_resource_tags(resource)
 
+            # testtest789
+            self.add_mod_params(resource)
+
             try:
                 self.add_mod_params(resource)
             except:
-                self.logger.debug("Did not add destroy params")
+                self.logger.debug("Did not add mod params")
 
         if isinstance(resource,list):
 
@@ -981,7 +976,7 @@ class ResourceCmdHelper:
                 try:
                     self.add_mod_params(_resource)
                 except:
-                    self.logger.debug("Did not add destroy params")
+                    self.logger.debug("Did not add mod params")
 
         return resource
 
