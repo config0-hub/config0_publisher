@@ -269,6 +269,18 @@ class ResourceCmdHelper:
 
         self._insert_tf_env_vars(env_vars)
 
+        # testtest789
+        print("s0"*32)
+        print_json(env_vars)
+        print("s1"*32)
+        print(self.tf_runtime)
+        print("s2"*32)
+        print(self.tf_binary)
+        print("s3"*32)
+        print(self.tf_version)
+        print("s4"*32)
+        sleep(20)
+
         if hasattr(self,"drift_protection") and self.drift_protection:
             resource["drift_protection"] = self.drift_protection
 
