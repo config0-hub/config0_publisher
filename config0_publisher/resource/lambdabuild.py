@@ -39,6 +39,12 @@ class LambdaParams(TFAwsBaseBuildParams):
 
     def get_init_env_vars(self):
 
+        # testtest789
+        print("a"*32)
+        print(self.tf_binary)
+        print("b"*32)
+        raise Exception("c"*32)
+
         env_vars = {
             "TMPDIR":"/tmp",
             "TF_PATH":f"/tmp/config0/bin/{self.tf_binary}",
