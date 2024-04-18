@@ -32,6 +32,7 @@ class TFConstructor(object):
         self.resource_type = kwargs["resource_type"]
         self.terraform_type = kwargs["terraform_type"]
         self.tf_runtime = kwargs.get("tf_runtime")
+        self.docker_image = kwargs.get("docker_image")
         self.include_raw = kwargs.get("include_raw",True)
 
         self.ssm_format = kwargs.get("ssm_format", ".env")
@@ -328,7 +329,6 @@ class TFConstructor(object):
         overide_values["resource_configs_hash"] = self._get_resource_configs_hash()
         overide_values["runtime_env_vars_hash"] = self._get_runtime_env_vars()
 
-        # user provided overides
         if self.docker_image:
             overide_values["docker_image"] = self.docker_image
 
