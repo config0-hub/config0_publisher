@@ -317,6 +317,9 @@ class ResourceCmdHelper:
         env_vars["TF_VERSION"] = tf_version
         env_vars["TF_BINARY"] = tf_binary
 
+        self.tf_version = tf_version
+        self.tf_binary = tf_binary
+
         # synchronize to keep things consistent
         env_vars["TF_RUNTIME"] = f'{tf_binary}:{tf_version}'
         self.tf_runtime = env_vars["TF_RUNTIME"]
