@@ -291,8 +291,6 @@ class ResourceCmdHelper:
         #if self.phase == "submit":
         #    return _awsbuild.submit(**self.get_phase_inputargs())
 
-    # testtest789
-    # the below may not be used
     def add_mod_params(self,resource):
 
         '''
@@ -960,12 +958,7 @@ class ResourceCmdHelper:
             except:
                 self.logger.debug("Did not add mod params")
 
-            print_json(resource)
-
-            # testtest789
-            raise Exception('hello1')
-
-        if isinstance(resource,list):
+        elif isinstance(resource,list):
 
             for _resource in resource:
 
