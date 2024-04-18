@@ -320,9 +320,8 @@ class ResourceCmdHelper:
             "APP_DIR": self.app_dir,
         }
 
+        resource["mod_params"]["inputargs"] = self._insert_tf_env_vars(env_vars)
         resource["mod_params"]["env_vars"] = env_vars
-
-        self._insert_var_tf_mods(resource)
 
         if env_vars.get("STATEFUL_ID"):
             resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
@@ -360,20 +359,20 @@ class ResourceCmdHelper:
 
         return tf_binary,tf_version
 
-    def _insert_var_tf_mods(self,resource):
+    def _insert_tf_env_vars(self,env_vars):
 
         self.tf_binary,self.tf_version = self._get_tf_binary_version()
         self.tf_runtime = f'{self.tf_binary}:{self.tf_version}'
 
-        resource["mod_params"]["env_vars"]["TF_VERSION"] = self.tf_version
-        resource["mod_params"]["env_vars"]["TF_BINARY"] = self.tf_binary
-        resource["mod_params"]["env_vars"]["TF_RUNTIME"] = self.tf_runtime
+        env_vars["TF_VERSION"] = self.tf_version
+        env_vars["TF_BINARY"] = self.tf_binary
+        env_vars["TF_RUNTIME"] = self.tf_runtime
 
-        resource["mod_params"]["inputargs"] = {
-                           "tf_runtime":self.tf_runtime,
-                           "tf_binary": self.tf_binary,
-                           "tf_version": self.tf_version
-                           }
+        return {
+             "tf_runtime":self.tf_runtime,
+             "tf_binary": self.tf_binary,
+             "tf_version": self.tf_version
+             }
 
         ##################################################################
 
