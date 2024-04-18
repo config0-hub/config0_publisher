@@ -518,10 +518,6 @@ class EnvVarsToClassVars:
             return
 
         self.env_vars = self.main_vars["env_vars"]
-        print("e"*32)
-        print_json(self.env_vars)
-        print("e"*32)
-        raise Exception("e"*32)
         self.env_vars_to_class_vars(self.env_vars)
 
     def env_vars_to_class_vars(self,env_vars):

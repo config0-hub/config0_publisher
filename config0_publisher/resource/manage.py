@@ -250,6 +250,8 @@ class ResourceCmdHelper:
         print("d"*32)
         print_json(self.tf_configs)
         print("d"*32)
+        print_json(self.runtime_exec)
+        print("d"*32)
         raise Exception("d"*32)
 
         if self.tf_runtime:
