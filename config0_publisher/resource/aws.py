@@ -48,27 +48,21 @@ class TFCmdOnAWS(object):
         else:
             cmds = [f'echo "downloading {self.tf_binary}_{self.tf_version}"']
 
-        if self.tf_binary == "terraform":
-            distro = "terraform"
-        else:
-            distro = "tofu"
-
-        bucket_install = f'([ ! -f "$TMPDIR/{self.dl_subdir}/{distro}_{self.tf_version}" ] && aws s3 cp {self.tf_bucket_path} $TMPDIR/{self.dl_subdir}/{distro}_{self.tf_version} --quiet )'
-        terraform_direct = f'(cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{self.tf_version}/{distro}_{self.tf_version}_{self.arch}.zip -o {distro}_{self.tf_version} && aws s3 cp {distro}_{self.tf_version} {self.tf_bucket_path} --quiet)'
-        opentofu_direct = f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{self.tf_version}/{distro}_{self.tf_version}_{self.arch}.zip -o {distro}_{self.tf_version} && aws s3 cp {distro}_{self.tf_version} {self.tf_bucket_path} --quiet'
+        bucket_install = f'([ ! -f "$TMPDIR/{self.dl_subdir}/{self.tf_binary}_{self.tf_version}" ] && aws s3 cp {self.tf_bucket_path} $TMPDIR/{self.dl_subdir}/{self.tf_binary}_{self.tf_version} --quiet )'
+        terraform_direct = f'(cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{self.tf_version}/{self.tf_binary}_{self.tf_version}_{self.arch}.zip -o {self.tf_binary}_{self.tf_version} && aws s3 cp {self.tf_binary}_{self.tf_version} {self.tf_bucket_path} --quiet)'
+        tofu_direct = f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{self.tf_version}/{self.tf_binary}_{self.tf_version}_{self.arch}.zip -o {self.tf_binary}_{self.tf_version} && aws s3 cp {self.tf_binary}_{self.tf_version} {self.tf_bucket_path} --quiet'
 
         if self.tf_binary == "terraform":
-            _install_cmd = f'{bucket_install} || (echo "terraform/opentofu not found in local s3 bucket" && {terraform_direct})'
+            _install_cmd = f'{bucket_install} || (echo "terraform/tofu not found in local s3 bucket" && {terraform_direct})'
         else:  # opentofu
-            _install_cmd = f'{bucket_install} || (echo "terraform/opentofu not found in local s3 bucket" && {opentofu_direct})'
+            _install_cmd = f'{bucket_install} || (echo "terraform/tofu not found in local s3 bucket" && {tofu_direct})'
 
         cmds.append(_install_cmd)
 
         cmds.extend([
-            f'(cd $TMPDIR/{self.dl_subdir} && unzip {distro}_{self.tf_version} && mv {self.tf_binary} {self.tf_path} > /dev/null) || exit 0',
+            f'(cd $TMPDIR/{self.dl_subdir} && unzip {self.tf_binary}_{self.tf_version} && mv {self.tf_binary} {self.tf_path} > /dev/null) || exit 0',
             f'chmod 777 {self.tf_path}'
-            ]
-        )
+            self.tf_binary
 
         return cmds
 
@@ -223,7 +217,7 @@ class TFAwsBaseBuildParams(object):
             return
 
         if self.tf_binary in ["opentofu", "tofu"]:
-            self.tf_bucket_key = f"downloads/opentofu/{self.tf_version}"
+            self.tf_bucket_key = f"downloads/tofu/{self.tf_version}"
         else:
             self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
 
