@@ -66,7 +66,7 @@ class TFCmdOnAWS(object):
 
         cmds.extend([
             f'(cd $TMPDIR/{self.dl_subdir} && unzip {distro}_{self.tf_version} && mv {self.tf_binary} {self.tf_path} > /dev/null) || exit 0',
-            'chmod 777 {self.tf_path}'
+            f'chmod 777 {self.tf_path}'
             ]
         )
 
