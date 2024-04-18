@@ -59,6 +59,8 @@ class TFCmdOnAWS(object):
             ]
         )
 
+        cmds.append('echo "hello testing"')
+
         return cmds
     def get_decrypt_buildenv_vars(self,openssl=True):
 
