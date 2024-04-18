@@ -931,9 +931,10 @@ class ResourceCmdHelper:
 
         return values
 
-    def add_mod_params(self,resource):
-        self.logger.debug("add_mod_params is to specified by the inherited class")
-        return
+    # testtest789
+    #def add_mod_params(self,resource):
+    #    self.logger.debug("add_mod_params is to specified by the inherited class")
+    #    return
 
     def get_resource_details(self):
 
@@ -954,21 +955,17 @@ class ResourceCmdHelper:
 
             self.add_resource_tags(resource)
 
-            # testtest789
-            print('hello1'*32)
-
             try:
                 self.add_mod_params(resource)
             except:
                 self.logger.debug("Did not add mod params")
 
+            print_json(resource)
+
             # testtest789
             raise Exception('hello1')
 
         if isinstance(resource,list):
-
-            # testtest789
-            raise Exception('hello2')
 
             for _resource in resource:
 
