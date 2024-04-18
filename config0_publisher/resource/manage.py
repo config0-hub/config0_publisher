@@ -309,6 +309,9 @@ class ResourceCmdHelper:
             "shelloutconfig": self.shelloutconfig
         }
 
+        if hasattr(self,"drift_protection") and self.drift_protection:
+            resource["drift_protection"] = self.drift_protection
+
         # environmental variables to include during destruction
         env_vars = {
             "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
@@ -317,12 +320,9 @@ class ResourceCmdHelper:
             "APP_DIR": self.app_dir,
         }
 
-        self._insert_tf_env_vars(env_vars)
-
-        if hasattr(self,"drift_protection") and self.drift_protection:
-            resource["drift_protection"] = self.drift_protection
-
         resource["mod_params"]["env_vars"] = env_vars
+
+        self._insert_var_tf_mods(resource)
 
         if env_vars.get("STATEFUL_ID"):
             resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
@@ -360,31 +360,34 @@ class ResourceCmdHelper:
 
         return tf_binary,tf_version
 
-    def _insert_tf_env_vars(self,env_vars):
+    def _insert_var_tf_mods(self,resource):
 
-        tf_binary,tf_version = self._get_tf_binary_version()
+        resource["mod_params"]["env_vars"] = env_vars
 
-        env_vars["TF_VERSION"] = tf_version
-        env_vars["TF_BINARY"] = tf_binary
+        self.tf_binary,self.tf_version = self._get_tf_binary_version()
+        self.tf_runtime = f'{self.tf_binary}:{self.tf_version}'
 
-        self.tf_version = tf_version
-        self.tf_binary = tf_binary
+        resource["mod_params"]["env_vars"]["TF_VERSION"] = self.tf_version
+        resource["mod_params"]["env_vars"]["TF_BINARY"] = self.tf_binary
+        resource["mod_params"]["env_vars"]["TF_RUNTIME"] = self.tf_runtime
 
-        # synchronize to keep things consistent
-        env_vars["TF_RUNTIME"] = f'{tf_binary}:{tf_version}'
-        self.tf_runtime = env_vars["TF_RUNTIME"]
+        resource["mod_params"]["inputargs"] = {
+                           "tf_runtime":self.tf_runtime,
+                           "tf_binary": self.tf_binary,
+                           "tf_version": self.tf_version
+                           }
 
-    ##################################################################
+        ##################################################################
 
     def _set_json_files(self):
 
-        if not hasattr(self,"config0_resource_json_file") or not self.config0_resource_json_file:
+        if not hasattr(self,"config0_ resource_json_file") or not self.cnfig0_resource_json_file:
             self.config0_resource_json_file = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
 
         if not hasattr(self,"config0_phases_json_file") or not self.config0_phases_json_file:
             self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
 
-        if not self.config0_resource_json_file:
+        if not self.config0_resource_json_file
             try:
                 self.config0_resource_json_file = os.path.join(self.stateful_dir,
                                                           f"resource-{self.stateful_id}.json")
