@@ -321,6 +321,7 @@ class ResourceCmdHelper:
 
         # testtest789
         print("s0"*32)
+        env_vars["NAME"] = "jimmy"
         print_json(env_vars)
         print("s1"*32)
         print(self.tf_runtime)
@@ -329,7 +330,6 @@ class ResourceCmdHelper:
         print("s3"*32)
         print(self.tf_version)
         print("s4"*32)
-        sleep(20)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
             resource["drift_protection"] = self.drift_protection
