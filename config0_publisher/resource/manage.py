@@ -245,7 +245,7 @@ class ResourceCmdHelper:
         print(self.tf_runtime)
         print_json(self.tf_configs)
         print("d1"*32)
-        print(self.tf_configs.get("tf_run_time"))
+        print(self.tf_configs.get("tf_runtime"))
         print("d2"*32)
         raise
 
