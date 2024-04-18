@@ -137,7 +137,7 @@ class TFCmdOnAWS(object):
         base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
-            f'({base_cmd}) && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init || (rm -rf .terraform && $TF_PATH init)',
+            f'({base_cmd}) && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (rm -rf .terraform && $TF_PATH init)',
             f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH plan -out=tfplan',
             f'({base_cmd}) && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH apply tfplan) || ($TF_PATH destroy -auto-approve && exit 9)'
         ]
@@ -149,7 +149,7 @@ class TFCmdOnAWS(object):
         base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
-          f'({base_cmd}) && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init || (rm -rf .terraform && $TF_PATH init)',
+          f'({base_cmd}) && (cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH init) || (rm -rf .terraform && $TF_PATH init)',
           f'({base_cmd}) && cd $TMPDIR/config0/$STATEFUL_ID/build/$APP_DIR && $TF_PATH destroy -auto-approve'
         ]
 
