@@ -1523,9 +1523,6 @@ class ResourceCmdHelper:
         we use stateful_id for the encrypt key
         '''
 
-        # testtest789
-        print_json(self.build_env_vars)
-
         if not self.build_env_vars:
             return
 
