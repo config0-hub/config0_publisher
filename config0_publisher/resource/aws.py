@@ -206,7 +206,9 @@ class TFAwsBaseBuildParams(object):
             self.tmp_bucket = os.environ.get("TMP_BUCKET")
 
         if not self.tmp_bucket:
+            raise Exception("yo")
             return
 
         self.tf_bucket_key = f"downloads/{self.app_name}/{self.tf_version}"
         self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"
+        raise Exception("y1")

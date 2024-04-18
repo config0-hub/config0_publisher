@@ -100,7 +100,6 @@ class Codebuild(CodebuildParams):
                                  envfile="build_env_vars.env",
                                  tf_binary=self.tf_binary,
                                  tf_version=self.tf_version,
-                                 tf_bucket_path=self.tf_bucket_path,
                                  arch="linux_amd64"
                                  )
 
