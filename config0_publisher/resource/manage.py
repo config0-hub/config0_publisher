@@ -279,6 +279,7 @@ class ResourceCmdHelper:
         print("s3"*32)
         print(self.tf_version)
         print("s4"*32)
+        raise Exception("s5"*32)
         sleep(20)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
