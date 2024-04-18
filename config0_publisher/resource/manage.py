@@ -241,6 +241,13 @@ class ResourceCmdHelper:
     ##################################################################
     def _insert_tf_env_vars(self,env_vars):
 
+        print("d0"*32)
+        print(self.tf_runtime)
+        print_json(self.tf_configs)
+        print("d1"*32)
+        print_json(self.runtime_exec)
+        print("d2"*32)
+
         if self.tf_runtime:
             tf_binary,tf_version = self.tf_runtime.split(":")
         else:
