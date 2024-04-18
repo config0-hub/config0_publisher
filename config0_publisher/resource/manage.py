@@ -948,6 +948,9 @@ class ResourceCmdHelper:
     # the below may not be used
     def config_resource_details(self,resource):
 
+        # testtest789
+        raise Exception('hello')
+
         if not isinstance(resource,dict) and not isinstance(resource,list):
             self.logger.error("resource needs to be a dictionary or list!")
             return False
@@ -955,9 +958,6 @@ class ResourceCmdHelper:
         if isinstance(resource,dict):
 
             self.add_resource_tags(resource)
-
-            # testtest789
-            self.add_mod_params(resource)
 
             try:
                 self.add_mod_params(resource)
