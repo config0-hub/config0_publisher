@@ -950,7 +950,6 @@ class ResourceCmdHelper:
             return False
 
         if isinstance(resource,dict):
-
             self.add_resource_tags(resource)
 
             try:
@@ -959,7 +958,6 @@ class ResourceCmdHelper:
                 self.logger.debug("Did not add mod params")
 
         elif isinstance(resource,list):
-
             for _resource in resource:
 
                 self.add_resource_tags(_resource)
