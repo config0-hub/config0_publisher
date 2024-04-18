@@ -278,12 +278,6 @@ class ResourceCmdHelper:
         self.tf_binary = env_vars["TF_BINARY"]
         self.tf_runtime = env_vars["TF_RUNTIME"]
 
-        # testtest789
-        print("a"*32)
-        print_json(env_vars)
-        print("b"*32)
-        raise Exception("c"*32)
-
     ##################################################################
 
     def _set_json_files(self):
