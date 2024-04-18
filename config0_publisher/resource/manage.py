@@ -362,8 +362,6 @@ class ResourceCmdHelper:
 
     def _insert_var_tf_mods(self,resource):
 
-        resource["mod_params"]["env_vars"] = env_vars
-
         self.tf_binary,self.tf_version = self._get_tf_binary_version()
         self.tf_runtime = f'{self.tf_binary}:{self.tf_version}'
 
@@ -387,7 +385,7 @@ class ResourceCmdHelper:
         if not hasattr(self,"config0_phases_json_file") or not self.config0_phases_json_file:
             self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
 
-        if not self.config0_resource_json_file
+        if not self.config0_resource_json_file:
             try:
                 self.config0_resource_json_file = os.path.join(self.stateful_dir,
                                                           f"resource-{self.stateful_id}.json")
