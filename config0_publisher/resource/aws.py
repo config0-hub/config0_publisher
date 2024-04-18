@@ -62,17 +62,11 @@ class TFCmdOnAWS(object):
         cmds.extend([
             f'(cd $TMPDIR/{self.dl_subdir} && unzip {distro}_{self.tf_version} && mv {self.tf_binary} $TF_PATH > /dev/null) || exit 0',
             'chmod 777 $TF_PATH'
-            'echo $TF_PATH',
-            'echo $TF_PATH',
-            'echo $TF_PATH',
-            'echo $TF_PATH'
-            'exit 9'
             ]
         )
 
-        cmds.append('echo "hello testing"')
-
         return cmds
+
     def get_decrypt_buildenv_vars(self,openssl=True):
 
         '''
@@ -203,9 +197,6 @@ class TFAwsBaseBuildParams(object):
         self.tf_binary = kwargs["tf_binary"]
         self.tf_version = kwargs["tf_version"]
         self.tf_runtime = kwargs["tf_runtime"]
-
-        # testtest789
-        self.tf_runtime = "tofu:1.6.2"
 
         self.run_share_dir = kwargs["run_share_dir"]
         self.app_dir = kwargs["app_dir"]
