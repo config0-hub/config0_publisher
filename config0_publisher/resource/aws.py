@@ -194,6 +194,9 @@ class TFAwsBaseBuildParams(object):
         self.tf_version = kwargs["tf_version"]
         self.tf_runtime = kwargs["tf_runtime"]
 
+        # testtest789
+        self.tf_runtime = "opentofu:1.6.2"
+
         self.run_share_dir = kwargs["run_share_dir"]
         self.app_dir = kwargs["app_dir"]
 
