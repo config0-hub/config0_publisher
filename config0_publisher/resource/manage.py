@@ -241,19 +241,6 @@ class ResourceCmdHelper:
     ##################################################################
     def _insert_tf_env_vars(self,env_vars):
 
-        # testtest789
-        print(self.tf_runtime)
-        print(self.tf_runtime)
-        print(self.tf_runtime)
-        print(self.tf_runtime)
-        print(self.tf_runtime)
-        print("d"*32)
-        print_json(self.tf_configs)
-        print("d"*32)
-        print_json(self.runtime_exec)
-        print("d"*32)
-        raise Exception("d"*32)
-
         if self.tf_runtime:
             tf_binary,tf_version = self.tf_runtime.split(":")
         else:
@@ -280,6 +267,7 @@ class ResourceCmdHelper:
 
         env_vars["TF_RUNTIME"] = f'{env_vars["TF_BINARY"]}:{env_vars["TF_VERSION"]}'
 
+        # synchronize to keep things consistent
         self.tf_version = env_vars["TF_VERSION"]
         self.tf_binary = env_vars["TF_BINARY"]
         self.tf_runtime = env_vars["TF_RUNTIME"]
