@@ -43,9 +43,14 @@ class TFCmdOnAWS(object):
         else:
             cmds = [f'echo "downloading {self.tf_binary}_{self.tf_version}"']
 
-        bucket_install = f'([ ! -f "$TMPDIR/{self.dl_subdir}/{self.tf_binary}_{self.tf_version}" ] && aws s3 cp {self.tf_bucket_path} $TMPDIR/{self.dl_subdir}/{self.tf_binary}_{self.tf_version} --quiet )'
-        terraform_direct = f'(cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{self.tf_version}/{self.tf_binary}_{self.tf_version}_{self.arch}.zip -o {self.tf_binary}_{self.tf_version} && aws s3 cp {self.tf_binary}_{self.tf_version} {self.tf_bucket_path} --quiet)'
-        opentofu_direct = f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{self.tf_version}/{self.tf_binary}_{self.tf_version}_{self.arch}.zip -o {self.tf_binary}_{self.tf_version} && aws s3 cp {self.tf_binary}_{self.tf_version} {self.tf_bucket_path} --quiet'
+        if self.tf_binary == "terraform":
+            distro = "terraform"
+        else:
+            distro = "opentofu"
+
+        bucket_install = f'([ ! -f "$TMPDIR/{self.dl_subdir}/{distro}_{self.tf_version}" ] && aws s3 cp {self.tf_bucket_path} $TMPDIR/{self.dl_subdir}/{distro}_{self.tf_version} --quiet )'
+        terraform_direct = f'(cd $TMPDIR/{self.dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{self.tf_version}/{distro}_{self.tf_version}_{self.arch}.zip -o {distro}_{self.tf_version} && aws s3 cp {distro}_{self.tf_version} {self.tf_bucket_path} --quiet)'
+        opentofu_direct = f'cd $TMPDIR/{self.dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{self.tf_version}/{distro}_{self.tf_version}_{self.arch}.zip -o {distro}_{self.tf_version} && aws s3 cp {distro}_{self.tf_version} {self.tf_bucket_path} --quiet'
 
         if self.tf_binary == "terraform":
             _install_cmd = f'{bucket_install} || {terraform_direct}'
@@ -55,8 +60,13 @@ class TFCmdOnAWS(object):
         cmds.append(_install_cmd)
 
         cmds.extend([
-            f'(cd $TMPDIR/{self.dl_subdir} && unzip {self.tf_binary}_{self.tf_version} && mv {self.tf_binary} $TF_PATH > /dev/null) || exit 0',
+            f'(cd $TMPDIR/{self.dl_subdir} && unzip {distro}_{self.tf_version} && mv {self.tf_binary} $TF_PATH > /dev/null) || exit 0',
             'chmod 777 $TF_PATH'
+            'echo $TF_PATH',
+            'echo $TF_PATH',
+            'echo $TF_PATH',
+            'echo $TF_PATH'
+            'exit 9'
             ]
         )
 
@@ -195,7 +205,7 @@ class TFAwsBaseBuildParams(object):
         self.tf_runtime = kwargs["tf_runtime"]
 
         # testtest789
-        self.tf_runtime = "opentofu:1.6.2"
+        self.tf_runtime = "tofu:1.6.2"
 
         self.run_share_dir = kwargs["run_share_dir"]
         self.app_dir = kwargs["app_dir"]
