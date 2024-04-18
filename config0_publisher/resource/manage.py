@@ -22,6 +22,7 @@ from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
 from config0_publisher.shellouts import rm_rf
 from config0_publisher.variables import EnvVarsToClassVars
+from config0_publisher.resource.lambdabuild import Lambdabuild
 #from config0_publisher.variables import SyncClassVarsHelper
 
 # ref 34532045732
@@ -240,7 +241,56 @@ class ResourceCmdHelper:
     # move back to resource_wrapper - testing now opentofu
     # insert 34523452
     ##################################################################
-    
+
+    def _get_aws_exec_cinputargs(self,method="create"):
+
+        cinputargs = {
+            "method": method,
+            "build_timeout": self.build_timeout,
+            "run_share_dir": self.run_share_dir,
+            "app_dir": self.app_dir,
+            "remote_stateful_bucket": self.remote_stateful_bucket,
+            "aws_region": self.aws_region
+        }
+
+        if self.build_env_vars:
+            cinputargs["build_env_vars"] = self.build_env_vars
+
+        if self.ssm_name:
+            cinputargs["ssm_name"] = self.ssm_name
+
+        if self.phases_info:
+            cinputargs["phases_info"] = self.phases_info
+
+        tf_binary,tf_version = self.tf_runtime.split(":")
+
+        cinputargs.update({
+            "tf_version": tf_version,
+            "tf_binary": tf_binary
+        })
+
+        return cinputargs
+
+    def _exec_lambdabuild(self,method="create"):
+
+        cinputargs = self._get_aws_exec_cinputargs(method=method)
+        _awsbuild = Lambdabuild(**cinputargs)
+
+        # submit and run required env file
+        if method == "create":
+            self.create_build_envfile(openssl=False)
+
+        results = _awsbuild.run()
+
+        return results
+
+        # below is for phases - requires more testing
+        #if self.phase == "retrieve":
+        #    return _awsbuild.retrieve(**self.get_phase_inputargs())
+
+        #if self.phase == "submit":
+        #    return _awsbuild.submit(**self.get_phase_inputargs())
+
     def add_mod_params(self,resource):
 
         '''
@@ -279,7 +329,6 @@ class ResourceCmdHelper:
         print("s3"*32)
         print(self.tf_version)
         print("s4"*32)
-        raise Exception("s5"*32)
         sleep(20)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
