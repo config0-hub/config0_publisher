@@ -257,12 +257,8 @@ class ResourceCmdHelper:
 
     def _insert_tf_env_vars(self,env_vars):
 
-        # testtest789
-        print(env_vars["TF_RUNTIME"])
-        print(env_vars["TF_RUNTIME"])
-        print(env_vars["TF_RUNTIME"])
-        print(env_vars["TF_RUNTIME"])
-        raise Exception('yoyo5555')
+        print_json(self.tf.configs)
+        raise Exception('jo')
 
         try:
             tf_binary = self.tf_configs["tf_binary"]
