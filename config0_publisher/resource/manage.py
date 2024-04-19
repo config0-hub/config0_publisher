@@ -368,6 +368,10 @@ class ResourceCmdHelper:
         env_vars["TF_BINARY"] = self.tf_binary
         env_vars["TF_RUNTIME"] = self.tf_runtime
 
+        print("a"*32)
+        print_json(env_vars)
+        print("a"*32)
+
         self.logger.debug("testtest789 35421345214")
         sleep(20)
 
