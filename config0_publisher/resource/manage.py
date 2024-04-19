@@ -320,20 +320,17 @@ class ResourceCmdHelper:
         self._insert_tf_env_vars(env_vars)
 
         # Create mod params resource arguments and reference
-        #resource["mod_params"] = {
-        #    "shelloutconfig": self.shelloutconfig
-        #}
-
-        #if self.mod_execgroup:
-        #    resource["mod_params"]["execgroup"] = self.mod_execgroup
-
         resource["mod_params"] = {
+            "shelloutconfig": self.shelloutconfig,
             "env_vars": env_vars,
             "inputargs": {
                 "tf_runtime":self.tf_runtime,
                 "stateful_id":self.stateful_id,
                 }
             }
+
+        if self.mod_execgroup:
+            resource["mod_params"]["execgroup"] = self.mod_execgroup
 
         if self.destroy_env_vars:
             resource["destroy_params"] = {
