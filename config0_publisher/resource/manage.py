@@ -353,24 +353,25 @@ class ResourceCmdHelper:
 
         try:
             tf_runtime = self.tf_configs["tf_runtime"]
-            self.logger.debug("got tf_runtime from self.tfconfigs")
+            self.logger.debug(f'tf_runtime {tf_runtime} class var "tfconfigs"')
         except:
             tf_runtime = None
 
         if not tf_runtime:
             try:
                 tf_runtime = os.environ["TF_RUNTIME"]
-                self.logger.debug("got tf_runtime env var TF_RUNTIME")
+                self.logger.debug(f'tf_runtime {tf_runtime} from env var "TF_RUNTIME"')
             except:
                 tf_runtime = None
 
         if not tf_runtime:
-            self.logger.debug("using default terraform:1.5.4 for TF_RUNTIME")
-            return "terraform","1.5.4"
+            tf_runtime = "terraform:1.5.4"
+            self.logger.debug(f'tf_runtime {tf_runtime} - using default"')
 
         try:
             tf_binary,tf_version = tf_runtime.split(":")
         except:
+            self.logger.debug(f'could not evaluate tf_runtime - using default {tf_runtime}"')
             return "terraform","1.5.4"
 
         return tf_binary,tf_version
@@ -384,15 +385,6 @@ class ResourceCmdHelper:
         env_vars["TF_VERSION"] = self.tf_version
         env_vars["TF_BINARY"] = self.tf_binary
         env_vars["TF_RUNTIME"] = self.tf_runtime
-
-        self.logger.debug("a"*32)
-        self.logger.debug("testtest789 35421345214")
-        self.logger.debug("a"*32)
-        print_json(env_vars)
-        self.logger.debug("testtest789 35421345214")
-        self.logger.debug("a"*32)
-
-        ##################################################################
 
     def _set_json_files(self):
 
