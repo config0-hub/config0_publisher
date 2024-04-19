@@ -368,7 +368,8 @@ class ResourceCmdHelper:
         env_vars["TF_BINARY"] = self.tf_binary
         env_vars["TF_RUNTIME"] = self.tf_runtime
 
-        raise Exception("testtest789 0")
+        self.logger.debug("testtest789 35421345214")
+        sleep(20)
 
         ##################################################################
 
