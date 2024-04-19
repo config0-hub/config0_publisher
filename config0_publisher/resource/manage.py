@@ -352,7 +352,24 @@ class ResourceCmdHelper:
     def _get_tf_binary_version(self):
 
         try:
-            tf_binary,tf_version = self.tf_configs["tf_runtime"].split(":")
+            tf_runtime = self.tf_configs["tf_runtime"]
+            self.logger.debug("got tf_runtime from self.tfconfigs")
+        except:
+            tf_runtime = None
+
+        if not tf_runtime:
+            try:
+                tf_runtime = os.environ["TF_RUNTIME"]
+                self.logger.debug("got tf_runtime env var TF_RUNTIME")
+            except:
+                tf_runtime = None
+
+        if not tf_runtime:
+            self.logger.debug("using default terraform:1.5.4 for TF_RUNTIME")
+            return "terraform","1.5.4"
+
+        try:
+            tf_binary,tf_version = tf_runtime.split(":")
         except:
             return "terraform","1.5.4"
 
@@ -368,12 +385,12 @@ class ResourceCmdHelper:
         env_vars["TF_BINARY"] = self.tf_binary
         env_vars["TF_RUNTIME"] = self.tf_runtime
 
-        print("a"*32)
-        print_json(env_vars)
-        print("a"*32)
-
+        self.logger.debug("a"*32)
         self.logger.debug("testtest789 35421345214")
-        sleep(20)
+        self.logger.debug("a"*32)
+        print_json(env_vars)
+        self.logger.debug("testtest789 35421345214")
+        self.logger.debug("a"*32)
 
         ##################################################################
 
