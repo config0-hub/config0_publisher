@@ -304,11 +304,6 @@ class ResourceCmdHelper:
         validate/destroy the resource and any environmental variables
         '''
 
-        # Create mod params resource arguments and reference
-        resource["mod_params"] = {
-            "shelloutconfig": self.shelloutconfig
-        }
-
         if hasattr(self,"drift_protection") and self.drift_protection:
             resource["drift_protection"] = self.drift_protection
 
@@ -320,14 +315,25 @@ class ResourceCmdHelper:
             "APP_DIR": self.app_dir,
         }
 
-        resource["mod_params"]["inputargs"] = self._insert_tf_env_vars(env_vars)
-        resource["mod_params"]["env_vars"] = env_vars
+        # the below will also set class vars
+        # tf_runtime, tf_binary, and tf_version
+        self._insert_tf_env_vars(env_vars)
 
-        if env_vars.get("STATEFUL_ID"):
-            resource["mod_params"]["stateful_id"] = env_vars["STATEFUL_ID"]
+        # Create mod params resource arguments and reference
+        #resource["mod_params"] = {
+        #    "shelloutconfig": self.shelloutconfig
+        #}
 
-        if self.mod_execgroup:
-            resource["mod_params"]["execgroup"] = self.mod_execgroup
+        #if self.mod_execgroup:
+        #    resource["mod_params"]["execgroup"] = self.mod_execgroup
+
+        resource["mod_params"] = {
+            "env_vars": env_vars,
+            "inputargs": {
+                "tf_runtime":self.tf_runtime,
+                "stateful_id":self.stateful_id,
+                }
+            }
 
         if self.destroy_env_vars:
             resource["destroy_params"] = {
@@ -359,6 +365,7 @@ class ResourceCmdHelper:
 
         return tf_binary,tf_version
 
+    # testtest789
     def _insert_tf_env_vars(self,env_vars):
 
         self.tf_binary,self.tf_version = self._get_tf_binary_version()
@@ -367,12 +374,6 @@ class ResourceCmdHelper:
         env_vars["TF_VERSION"] = self.tf_version
         env_vars["TF_BINARY"] = self.tf_binary
         env_vars["TF_RUNTIME"] = self.tf_runtime
-
-        return {
-             "tf_runtime":self.tf_runtime,
-             "tf_binary": self.tf_binary,
-             "tf_version": self.tf_version
-             }
 
         ##################################################################
 
