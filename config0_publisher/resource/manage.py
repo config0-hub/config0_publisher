@@ -323,10 +323,6 @@ class ResourceCmdHelper:
         resource["mod_params"] = {
             "shelloutconfig": self.shelloutconfig,
             "env_vars": env_vars,
-            "inputargs": {
-                "tf_runtime":self.tf_runtime,
-                "stateful_id":self.stateful_id,
-                }
             }
 
         if self.mod_execgroup:
