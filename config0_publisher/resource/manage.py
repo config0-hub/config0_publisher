@@ -224,6 +224,7 @@ class ResourceCmdHelper:
 
         # testtest456 not sure the below is needed
         self.syncvars.set()
+
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
         self._set_json_files()
 
@@ -234,157 +235,6 @@ class ResourceCmdHelper:
                 self.logger.debug("could not print out debug class vars")
 
         #self._debug_print_out_key_class_vars()
-
-    ##################################################################
-    # testtest789
-    # ref 3241245124321
-    # move back to resource_wrapper - testing now opentofu
-    # insert 34523452
-    ##################################################################
-
-    def _get_aws_exec_cinputargs(self,method="create"):
-
-        cinputargs = {
-            "method": method,
-            "build_timeout": self.build_timeout,
-            "run_share_dir": self.run_share_dir,
-            "app_dir": self.app_dir,
-            "remote_stateful_bucket": self.remote_stateful_bucket,
-            "aws_region": self.aws_region
-        }
-
-        if self.build_env_vars:
-            cinputargs["build_env_vars"] = self.build_env_vars
-
-        if self.ssm_name:
-            cinputargs["ssm_name"] = self.ssm_name
-
-        if self.phases_info:
-            cinputargs["phases_info"] = self.phases_info
-
-        tf_binary,tf_version = self.tf_runtime.split(":")
-
-        cinputargs.update({
-            "tf_version": tf_version,
-            "tf_binary": tf_binary
-        })
-
-        return cinputargs
-
-    def _exec_lambdabuild(self,method="create"):
-
-        cinputargs = self._get_aws_exec_cinputargs(method=method)
-        _awsbuild = Lambdabuild(**cinputargs)
-
-        # submit and run required env file
-        if method == "create":
-            self.create_build_envfile(openssl=False)
-
-        results = _awsbuild.run()
-
-        return results
-
-        # below is for phases - requires more testing
-        #if self.phase == "retrieve":
-        #    return _awsbuild.retrieve(**self.get_phase_inputargs())
-
-        #if self.phase == "submit":
-        #    return _awsbuild.submit(**self.get_phase_inputargs())
-
-    def add_mod_params(self,resource):
-
-        '''
-        - we typically load the modifications parameters along with created resource like a
-        VPC or database
-
-        - the resource is therefore self contained, whereby it specifies to the
-        system how it can be validated/destroyed.
-
-        - for terraform, we include things like the docker image used to
-        validate/destroy the resource and any environmental variables
-        '''
-
-        if hasattr(self,"drift_protection") and self.drift_protection:
-            resource["drift_protection"] = self.drift_protection
-
-        # environmental variables to include during destruction
-        env_vars = {
-            "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
-            "STATEFUL_ID": self.stateful_id,
-            "BUILD_TIMEOUT": self.build_timeout,
-            "APP_DIR": self.app_dir,
-        }
-
-        # the below will also set class vars
-        # tf_runtime, tf_binary, and tf_version
-        self._insert_tf_env_vars(env_vars)
-
-        # Create mod params resource arguments and reference
-        resource["mod_params"] = {
-            "shelloutconfig": self.shelloutconfig,
-            "env_vars": env_vars,
-            }
-
-        if self.mod_execgroup:
-            resource["mod_params"]["execgroup"] = self.mod_execgroup
-
-        if self.destroy_env_vars:
-            resource["destroy_params"] = {
-                "env_vars": dict({"METHOD": "destroy"},
-                                 **self.destroy_env_vars)
-            }
-        else:
-            resource["destroy_params"] = {
-                "env_vars": {"METHOD": "destroy"}
-            }
-
-        if self.validate_env_vars:
-            resource["validate_params"] = {
-                "env_vars": dict({"METHOD": "validate"},
-                                 **self.validate_env_vars)
-            }
-        else:
-            resource["validate_params"] = {
-                "env_vars": {"METHOD": "validate"}
-            }
-
-        return resource
-    def _get_tf_binary_version(self):
-
-        try:
-            tf_runtime = self.tf_configs["tf_runtime"]
-            self.logger.debug(f'tf_runtime {tf_runtime} class var "tfconfigs"')
-        except:
-            tf_runtime = None
-
-        if not tf_runtime:
-            try:
-                tf_runtime = os.environ["TF_RUNTIME"]
-                self.logger.debug(f'tf_runtime {tf_runtime} from env var "TF_RUNTIME"')
-            except:
-                tf_runtime = None
-
-        if not tf_runtime:
-            tf_runtime = "terraform:1.5.4"
-            self.logger.debug(f'tf_runtime {tf_runtime} - using default"')
-
-        try:
-            tf_binary,tf_version = tf_runtime.split(":")
-        except:
-            self.logger.debug(f'could not evaluate tf_runtime - using default {tf_runtime}"')
-            return "terraform","1.5.4"
-
-        return tf_binary,tf_version
-
-    # testtest789
-    def _insert_tf_env_vars(self,env_vars):
-
-        self.tf_binary,self.tf_version = self._get_tf_binary_version()
-        self.tf_runtime = f'{self.tf_binary}:{self.tf_version}'
-
-        env_vars["TF_VERSION"] = self.tf_version
-        env_vars["TF_BINARY"] = self.tf_binary
-        env_vars["TF_RUNTIME"] = self.tf_runtime
 
     def _set_json_files(self):
 
@@ -939,9 +789,8 @@ class ResourceCmdHelper:
 
         return values
 
-    # testtest789
-    #def add_mod_params(self,resource):
-    #    self.logger.debug("add_mod_params is to specified by the inherited class")
+    # add_mod_params is to specified by the inherited class"
+    #def add_mod_params(self):
     #    return
 
     def get_resource_details(self):
@@ -965,7 +814,7 @@ class ResourceCmdHelper:
             try:
                 self.add_mod_params(resource)
             except:
-                self.logger.debug("Did not add mod params")
+                self.logger.debug("could not add mod params")
 
         elif isinstance(resource,list):
             for _resource in resource:
@@ -978,7 +827,7 @@ class ResourceCmdHelper:
                 try:
                     self.add_mod_params(_resource)
                 except:
-                    self.logger.debug("Did not add mod params")
+                    self.logger.debug("could not add mod params")
 
         return resource
 
