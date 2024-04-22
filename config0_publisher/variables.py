@@ -530,7 +530,7 @@ class EnvVarsToClassVars:
         if _env_var.upper() in os.environ:
             #print(f"==> {_env_var} is os.environ")
             self.class_vars[_env_var.lower()] = os.environ[_env_var.upper()]  # we convert to lowercase
-        elif self.os_env_prefix and ((self.os_env_prefix in _env_var) and (_env_var in self._default_values)):  # testtest456
+        elif self.os_env_prefix and ((self.os_env_prefix in _env_var) and (_env_var in self._default_values)):
             self.class_vars[_env_var] = self._default_values[_env_var]  # we don't modify os env prefixed vars
         elif _env_var in self._default_values:
             #print(f"++> {_env_var} is default_values")

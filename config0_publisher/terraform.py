@@ -121,7 +121,7 @@ class TFConstructor(object):
                                         types="str")
             else:
                 self.stack.parse.add_required(key="docker_image",
-                                              default="terraform:1.5.4",
+                                              default="tofu:1.6.2",
                                               types="str")
 
         if not hasattr(self.stack,"stateful_id"):
