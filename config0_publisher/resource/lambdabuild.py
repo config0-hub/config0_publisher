@@ -73,17 +73,15 @@ class LambdaParams(TFAwsBaseBuildParams):
 
     def run(self,**inputargs):
 
-        raise Exception('test test789')
-
         self._init_lambda_helper()
         self.lambda_helper.run(**inputargs)
 
+        return self.lambda_helper.results
+
         # testtest789
         results = self.lambda_helper.results
-
-        print(results)
-        raise Exception('test test789')
-        #return self.lambda_helper.results
+        #print(results)
+        #raise Exception('test test789')
 
 class Lambdabuild(LambdaParams):
 
