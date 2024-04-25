@@ -73,6 +73,8 @@ class LambdaParams(TFAwsBaseBuildParams):
 
     def run(self,**inputargs):
 
+        raise Exception('test test789')
+
         self._init_lambda_helper()
         self.lambda_helper.run(**inputargs)
 
