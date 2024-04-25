@@ -1493,37 +1493,12 @@ class ResourceCmdHelper:
 
         output = None
 
-        # testtest789
-        self.logger.debug("0" * 32)
-        self.logger.debug("0" * 32)
-        self.logger.debug("0" * 32)
-        self.logger.debug("0" * 32)
-        self.logger.json(results)
-        self.logger.debug("1" * 32)
-        self.logger.debug("1" * 32)
-        self.logger.debug("1" * 32)
-        self.logger.debug("1" * 32)
-
         if results.get("output"):
-
-            # testtest789
-            print("a"*32)
-            print("a"*32)
-            print("a"*32)
-            print("a"*32)
-            print("a"*32)
             self.final_output = results["output"]
             self.append_log(self.final_output)
             del results["output"]
 
         if results.get("status") is False:
-
-            # testtest789
-            print("b"*32)
-            print("b"*32)
-            print("b"*32)
-            print("b"*32)
-            print("b"*32)
             # failed at this point
             if results.get("failed_message"):
                 failed_message = results.get("failed_message")
