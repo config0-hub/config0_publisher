@@ -76,7 +76,12 @@ class LambdaParams(TFAwsBaseBuildParams):
         self._init_lambda_helper()
         self.lambda_helper.run(**inputargs)
 
-        return self.lambda_helper.results
+        # testtest789
+        results = self.lambda_helper.results
+
+        print(results)
+        raise Exception('test test789')
+        #return self.lambda_helper.results
 
 class Lambdabuild(LambdaParams):
 
@@ -131,16 +136,4 @@ class Lambdabuild(LambdaParams):
         if build_cmds:
             cmds["build"] = {"cmds":build_cmds}
 
-        #if self.method == "create":
-        #    postbuild_cmds = self._get_postbuild_cmds()
-        #else:
-        #    postbuild_cmds = None
-
-        #if postbuild_cmds:
-        #    cmds["postbuild"] = {"cmds":postbuild_cmds}
-
         return cmds
-
-    #def _get_postbuild_cmds(self):
-
-    #    return self.tfcmds.local_to_s3()
