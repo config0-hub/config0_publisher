@@ -81,6 +81,7 @@ class LambdaParams(TFAwsBaseBuildParams):
         # testtest789
         results = self.lambda_helper.results
         print(results)
+        raise RuntimeError
 
         return results
         #raise Exception('test test789')
