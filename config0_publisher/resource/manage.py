@@ -1493,6 +1493,17 @@ class ResourceCmdHelper:
 
         output = None
 
+        # testtest789
+        self.logger.debug("0" * 32)
+        self.logger.debug("0" * 32)
+        self.logger.debug("0" * 32)
+        self.logger.debug("0" * 32)
+        self.logger.json(results)
+        self.logger.debug("1" * 32)
+        self.logger.debug("1" * 32)
+        self.logger.debug("1" * 32)
+        self.logger.debug("1" * 32)
+
         if results.get("output"):
 
             # testtest789
