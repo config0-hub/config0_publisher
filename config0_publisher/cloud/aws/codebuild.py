@@ -538,8 +538,13 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.print_output()
 
         if self.results.get("failed_message"):
-            self.logger.error(self.results["failed_message"])
-            raise Exception(self.results.get("failed_message"))
+            failed_message = self.results.get("failed_message")
+
+            # testtest789
+            if failed_message:
+                raise Exception(failed_message)
+            else:
+                exit(44)
 
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
