@@ -126,7 +126,8 @@ class ResourceCmdHelper:
         self._set_build_timeout()
         self._set_aws_region()
 
-        self.printed = None
+        # ref 34532453245
+        self.wrote_local_log = None
         self.final_output = None
 
     def _set_build_timeout(self):
@@ -1512,12 +1513,9 @@ class ResourceCmdHelper:
             # but included to be explicit
             self.delete_phases_to_json_file()
             print(self.final_output)
-
-            # self.logger.error(failed_message)
-            # testtest789
-            failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
-            raise Exception(failed_message)
-            #exit(9)
+            exit(9)
+            #failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
+            #raise Exception(failed_message)
 
         return True
 
