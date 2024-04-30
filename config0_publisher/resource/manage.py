@@ -410,17 +410,20 @@ class ResourceCmdHelper:
                 _key = _k.upper()
 
             if _v is None:
-                print(f"n--n {_key} -> None - skipping")
+                if os.environ.get("JIFFY_ENHANCED_LOG"):
+                    print(f"{_key} -> None - skipping")
                 continue
 
             if _key in os.environ and _key in auto_clobber_keys:
-                print(f"o--o {_key} -> {_v} already set/will clobber")
+                if os.environ.get("JIFFY_ENHANCED_LOG"):
+                    print(f"{_key} -> {_v} already set/will clobber")
             elif _key in os.environ and not clobber:
-                print(f"o--o {_key} -> {_v} already set as {os.environ[_key]}")
+                if os.environ.get("JIFFY_ENHANCED_LOG"):
+                    print(f"{_key} -> {_v} already set as {os.environ[_key]}")
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
-               print(f"p--p {_key} -> {_v}")
+               print(f"{_key} -> {_v}")
 
             os.environ[_key] = str(_v)
 
@@ -1513,8 +1516,8 @@ class ResourceCmdHelper:
             # self.logger.error(failed_message)
             # testtest789
             failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
-            #raise Exception(failed_message)
-            exit(9)
+            raise Exception(failed_message)
+            #exit(9)
 
         return True
 
