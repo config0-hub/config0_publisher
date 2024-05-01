@@ -1493,6 +1493,17 @@ class ResourceCmdHelper:
 
         return True
 
+    def _write_cli_log(self):
+
+        cli_log_file = f'/tmp/{self.stateful_id}.cli.log'
+
+        with open(cli_log_file,"w") as f:
+            f.write(self.final_output)
+
+        print(f'local log file here: {cli_log_file}')
+
+        return True
+
     def eval_log(self,results,prt=None):
 
         if not results.get("output"):
@@ -1506,12 +1517,11 @@ class ResourceCmdHelper:
 
         # ref 34532453245
         if not self.wrote_local_log and prt:
-            cli_log_file = f'/tmp/{self.stateful_id}.cli.log'
-            with open(cli_log_file,"w") as f:
-
-                f.write(self.final_output)
-            print(f'local log file here: {cli_log_file}')
-            self.wrote_local_log = True
+            try:
+                self._write_cli_log()
+                self.wrote_local_log = True
+            except:
+                self.wrote_local_log = None
 
         print(self.final_output)
 
