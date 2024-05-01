@@ -292,10 +292,19 @@ class ShellOutExecute(object):
         return _env_vars
 
     def print_out(self):
+
+        if not self.results:
+            return
+
+        output = self.results.get("output")
+
+        if not output:
+            return
+
         try:
-            self.logger.debug(self.results["output"])
+            self.logger.debug(output)
         except:
-            print(self.results["output"])
+            print(output)
 
     def _convert_output_to_json(self):
 
