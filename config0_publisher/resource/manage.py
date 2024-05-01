@@ -1493,29 +1493,45 @@ class ResourceCmdHelper:
 
         return True
 
+    def eval_log(self,results,prt=None):
+
+        if not results.get("output"):
+            return
+
+        self.final_output = results["output"]
+        self.append_log(self.final_output)
+        del results["output"]
+
+        # ref 34532453245
+        if not self.wrote_local_log and prt:
+            cli_log_file = f'/tmp/{self.stateful_id}.cli.log'
+            with open(cli_log_file,"w") as f:
+                f.write(self.final_output)
+            print(f'local log file here: {cli_log_file}')
+            self.wrote_local_log = True
+
+        print(self.final_output)
+
     def eval_failure(self,results,method):
 
-        output = None
+        if results.get("status") is not False:
+            return
 
-        if results.get("output"):
-            self.final_output = results["output"]
-            self.append_log(self.final_output)
-            del results["output"]
+        # failed at this point
+        #if results.get("failed_message"):
+        #    failed_message = results.get("failed_message")
+        #else:
+        #    failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
 
-        if results.get("status") is False:
-            # failed at this point
-            if results.get("failed_message"):
-                failed_message = results.get("failed_message")
-            else:
-                failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
+        failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
+        print(failed_message)
+        exit(9)
 
-            # this should also be removed further upstream
-            # but included to be explicit
-            self.delete_phases_to_json_file()
-            print(self.final_output)
-            exit(9)
-            #failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
-            #raise Exception(failed_message)
+        # this should also be removed further upstream
+        # but included to be explicit
+        #self.delete_phases_to_json_file()
+        #print(self.final_output)  # this will create duplicates
+        #raise Exception(failed_message)
 
         return True
 

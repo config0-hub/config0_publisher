@@ -72,7 +72,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
-
             results[build["id"]] = { "status":build["buildStatus"],
                                      "logarn":build["logs"]["s3LogsArn"] }
 
@@ -535,21 +534,23 @@ class CodebuildResourceHelper(AWSCommonConn):
         if self.output:
             self.results["output"] = self.output
 
-        self.print_output()
-
-        if self.results.get("failed_message"):
-            failed_message = self.results.get("failed_message")
-
-            # testtest789
-            if failed_message:
-                raise Exception(failed_message)
-            else:
-                exit(44)
-
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
 
+        # testtest789
+        #self.print_output()
         return self.results
+
+        #if self.results.get("status") is False:
+
+        #    failed_message = self.results.get("failed_message")
+
+        #    if failed_message:
+        #        raise Exception(failed_message)
+        #    else:
+        #        exit(44)
+
+        #return self.results
 
     # this is a single run and not in phases
     # we use _retrieve instead of retrieve method

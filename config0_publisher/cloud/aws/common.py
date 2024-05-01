@@ -251,10 +251,11 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.output = clean_lines
 
-    def print_output(self):
-        self.clean_output()
-        for line in self.output:
-            print(line)
+    # testtest789
+    #def print_output(self):
+    #    self.clean_output()
+    #    for line in self.output:
+    #        print(line)
 
     def execute(self,cmd,**kwargs):
         return execute3(cmd,**kwargs)
