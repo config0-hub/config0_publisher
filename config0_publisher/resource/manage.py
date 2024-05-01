@@ -1498,6 +1498,8 @@ class ResourceCmdHelper:
         if not results.get("output"):
             return
 
+        # testtest789
+        self.clean_output(results,replace=True)
         self.final_output = results["output"]
         self.append_log(self.final_output)
         del results["output"]
@@ -1506,6 +1508,7 @@ class ResourceCmdHelper:
         if not self.wrote_local_log and prt:
             cli_log_file = f'/tmp/{self.stateful_id}.cli.log'
             with open(cli_log_file,"w") as f:
+
                 f.write(self.final_output)
             print(f'local log file here: {cli_log_file}')
             self.wrote_local_log = True
