@@ -160,11 +160,6 @@ class LambdaResourceHelper(AWSCommonConn):
 
         self.results["output"] = b64_decode(self.response["LogResult"])
 
-        # testtest789
-        self.logger.debug("h0"*32)
-        self.logger.debug(self.results["output"])
-        self.logger.debug("h0"*32)
-
         return self.results
 
     def run(self):
