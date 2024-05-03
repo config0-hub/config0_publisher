@@ -537,20 +537,7 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
 
-        # testtest789
-        #self.print_output()
         return self.results
-
-        #if self.results.get("status") is False:
-
-        #    failed_message = self.results.get("failed_message")
-
-        #    if failed_message:
-        #        raise Exception(failed_message)
-        #    else:
-        #        exit(44)
-
-        #return self.results
 
     # this is a single run and not in phases
     # we use _retrieve instead of retrieve method

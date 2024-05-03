@@ -1509,7 +1509,6 @@ class ResourceCmdHelper:
         if not results.get("output"):
             return
 
-        # testtest789
         self.clean_output(results,replace=True)
         self.final_output = results["output"]
         self.append_log(self.final_output)
