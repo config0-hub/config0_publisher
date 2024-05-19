@@ -52,7 +52,7 @@ class TFConstructor(object):
         if not os.environ.get("CONFIG0_RESTAPI"):
             self._add_values_to_ssm()
 
-        # for authoring purchasing, we use 
+        # for authoring purposes, we use
         # tag "db" instead of "resource_values"
         self.resource_values = self.stack.get_tagged_vars(tag="db",
                                                           output="dict")
