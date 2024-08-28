@@ -148,25 +148,37 @@ def uncompress(zdata):
 
     return zlib.decompress(zdata)  
 
-# dup 452346236234
-def to_envfile(obj,b64=True,include_export=True):
+def create_envfile(dict_obj,b64=None,include_export=None,file_path=None):
 
     # Create a StringIO object
     file_buffer = io.StringIO()
 
-    for _k,_v in list(obj.items()):
+    for _k,_v in list(dict_obj.items()):
         if include_export:
             file_buffer.write("export {}={}\n".format(_k,_v))
         else:
             file_buffer.write("{}={}\n".format(_k,_v))
 
-    if not b64:
-        return file_buffer.getvalue()
-    
-    base64_hash = base64.b64encode(file_buffer.getvalue().encode()).decode()
-    
-    # Close the StringIO object
+    contents = file_buffer.getvalue()
+
+    # close the StringIO object
     file_buffer.close()
+
+    if not b64 and not file_path:
+        return contents
+
+    if not b64:
+        with open(file_path,'w') as file:
+            file.write(contents)
+        return contents
+
+    base64_hash = base64.b64encode(contents.encode()).decode()
+
+    if not file_path:
+        return base64_hash
+
+    with open(file_path, 'w') as file:
+        file.write(base64_hash)
 
     return base64_hash
 
@@ -257,25 +269,14 @@ def decrypt_str_openssl(password, encrypted_text):
 
     return decrypted_output.strip().decode()
 
-def create_envfile(env_vars,envfile=None,secret=True,openssl=True):
+def create_encrypted_envfile(env_vars,secret,file_path,openssl=True):
+
     '''
     we use stateful_id for the encrypt key
     '''
 
     if not env_vars.items():
         return
-
-    if not secret:
-
-        file_obj = open(envfile,"w")
-
-        for key,value in env_vars.items():
-            file_obj.write(f"{key}={value}\n")
-        file_obj.close()
-
-        print(f"envfile {envfile} written.")
-
-        return True
 
     virtual_file = StringIO()
 
@@ -287,13 +288,13 @@ def create_envfile(env_vars,envfile=None,secret=True,openssl=True):
     if openssl:
         encrypted_content = encrypt_str_openssl(secret,
                                                 base64_string)
-        with open(envfile, 'w') as f:
+        with open(file_path, 'w') as f:
             f.write(encrypted_content)
     else:
         encrypted_content = encrypt_file(secret,
                                          file_content=base64_string,
-                                         output_file=envfile)
+                                         output_file=file_path)
 
-    print(f"encrypted envfile {envfile}/openssl {openssl} written.")
+    print(f"encrypted file_path {file_path}/openssl {openssl} written.")
 
     return encrypted_content

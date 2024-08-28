@@ -16,6 +16,7 @@ from config0_publisher.utilities import eval_str_to_join
 from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
+from config0_publisher.serialization import create_encrypted_envfile
 from config0_publisher.serialization import b64_decode
 from config0_publisher.serialization import b64_encode
 from config0_publisher.templating import list_template_files
@@ -1478,18 +1479,18 @@ class ResourceCmdHelper:
         if not self.build_env_vars:
             return
 
-        envfile = os.path.join(self.run_share_dir,
-                               self.app_dir,
-                               "build_env_vars.env")
+        file_path = os.path.join(self.run_share_dir,
+                                 self.app_dir,
+                                 "build_env_vars.env")
 
         if self.build_env_vars.get("STATEFUL_ID"):
-            create_envfile(self.build_env_vars,
-                           envfile=f"{envfile}.enc",
-                           secret=self.build_env_vars["STATEFUL_ID"],
-                           openssl=openssl)
+            create_encrypted_envfile(self.build_env_vars,
+                                     secret=self.build_env_vars["STATEFUL_ID"],
+                                     envfile=f"{file_path}.enc",
+                                     openssl=openssl)
         else:
             create_envfile(self.build_env_vars,
-                           envfile=envfile)
+                           file_path=file_path)
 
         return True
 
@@ -1605,7 +1606,7 @@ class ResourceCmdHelper:
     def create_config0_settings_file(self):
 
         try:
-            value = os.environ.get("CONFIG0_RESOURCE_SETTINGS_HASH")
+            value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
         except:
             value = None
 
