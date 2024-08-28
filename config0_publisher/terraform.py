@@ -12,10 +12,9 @@
 #Proprietary and confidential
 #Written by Gary Leong  <gary@config0.com, March 11,2023
 
-import json
 import os
-from config0_publisher.utilities import print_json
 from config0_publisher.loggerly import Config0Logger
+#from config0_publisher.utilities import print_json
 
 class TFConstructor(object):
 

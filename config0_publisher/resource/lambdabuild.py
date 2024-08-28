@@ -3,8 +3,7 @@
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.aws import TFCmdOnAWS
-from config0_publisher.utilities import print_json
-
+#from config0_publisher.utilities import print_json
 
 class LambdaParams(TFAwsBaseBuildParams):
 
@@ -101,7 +100,8 @@ class Lambdabuild(LambdaParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=False))
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(decrypt=None,
+                                                          lambda_env=True))
         cmds.append(self.tfcmds.get_src_buildenv_vars_cmd())
 
         return cmds

@@ -115,7 +115,8 @@ class Codebuild(CodebuildParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(openssl=True))
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(decrypt=None,
+                                                          lambda_env=None))
 
         if self.ssm_name:
             cmds.append(self.tfcmds.get_codebuild_ssm_concat())

@@ -2,18 +2,12 @@
 
 import re
 import json
-import botocore
-from time import sleep
 from time import time
-
-#import gzip
-#import traceback
-#from io import BytesIO
 
 from config0_publisher.serialization import b64_encode
 from config0_publisher.serialization import b64_decode
 from config0_publisher.cloud.aws.common import AWSCommonConn
-from config0_publisher.utilities import print_json
+#from config0_publisher.utilities import print_json
 
 class LambdaResourceHelper(AWSCommonConn):
 

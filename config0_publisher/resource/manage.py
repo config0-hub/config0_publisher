@@ -23,8 +23,6 @@ from config0_publisher.templating import list_template_files
 from config0_publisher.output import convert_config0_output_to_values
 from config0_publisher.shellouts import rm_rf
 from config0_publisher.variables import EnvVarsToClassVars
-from config0_publisher.resource.lambdabuild import Lambdabuild
-#from config0_publisher.variables import SyncClassVarsHelper
 
 # ref 34532045732
 def to_jsonfile(values,filename,exec_dir=None):
@@ -1471,7 +1469,8 @@ class ResourceCmdHelper:
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
-    def create_build_envfile(self,openssl=True):
+    # ref 4354523
+    def create_build_envfile(self,encrypt=None,openssl=True):
         '''
         we use stateful_id for the encrypt key
         '''
@@ -1483,14 +1482,17 @@ class ResourceCmdHelper:
                                  self.app_dir,
                                  "build_env_vars.env")
 
-        if self.build_env_vars.get("STATEFUL_ID"):
+        if self.build_env_vars.get("STATEFUL_ID") and encrypt:
+            # these are converted to b64 twice over
             create_encrypted_envfile(self.build_env_vars,
                                      secret=self.build_env_vars["STATEFUL_ID"],
                                      file_path=f"{file_path}.enc",
                                      openssl=openssl)
         else:
             create_envfile(self.build_env_vars,
-                           file_path=file_path)
+                           b64=True,
+                           include_export=None,
+                           file_path=f"{file_path}.enc")
 
         return True
 

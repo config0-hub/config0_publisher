@@ -18,7 +18,6 @@ class TFCmdOnAWS(object):
         self.tf_bucket_path = kwargs["tf_bucket_path"]
         self.arch = kwargs["arch"]
 
-
         if self.runtime_env == "lambda":
             self.tf_path_dir = f"/tmp/config0/bin"
         else:
@@ -67,7 +66,8 @@ class TFCmdOnAWS(object):
 
         return cmds
 
-    def get_decrypt_buildenv_vars(self,openssl=True):
+    # ref 4354523
+    def get_decrypt_buildenv_vars(self,decrypt=None,lambda_env=True):
 
         '''
         # for lambda function, we use the ssm_get python cli
@@ -78,20 +78,36 @@ class TFCmdOnAWS(object):
         envfile_env = os.path.join(self.app_dir,
                                    self.envfile)
 
-        if openssl:
-            cmds = [
-                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
-                f'if [ -f $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
-             ]
+        if not decrypt:
+            if not lambda_env:
+                cmds = [
+                    f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
+                    f'if [ -f $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
+                ]
 
+            if lambda_env:
+                cmds = [
+                    f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
+                    f'/tmp/decode_file -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
+                    'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
+                    'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
+                    f'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
+                ]
         else:
-            cmds = [
-                f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
-                f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
-                'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
-                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
-                f'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
-            ]
+            if not lambda_env:
+                cmds = [
+                    f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
+                    f'if [ -f $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc ]; then cat $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > $TMPDIR/config0/$STATEFUL_ID/{self.envfile}; fi'
+                 ]
+
+            if lambda_env:
+                cmds = [
+                    f'rm -rf $TMPDIR/config0/$STATEFUL_ID/{envfile_env} > /dev/null 2>&1 || echo "env file already removed"',
+                    f'/tmp/decrypt -s $STATEFUL_ID -d $TMPDIR/config0/$STATEFUL_ID/{self.envfile} -e $TMPDIR/config0/$STATEFUL_ID/build/{envfile_env}.enc',
+                    'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
+                    'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
+                    f'ssm_get -name $SSM_NAME -file $TMPDIR/config0/$STATEFUL_ID/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
+                ]
 
         return cmds
 
