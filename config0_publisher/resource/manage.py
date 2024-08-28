@@ -1486,7 +1486,7 @@ class ResourceCmdHelper:
         if self.build_env_vars.get("STATEFUL_ID"):
             create_encrypted_envfile(self.build_env_vars,
                                      secret=self.build_env_vars["STATEFUL_ID"],
-                                     envfile=f"{file_path}.enc",
+                                     file_path=f"{file_path}.enc",
                                      openssl=openssl)
         else:
             create_envfile(self.build_env_vars,
