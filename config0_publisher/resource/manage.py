@@ -63,7 +63,8 @@ def _to_json(output):
             raise Exception("output is not a dict")
         output = _output
     except:
-        print("Could not convert output to json")
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            print("Could not convert output to json")
 
     return output
 

@@ -317,7 +317,8 @@ class ShellOutExecute(object):
         try:
             output = json.loads(self.results["output"])
         except:
-            self.logger.debug("Could not convert output to json")
+            if os.environ.get("JIFFY_ENHANCED_LOG"):
+                self.logger.debug("Could not convert output to json")
             return
 
         self.results["output"] = output
