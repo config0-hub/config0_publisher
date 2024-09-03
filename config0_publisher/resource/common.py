@@ -11,7 +11,7 @@ class TFAppHelper:
         # required
         self.binary = kwargs['binary']
         self.version = kwargs['version']
-        self.bucket = kwargs["tmp_bucket"]
+        self.bucket = kwargs["bucket"]
         self.installer_format = kwargs.get("installer_format")
         self.src_remote_path = kwargs["src_remote_path"]
 
