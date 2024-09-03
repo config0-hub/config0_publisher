@@ -31,7 +31,9 @@ class TFCmdOnAWS(object):
 
         cmds = [
             f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"',
-            f'mkdir -p {self.stateful_dir}/build',
+            f'mkdir -p {self.stateful_dir}/run',
+            f'mkdir -p {self.stateful_dir}/output',
+            f'mkdir -p {self.stateful_dir}/generated',
             f'mkdir -p $TMPDIR/{self.dl_subdir}',
             f'echo "##############"; df -h; echo "##############"'
         ]
@@ -72,13 +74,13 @@ class TFCmdOnAWS(object):
             cmds = [
                 f'echo "testtest456"; exit 9',
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-                f'if [ -f {self.stateful_dir}/build/{envfile}.enc ]; then cat {self.stateful_dir}/build/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
+                f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
             ]
 
         if lambda_env:
             cmds = [
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-                f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/build/{envfile}.enc',
+                f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc',
                 'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
                 'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
                 f'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
@@ -103,8 +105,8 @@ class TFCmdOnAWS(object):
         cmds.extend([
             'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
             f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID {self.stateful_dir}/$STATEFUL_ID.zip --quiet',
-            f'rm -rf {self.stateful_dir}/build > /dev/null 2>&1 || echo "stateful already removed"',
-            f'unzip -o {self.stateful_dir}/$STATEFUL_ID.zip -d {self.stateful_dir}/build',
+            f'rm -rf {self.stateful_dir}/run > /dev/null 2>&1 || echo "stateful already removed"',
+            f'unzip -o {self.stateful_dir}/$STATEFUL_ID.zip -d {self.stateful_dir}/run',
             f'rm -rf {self.stateful_dir}/$STATEFUL_ID.zip'
         ])
 
@@ -115,9 +117,9 @@ class TFCmdOnAWS(object):
         base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
-            f'({base_cmd}) && (cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} init) || (rm -rf .terraform && {self.bin_dir}/{self.tf_binary} init)',
-            f'({base_cmd}) && cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} plan -out=tfplan',
-            f'({base_cmd}) && (cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} apply tfplan) || ({self.bin_dir}/{self.tf_binary} destroy -auto-approve && exit 9)'
+            f'({base_cmd}) && (cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} init) || (rm -rf .terraform && {self.bin_dir}/{self.tf_binary} init)',
+            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} plan -out=tfplan',
+            f'({base_cmd}) && (cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} apply tfplan) || ({self.bin_dir}/{self.tf_binary} destroy -auto-approve && exit 9)'
         ]
 
         return cmds
@@ -127,8 +129,8 @@ class TFCmdOnAWS(object):
         base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
-          f'({base_cmd}) && (cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} init) || (rm -rf .terraform && {self.bin_dir}/{self.tf_binary} init)',
-          f'({base_cmd}) && cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} destroy -auto-approve'
+          f'({base_cmd}) && (cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} init) || (rm -rf .terraform && {self.bin_dir}/{self.tf_binary} init)',
+          f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} destroy -auto-approve'
         ]
 
         return cmds
@@ -138,9 +140,9 @@ class TFCmdOnAWS(object):
         base_cmd = self.get_src_buildenv_vars_cmd()
 
         cmds = [
-            f'({base_cmd}) && cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} init',
-            f'({base_cmd}) && cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} refresh',
-            f'({base_cmd}) && cd {self.stateful_dir}/build/$APP_DIR && {self.bin_dir}/{self.tf_binary} plan -detailed-exitcode'
+            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} init',
+            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} refresh',
+            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} plan -detailed-exitcode'
         ]
 
         return cmds
@@ -153,10 +155,10 @@ class TFCmdOnAWS(object):
 #    # this does not work in lambda
 #    # so we won't use it for now
 #    cmds = [
-#      '(cd {self.stateful_dir}/build/$APP_DIR && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform-tfstate) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
-#      'cd {self.stateful_dir}/build && zip -r {self.stateful_dir}.zip . ',
-#      'cd {self.stateful_dir}/build && aws s3 cp {self.stateful_dir}.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID',
-#      'cd {self.stateful_dir}/build && rm -rf {self.stateful_dir}.zip '
+#      '(cd {self.stateful_dir}/run/$APP_DIR && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform-tfstate) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
+#      'cd {self.stateful_dir}/run && zip -r {self.stateful_dir}.zip . ',
+#      'cd {self.stateful_dir}/run && aws s3 cp {self.stateful_dir}.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID',
+#      'cd {self.stateful_dir}/run && rm -rf {self.stateful_dir}.zip '
 #    ]
 
 #    return cmds
@@ -183,13 +185,13 @@ class TFCmdOnAWS(object):
 #        if not lambda_env:
 #            cmds = [
 #                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'if [ -f {self.stateful_dir}/build/{envfile}.enc ]; then cat {self.stateful_dir}/build/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
+#                f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
 #            ]
 #
 #        if lambda_env:
 #            cmds = [
 #                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/build/{envfile}.enc',
+#                f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc',
 #                'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
 #                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
 #                f'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
@@ -198,13 +200,13 @@ class TFCmdOnAWS(object):
 #        if not lambda_env:
 #            cmds = [
 #                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'if [ -f {self.stateful_dir}/build/{envfile}.enc ]; then cat {self.stateful_dir}/build/{envfile}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
+#                f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
 #             ]
 #
 #        if lambda_env:
 #            cmds = [
 #                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'/tmp/decrypt -s $STATEFUL_ID -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/build/{envfile}.enc',
+#                f'/tmp/decrypt -s $STATEFUL_ID -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc',
 #                'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
 #                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
 #                f'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
