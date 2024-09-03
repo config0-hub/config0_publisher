@@ -24,6 +24,9 @@ class TFSecHelper(TFAppHelper):
 
     def install_cmds(self):
 
+        # testtest456
+        return self.download_cmds()
+
         cmds = self.download_cmds()
         cmds.append(f'(mv {self.dl_file_path} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
         cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
@@ -40,6 +43,9 @@ class TFSecHelper(TFAppHelper):
         return cmds
 
     def get_all_cmds(self):
+
+        # testtest456
+        return self.install_cmds()
 
         cmds = self.install_cmds()
         cmds.extend(self.exec_cmds())
