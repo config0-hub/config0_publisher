@@ -60,6 +60,19 @@ class TFAppHelper:
 
         return cmds
 
+    def reset_dirs(self):
+
+        cmds = [
+            f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"',
+            f'mkdir -p {self.stateful_dir}/run',
+            f'mkdir -p {self.stateful_dir}/output/{self.app_name}',
+            f'mkdir -p {self.stateful_dir}/generated/{self.app_name}',
+            f'mkdir -p $TMPDIR/{self.dl_subdir}',
+            f'echo "##############"; df -h; echo "##############"'
+        ]
+
+        return cmds
+
     def download_cmds(self):
 
         cmds = self._get_initial_preinstall_cmds()

@@ -27,19 +27,6 @@ class TFCmdOnAWS(TFAppHelper):
         self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}'
         self.base_generate_file = f'{self.stateful_dir}/generated/{self.app_name}'
 
-    def reset_dirs(self):
-
-        cmds = [
-            f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"',
-            f'mkdir -p {self.stateful_dir}/run',
-            f'mkdir -p {self.stateful_dir}/output',
-            f'mkdir -p {self.stateful_dir}/generated',
-            f'mkdir -p $TMPDIR/{self.dl_subdir}',
-            f'echo "##############"; df -h; echo "##############"'
-        ]
-
-        return cmds
-
     def get_tf_install(self):
 
         '''
