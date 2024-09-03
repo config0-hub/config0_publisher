@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 
 from config0_publisher.resource.common import TFAppHelper
 
@@ -45,6 +46,9 @@ class TFInfracostHelper(TFAppHelper):
         return cmds
 
     def get_all_cmds(self):
+
+        if not os.environ.get("INFRACOST_API_KEY"):
+            return
 
         cmds = self.install_cmds()
         cmds.extend(self.exec_cmds())
