@@ -70,8 +70,10 @@ class TFAppHelper:
         #_src_install = f'echo "### getting {base_file_path} from source ###" && curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
         #install_cmd = f'({_bucket_install}) || ({_src_install})'
         # testtest456
-        install_cmd = f'aws s3 cp {bucket_path} {dl_file_path}'
-        install_cmd = f'aws s3 cp {bucket_path} {dl_file_path} && echo "### got {base_file_path} from s3 bucket/cache ###"'
+        #install_cmd = f'aws s3 cp {bucket_path} {dl_file_path}'
+        _bucket_install = f'aws s3 cp {bucket_path} {dl_file_path} && echo "### got {base_file_path} from s3 bucket/cache ###"'
+        _src_install = f'echo "### getting {base_file_path} from source ###" && curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
+        install_cmd = f'({_bucket_install}) || ({_src_install})'
         # testtest456
 
         cmds.append(install_cmd)
