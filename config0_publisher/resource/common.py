@@ -57,7 +57,7 @@ class TFAppHelper:
         else:
             _suffix = None
 
-        if _suffix:
+        if not _suffix:
             base_file_path = self.base_file_path
             dl_file_path = self.dl_file_path
             bucket_path = self.bucket_path
