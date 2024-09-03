@@ -31,7 +31,7 @@ class TFAppHelper:
             self.path_dir = f"/usr/local/bin"
 
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
-        self.bucket_path = f"s3://{self.bucket}/downloads/{self.base_file_path}"
+        self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/self.base_file_path}"
         self.dl_file_path = f'$TMPDIR/{self.dl_subdir}/{self.base_file_path}'
 
     def _get_initial_preinstall_cmds(self):
@@ -66,10 +66,10 @@ class TFAppHelper:
             dl_file_path = f'{self.dl_file_path}.{_suffix}'
             bucket_path = f'{self.bucket_path}.{_suffix}'
 
-        #_bucket_install = f'([ ! -f "{dl_file_path}" ] && aws s3 cp {bucket_path} {dl_file_path} --quiet )'
-        #_src_install = f'curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
-        _bucket_install = f'aws s3 cp {bucket_path} {dl_file_path}'
-        _src_install = f'curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path}'
+        _bucket_install = f'([ ! -f "{dl_file_path}" ] && aws s3 cp {bucket_path} {dl_file_path} --quiet )'
+        _src_install = f'curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
+        #_bucket_install = f'aws s3 cp {bucket_path} {dl_file_path}'
+        #_src_install = f'curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path}'
         install_cmd = f'({_bucket_install}) || ({_src_install})'
     
         cmds.append(install_cmd)
