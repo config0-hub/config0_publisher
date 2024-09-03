@@ -28,6 +28,8 @@ class TFOpaHelper(TFAppHelper):
         cmds.append(f'(mv {self.dl_file_path} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
         cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
 
+        return cmds
+
     # TODO
     # opa is quite specific so not sure if
     # users should be versed in it.

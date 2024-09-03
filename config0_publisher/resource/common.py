@@ -30,7 +30,7 @@ class TFAppHelper:
         else:
             self.path_dir = f"/usr/local/bin"
 
-        self.base_file_path = '{self.binary}_{self.version}_{self.arch}'
+        self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
         self.bucket_path = f"s3://{self.bucket}/downloads/{self.base_file_path}"
         self.dl_file_path = f'$TMPDIR/{self.dl_subdir}/{self.base_file_path}'
 

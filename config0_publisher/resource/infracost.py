@@ -32,6 +32,8 @@ class TFInfracostHelper(TFAppHelper):
         cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && mv {dl_file} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
         cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
 
+        return cmds
+
     def exec_cmds(self):
 
         return [
@@ -39,6 +41,8 @@ class TFInfracostHelper(TFAppHelper):
             f'cd {self.tf_execdir}; {self.binary} --no-color breakdown --path . > {self.stateful_dir}/output/{self.app_name}.log',
             f'find {self.stateful_dir}'  # testtest456
             ]
+
+        return cmds
 
     def get_all_cmds(self):
 
