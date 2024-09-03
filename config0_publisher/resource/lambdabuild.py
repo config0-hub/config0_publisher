@@ -6,9 +6,6 @@ from config0_publisher.resource.terraform import TFCmdOnAWS
 from config0_publisher.resource.infracost import TFInfracostHelper
 from config0_publisher.resource.tfsec import TFSecHelper
 from config0_publisher.resource.opa import TFOpaHelper
-class TFInfracostHelper(TFAppHelper):
-
-#from config0_publisher.utilities import print_json
 
 class LambdaParams(TFAwsBaseBuildParams):
 
@@ -109,7 +106,7 @@ class Lambdabuild(LambdaParams):
 
         self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
                                                 envfile="build_env_vars.env",
-                                                binary='infracost",
+                                                binary='infracost',
                                                 version="0.10.39",
                                                 tmp_bucket=self.tmp_bucket,
                                                 arch="linux_amd64")
