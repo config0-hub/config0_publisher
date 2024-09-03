@@ -12,7 +12,7 @@ def get_tf_install(**kwargs):
     dl_subdir = kwargs["dl_subdir"]
     bucket_path = kwargs["tf_bucket_path"]
     arch = kwargs["arch"]
-    path_dir = kwargs["tf_path_dir"]
+    path_dir = kwargs["path_dir"]
 
     if runtime_env == "codebuild":
         cmds = [
