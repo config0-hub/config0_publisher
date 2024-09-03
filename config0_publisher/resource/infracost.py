@@ -48,7 +48,7 @@ class TFInfracostHelper(TFAppHelper):
     def get_all_cmds(self):
 
         if not os.environ.get("INFRACOST_API_KEY"):
-            return
+            return []
 
         cmds = self.install_cmds()
         cmds.extend(self.exec_cmds())
