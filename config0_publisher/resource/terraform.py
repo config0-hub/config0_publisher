@@ -70,6 +70,7 @@ class TFCmdOnAWS(object):
 
         if not lambda_env:
             cmds = [
+                f'echo "testtest456"; exit 9'
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
                 f'if [ -f {self.stateful_dir}/build/{envfile}.enc ]; then cat {self.stateful_dir}/build/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
             ]
