@@ -6,6 +6,7 @@ from config0_publisher.resource.terraform import TFCmdOnAWS
 from config0_publisher.resource.infracost import TFInfracostHelper
 from config0_publisher.resource.tfsec import TFSecHelper
 from config0_publisher.resource.opa import TFOpaHelper
+class TFInfracostHelper(TFAppHelper):
 
 #from config0_publisher.utilities import print_json
 
@@ -96,8 +97,7 @@ class Lambdabuild(LambdaParams):
                                  tf_binary=self.tf_binary,
                                  tf_version=self.tf_version,
                                  tf_bucket_path=self.tf_bucket_path,
-                                 arch="linux_amd64"
-                                 )
+                                 arch="linux_amd64")
 
         self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
                                       envfile="build_env_vars.env",
@@ -106,6 +106,20 @@ class Lambdabuild(LambdaParams):
                                       tmp_bucket=self.tmp_bucket,
                                       arch="linux_amd64"
                                       )
+
+        self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
+                                                envfile="build_env_vars.env",
+                                                binary='infracost",
+                                                version="0.10.39",
+                                                tmp_bucket=self.tmp_bucket,
+                                                arch="linux_amd64")
+
+        self.opa_cmds = TFOpaHelper(runtime_env="lambda",
+                                    envfile="build_env_vars.env",
+                                    binary='opa',
+                                    version="0.68.0",
+                                    tmp_bucket=self.tmp_bucket,
+                                    arch="linux_amd64")
 
     def _get_prebuild_cmds(self):
 
@@ -122,7 +136,9 @@ class Lambdabuild(LambdaParams):
             cmds = self.tfcmds.get_tf_apply()
 
             # testtest456
-            cmds.extend(self.tfsec_cmds.get_all_cmds())
+            #cmds.extend(self.tfsec_cmds.get_all_cmds())
+            cmds.extend(self.infracost_cmds.get_all_cmds())
+            #cmds.extend(self.opa_cmds.get_all_cmds())
 
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
