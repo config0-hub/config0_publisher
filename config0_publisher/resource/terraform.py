@@ -70,7 +70,7 @@ class TFCmdOnAWS(object):
 
         if not lambda_env:
             cmds = [
-                f'echo "testtest456"; exit 9'
+                f'echo "testtest456"; exit 9',
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
                 f'if [ -f {self.stateful_dir}/build/{envfile}.enc ]; then cat {self.stateful_dir}/build/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
             ]
@@ -102,10 +102,10 @@ class TFCmdOnAWS(object):
 
         cmds.extend([
             'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
-            'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID {self.stateful_dir}/$STATEFUL_ID.zip --quiet',
-            'rm -rf {self.stateful_dir}/build > /dev/null 2>&1 || echo "stateful already removed"',
-            'unzip -o {self.stateful_dir}/$STATEFUL_ID.zip -d {self.stateful_dir}/build',
-            'rm -rf {self.stateful_dir}/$STATEFUL_ID.zip'
+            f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID {self.stateful_dir}/$STATEFUL_ID.zip --quiet',
+            f'rm -rf {self.stateful_dir}/build > /dev/null 2>&1 || echo "stateful already removed"',
+            f'unzip -o {self.stateful_dir}/$STATEFUL_ID.zip -d {self.stateful_dir}/build',
+            f'rm -rf {self.stateful_dir}/$STATEFUL_ID.zip'
         ])
 
         return cmds
