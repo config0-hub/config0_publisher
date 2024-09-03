@@ -2,7 +2,7 @@
 
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
-from config0_publisher.resource.aws import TFCmdOnAWS
+from config0_publisher.resource.terraform import TFCmdOnAWS
 
 
 class CodebuildParams(TFAwsBaseBuildParams):
@@ -12,9 +12,7 @@ class CodebuildParams(TFAwsBaseBuildParams):
         TFAwsBaseBuildParams.__init__(self,**kwargs)
 
         self.classname = "CodebuildParams"
-
         self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
-
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
 
@@ -91,8 +89,7 @@ class Codebuild(CodebuildParams):
 
         self.classname = "Codebuild"
 
-        CodebuildParams.__init__(self,
-                                 **kwargs)
+        CodebuildParams.__init__(self,**kwargs)
 
         self.tfcmds = TFCmdOnAWS(runtime_env="codebuild",
                                  run_share_dir=self.run_share_dir,
@@ -115,8 +112,7 @@ class Codebuild(CodebuildParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(decrypt=None,
-                                                          lambda_env=None))
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(lambda_env=None))
 
         if self.ssm_name:
             cmds.append(self.tfcmds.get_codebuild_ssm_concat())
@@ -143,7 +139,7 @@ class Codebuild(CodebuildParams):
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         elif self.method == "validate":
-            cmds = self.tfcmds.get_tf_validate()
+            cmds = self.tfcmds.get_tf_chk_draft()
         else:
             raise Exception("method needs to be create/validate/destroy")
 
@@ -155,25 +151,4 @@ class Codebuild(CodebuildParams):
         prebuild = self._get_codebuildspec_prebuild()
         build = self._get_codebuildspec_build()
 
-        contents = init_contents + prebuild + build
-
-        # we only need postbuild if we add files, but
-        # we don't modify anything b/c we use a remote
-        # backend
-        # if self.method == "create":
-        #    postbuild = self._get_codebuildspec_postbuild()
-        #    contents = init_contents + prebuild + build + postbuild
-        # else:
-        #    contents = init_contents + prebuild + build  # if destroy, we skip postbuild
-
-        return contents
-
-#    def _get_codebuildspec_postbuild(self):
-#
-#        cmds = self.tfcmds.local_to_s3()
-#
-#        contents = '''
-#  post_build:
-#    commands:
-#'''
-#        return self._add_cmds(contents,cmds)
+        return init_contents + prebuild + build

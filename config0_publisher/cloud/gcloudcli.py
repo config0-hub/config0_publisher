@@ -43,7 +43,7 @@ class GcloudCli(ResourceCmdHelper):
 
         self.share_dir = os.environ.get("SHARE_DIR","/var/tmp/share")
 
-        self.stateful_dir = os.path.join(self.share_dir,
+        {self.stateful_dir} = os.path.join(self.share_dir,
                                          id_generator(8))
 
         self.docker_image = "google/cloud-sdk"
@@ -216,7 +216,7 @@ class GcloudCli(ResourceCmdHelper):
         if not hasattr(self,"tempdir") or not self.tempdir:
             self.set_ondisktmp()
 
-        self.google_application_credentials = os.path.join(self.stateful_dir,".creds","gcloud.json")
+        self.google_application_credentials = os.path.join({self.stateful_dir},".creds","gcloud.json")
 
         creds_dir = os.path.dirname(self.google_application_credentials)
     

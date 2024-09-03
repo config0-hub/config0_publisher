@@ -2,7 +2,7 @@
 
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
-from config0_publisher.resource.aws import TFCmdOnAWS
+from config0_publisher.resource.terraform import TFCmdOnAWS
 #from config0_publisher.utilities import print_json
 
 class LambdaParams(TFAwsBaseBuildParams):
@@ -83,8 +83,7 @@ class Lambdabuild(LambdaParams):
 
         self.classname = "Lambdabuild"
 
-        LambdaParams.__init__(self,
-                              **kwargs)
+        LambdaParams.__init__(self,**kwargs)
 
         self.tfcmds = TFCmdOnAWS(runtime_env="lambda",
                                  run_share_dir=self.run_share_dir,
@@ -100,8 +99,7 @@ class Lambdabuild(LambdaParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(decrypt=None,
-                                                          lambda_env=True))
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(lambda_env=True))
         cmds.append(self.tfcmds.get_src_buildenv_vars_cmd())
 
         return cmds
@@ -113,7 +111,7 @@ class Lambdabuild(LambdaParams):
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         elif self.method == "validate":
-            cmds = self.tfcmds.get_tf_validate()
+            cmds = self.tfcmds.get_tf_chk_draft()
         else:
             raise Exception("method needs to be create/validate/destroy")
 

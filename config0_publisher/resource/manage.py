@@ -247,7 +247,7 @@ class ResourceCmdHelper:
 
         if not self.config0_resource_json_file:
             try:
-                self.config0_resource_json_file = os.path.join(self.stateful_dir,
+                self.config0_resource_json_file = os.path.join({self.stateful_dir},
                                                           f"resource-{self.stateful_id}.json")
             except:
                 self.config0_resource_json_file = None
@@ -256,7 +256,7 @@ class ResourceCmdHelper:
 
         if not self.config0_phases_json_file:
             try:
-                self.config0_phases_json_file = os.path.join(self.stateful_dir,
+                self.config0_phases_json_file = os.path.join({self.stateful_dir},
                                                         f"phases-{self.stateful_id}.json")
             except:
                 self.config0_phases_json_file = None
