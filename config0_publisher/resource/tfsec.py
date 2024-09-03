@@ -28,12 +28,16 @@ class TFSecHelper(TFAppHelper):
         cmds.append(f'(mv {self.dl_file_path} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
         cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
 
+        return cmds
+
     def exec_cmds(self):
 
         return [
             f'cd {self.tf_execdir}; {self.binary} --no-color > {self.tf_execdir}/output/{self.app_name}.log',
             f'cd {self.tf_execdir}; {self.binary} --no-color --format json > {self.tf_execdir}/output/{self.app_name}.json'
         ]
+
+        return cmds
 
     def get_all_cmds(self):
 
