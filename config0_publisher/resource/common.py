@@ -70,7 +70,7 @@ class TFAppHelper:
         #_src_install = f'curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
         _bucket_install = f'aws s3 cp {bucket_path} {dl_file_path}'
         _src_install = f'curl -L -s {self.src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path}'
-        install_cmd = f'{_bucket_install} || {_src_install})'
+        install_cmd = f'({_bucket_install}) || ({_src_install})'
     
         cmds.append(install_cmd)
         cmds.append(f'mkdir -p {self.path_dir} || echo "trouble making self.path_dir {self.path_dir}"')
