@@ -33,8 +33,8 @@ class TFSecHelper(TFAppHelper):
     def exec_cmds(self):
 
         return [
-            f'cd {self.tf_execdir}; {self.path_dir}/{self.binary} --no-color > {self.stateful_dir}/output/{self.app_name}.log',
-            f'cd {self.tf_execdir}; {self.path_dir}/{self.binary} --no-color --format json > {self.stateful_dir}/output/{self.app_name}.json'
+            f'(cd {self.tf_execdir} && {self.path_dir}/{self.binary} --no-color > {self.stateful_dir}/output/{self.app_name}.log) || cat {self.stateful_dir}/output/{self.app_name}.log',
+            f'(cd {self.tf_execdir} && {self.path_dir}/{self.binary} --no-color --format json > {self.stateful_dir}/output/{self.app_name}.json || echo "tfsec format json failed"'
         ]
 
         return cmds
