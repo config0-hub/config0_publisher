@@ -29,8 +29,8 @@ class TFAwsBaseBuildParams(object):
 
         self.app_name = "terraform"
 
-        self.tf_binary = kwargs["tf_binary"]
-        self.tf_version = kwargs["tf_version"]
+        self.binary = kwargs["binary"]
+        self.version = kwargs["version"]
 
         self.run_share_dir = kwargs["run_share_dir"]
         self.app_dir = kwargs["app_dir"]
@@ -47,9 +47,9 @@ class TFAwsBaseBuildParams(object):
         if not self.tmp_bucket:
             return
 
-        if self.tf_binary in ["opentofu", "tofu"]:
-            self.tf_bucket_key = f"downloads/tofu/{self.tf_version}"
+        if self.binary in ["opentofu", "tofu"]:
+            self.tf_bucket_key = f"downloads/tofu/{self.version}"
         else:
-            self.tf_bucket_key = f"downloads/terraform/{self.tf_version}"
+            self.tf_bucket_key = f"downloads/terraform/{self.version}"
 
         self.tf_bucket_path = f"s3://{self.tmp_bucket}/{self.tf_bucket_key}"

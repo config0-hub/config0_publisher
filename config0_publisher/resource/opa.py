@@ -25,8 +25,8 @@ class TFOpaHelper(TFAppHelper):
     def install_cmds(self):
 
         cmds = self.download_cmds()
-        cmds.append(f'(mv {self.dl_file_path} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
-        cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
+        cmds.append(f'(mv {self.dl_file_path} {self.bin_dir}/{self.binary} > /dev/null) || exit 0')
+        cmds.append(f'chmod 777 {self.bin_dir}/{self.binary}')
 
         return cmds
 

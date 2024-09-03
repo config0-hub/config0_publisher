@@ -25,18 +25,16 @@ class TFSecHelper(TFAppHelper):
     def install_cmds(self):
 
         cmds = self.download_cmds()
-        cmds.append(f'(mv {self.dl_file_path} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
-        cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
+        cmds.append(f'(mv {self.dl_file_path} {self.bin_dir}/{self.binary} > /dev/null) || exit 0')
+        cmds.append(f'chmod 777 {self.bin_dir}/{self.binary}')
 
         return cmds
 
     def exec_cmds(self):
 
-        base_cmd = f'cd {self.tf_execdir} && {self.path_dir}/{self.binary} --no-color'
-
         return [
-            f'({base_cmd} > {self.stateful_dir}/output/{self.app_name}.log) || cat {self.stateful_dir}/output/{self.app_name}.log',
-            f'({base_cmd} --format json > {self.stateful_dir}/output/{self.app_name}.json) || echo "tfsec format json failed"'
+            f'({self.base_cmd} --no-color --out {self.base_output_file}.out) || echo "tfsec check failed"',
+            f'({self.base_cmd} --no-color --format json --out {self.base_output_file}.json) || echo "tfsec check with json output failed"'
         ]
 
     def get_all_cmds(self):

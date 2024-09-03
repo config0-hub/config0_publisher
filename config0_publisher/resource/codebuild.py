@@ -39,7 +39,7 @@ version: 0.2
 env:
   variables:
     TMPDIR: /tmp
-    TF_PATH: /usr/local/bin/{self.tf_binary}
+    TF_PATH: /usr/local/bin/{self.binary}
 '''
         if self.ssm_name:
             ssm_params_content = '''
@@ -95,8 +95,8 @@ class Codebuild(CodebuildParams):
                                  run_share_dir=self.run_share_dir,
                                  app_dir=self.app_dir,
                                  envfile="build_env_vars.env",
-                                 tf_binary=self.tf_binary,
-                                 tf_version=self.tf_version,
+                                 binary=self.binary,
+                                 version=self.version,
                                  tf_bucket_path=self.tf_bucket_path,
                                  arch="linux_amd64"
                                  )
@@ -139,7 +139,7 @@ class Codebuild(CodebuildParams):
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         elif self.method == "validate":
-            cmds = self.tfcmds.get_tf_chk_draft()
+            cmds = self.tfcmds.get_tf_chk_drift()
         else:
             raise Exception("method needs to be create/validate/destroy")
 

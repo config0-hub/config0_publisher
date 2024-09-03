@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 #from config0_publisher.fileutils import extract_tar_gz
+from time import time
 
 class TFAppHelper:
 
@@ -11,28 +12,41 @@ class TFAppHelper:
         # required
         self.binary = kwargs['binary']
         self.version = kwargs['version']
-        self.bucket = kwargs["bucket"]
+
+        # used except on terraform binary
+        self.bucket = kwargs.get("bucket")
         self.installer_format = kwargs.get("installer_format")
-        self.src_remote_path = kwargs["src_remote_path"]
+        self.src_remote_path = kwargs.get("src_remote_path")
+        self.start_time = str(time())
 
         # advisable
         self.runtime_env = kwargs.get("runtime_env",'codebuild')  # codebuild or lambda
-        self.app_name = kwargs.get("app_name",self.binary)
+
+        if not hasattr(self,"app_name"):
+            self.app_name = kwargs.get("app_name",self.binary)
 
         # pretty fixed
-        self.stateful_dir = kwargs.get("stateful_dir",'$TMPDIR/config0/$STATEFUL_ID')
-        self.tf_execdir = kwargs.get("tf_exedir",f'{self.stateful_dir}/run')  # notice the execution directory is in "run" subdir
+        self.stateful_dir = '$TMPDIR/config0/$STATEFUL_ID'
+
+        self.app_dir = kwargs.get("app_dir","var/tmp/terraform")
         self.arch = kwargs.get("arch",'linux_amd64')
         self.dl_subdir = kwargs.get("dl_subdir",'config0/downloads')
 
         if self.runtime_env == "lambda":
-            self.path_dir = f"/tmp/config0/bin"
+            self.bin_dir = f"/tmp/config0/bin"
         else:
-            self.path_dir = f"/usr/local/bin"
+            self.bin_dir = f"/usr/local/bin"
+
+        self.execdir = f'{self.stateful_dir}/run/{self.app_dir}'  # notice the execution directory is in "run" subdir
+
+        self.base_cmd = f'cd {self.execdir} && {self.bin_dir}/{self.binary} '
 
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
         self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/{self.base_file_path}"
         self.dl_file_path = f'$TMPDIR/{self.dl_subdir}/{self.base_file_path}'
+
+        self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}'
+        self.base_generate_file = f'{self.stateful_dir}/generated/{self.app_name}'
 
     def _get_initial_preinstall_cmds(self):
 
@@ -73,7 +87,7 @@ class TFAppHelper:
         install_cmd = f'({_bucket_install}) || ({_src_install})'
 
         cmds.append(install_cmd)
-        cmds.append(f'mkdir -p {self.path_dir} || echo "trouble making self.path_dir {self.path_dir}"')
+        cmds.append(f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"')
 
         if self.installer_format == "zip":
             cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && unzip {base_file_path} > /dev/null) || exit 0')
@@ -81,4 +95,3 @@ class TFAppHelper:
             cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && tar xfz {base_file_path} > /dev/null) || exit 0')
 
         return cmds
-

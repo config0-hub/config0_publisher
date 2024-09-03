@@ -3,29 +3,29 @@
 import os
 
 from config0_publisher.resource.tfinstaller import get_tf_install
+from config0_publisher.resource.common import TFAppHelper
 
-class TFCmdOnAWS(object):
+class TFCmdOnAWS(TFAppHelper):
 
     def __init__(self,**kwargs):
 
         self.classname = "TFCmdOnAWS"
-        self.runtime_env = kwargs["runtime_env"]
-        self.run_share_dir = kwargs["run_share_dir"]
+
+        self.app_name = "terraform"
         self.app_dir = kwargs["app_dir"]  # e.g. var/tmp/terraform
+
         self.envfile = kwargs["envfile"]  # e.g. build_env_vars.env
-        self.tf_binary = kwargs["tf_binary"]  # tofu
-        self.tf_version = kwargs["tf_version"]  # 1.6.2
         self.tf_bucket_path = kwargs["tf_bucket_path"]
-        self.arch = kwargs["arch"]
+        self.run_share_dir = kwargs["run_share_dir"]
 
-        self.dl_subdir = "config0/downloads"
+        TFAppHelper.__init__(self,
+                             binary=kwargs["binary"],
+                             version=kwargs["version"],
+                             arch=kwargs["arch"],
+                             runtime_env=kwargs["runtime_env"])
 
-        if self.runtime_env == "lambda":
-            self.bin_dir = f"/tmp/config0/bin"
-        else:
-            self.bin_dir = f"/usr/local/bin"
-        
-        self.stateful_dir = '$TMPDIR/config0/$STATEFUL_ID'
+        self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}'
+        self.base_generate_file = f'{self.stateful_dir}/generated/{self.app_name}'
 
     def reset_dirs(self):
 
@@ -48,12 +48,12 @@ class TFCmdOnAWS(object):
         
         return get_tf_install(
                 runtime_env=self.runtime_env,
-                tf_binary=self.tf_binary,
-                tf_version=self.tf_version,
+                binary=self.binary,
+                version=self.version,
                 dl_subdir=self.dl_subdir,
                 tf_bucket_path=self.tf_bucket_path,
                 arch=self.arch,
-                tf_path_dir=self.bin_dir)
+                bin_dir=self.bin_dir)
 
     # ref 4354523
     def get_decrypt_buildenv_vars(self,lambda_env=True):
@@ -111,38 +111,69 @@ class TFCmdOnAWS(object):
 
         return cmds
 
+    def get_tf_init(self):
+
+        src_build_vars_cmd = self.get_src_buildenv_vars_cmd()
+
+        return [
+            f'({src_build_vars_cmd}) && ({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)',
+            f'({src_build_vars_cmd}) && ({self.base_cmd} validate)'
+        ]
+
+    def get_tf_plan(self):
+
+        src_build_vars_cmd = self.get_src_buildenv_vars_cmd()
+
+        return [
+            f'({src_build_vars_cmd}) && {self.base_cmd} plan -out={self.base_output_file}/{self.start_time}.tfplan',
+            f'({src_build_vars_cmd}) && {self.base_cmd} show -no-color -json {self.base_output_file}/{self.start_time}.tfplan > {self.base_output_file}/{self.start_time}.tfplan.json'
+        ]
+
+    def get_ci_check(self):
+
+        cmds = self.get_tf_init()
+        cmds.append(self.get_tf_chk_fmt(exit_on_error=True))
+        cmds.extend(self.get_tf_plan())
+
+        return cmds
+
     def get_tf_apply(self):
 
-        base_cmd = self.get_src_buildenv_vars_cmd()
+        src_build_vars_cmd = self.get_src_buildenv_vars_cmd()
 
-        cmds = [
-            f'({base_cmd}) && (cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} init) || (rm -rf .terraform && {self.bin_dir}/{self.tf_binary} init)',
-            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} plan -out=tfplan',
-            f'({base_cmd}) && (cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} apply tfplan) || ({self.bin_dir}/{self.tf_binary} destroy -auto-approve && exit 9)'
-        ]
+        cmds = self.get_tf_init()
+        cmds.extend(self.get_tf_plan())
+        cmds.append(f'({src_build_vars_cmd}) && ({self.base_cmd} apply {self.base_output_file}/{self.start_time}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         return cmds
 
     def get_tf_destroy(self):
 
-        base_cmd = self.get_src_buildenv_vars_cmd()
+        src_build_vars_cmd = self.get_src_buildenv_vars_cmd()
 
-        cmds = [
-          f'({base_cmd}) && (cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} init) || (rm -rf .terraform && {self.bin_dir}/{self.tf_binary} init)',
-          f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} destroy -auto-approve'
-        ]
+        cmds = self.get_tf_init()
+        cmds.append(f'({src_build_vars_cmd}) && {self.base_cmd} destroy -auto-approve')
 
         return cmds
 
-    def get_tf_chk_draft(self):
+    def get_tf_chk_fmt(self,exit_on_error=True):
 
-        base_cmd = self.get_src_buildenv_vars_cmd()
+        src_build_vars_cmd = self.get_src_buildenv_vars_cmd()
 
-        cmds = [
-            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} init',
-            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} refresh',
-            f'({base_cmd}) && cd {self.stateful_dir}/run/$APP_DIR && {self.bin_dir}/{self.tf_binary} plan -detailed-exitcode'
-        ]
+        if exit_on_error:
+            return f'{src_build_vars_cmd}) && {self.base_cmd} fmt -check -diff -recursive > {self.base_output_file}/tf-fmt.out'
+
+        return f'{src_build_vars_cmd}) && {self.base_cmd} fmt -write=false -diff -recursive > {self.base_output_file}/tf-fmt.out'
+
+    def get_tf_chk_drift(self):
+
+        src_build_vars_cmd = self.get_src_buildenv_vars_cmd()
+
+        cmds = self.get_tf_init()
+        cmds.extend([
+            f'({src_build_vars_cmd}) && {self.base_cmd} refresh',
+            f'({src_build_vars_cmd}) && {self.base_cmd} plan -detailed-exitcode'
+        ])
 
         return cmds
 

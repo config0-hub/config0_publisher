@@ -42,7 +42,7 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         env_vars = {
             "TMPDIR":"/tmp",
-            "TF_PATH":f"/tmp/config0/bin/{self.tf_binary}",
+            "TF_PATH":f"/tmp/config0/bin/{self.binary}",
             "METHOD":self.method
         }
 
@@ -91,8 +91,8 @@ class Lambdabuild(LambdaParams):
                                  run_share_dir=self.run_share_dir,
                                  app_dir=self.app_dir,
                                  envfile="build_env_vars.env",
-                                 tf_binary=self.tf_binary,
-                                 tf_version=self.tf_version,
+                                 binary=self.binary,
+                                 version=self.version,
                                  tf_bucket_path=self.tf_bucket_path,
                                  arch="linux_amd64")
 
@@ -140,7 +140,7 @@ class Lambdabuild(LambdaParams):
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         elif self.method == "validate":
-            cmds = self.tfcmds.get_tf_chk_draft()
+            cmds = self.tfcmds.get_tf_chk_drift()
         else:
             raise Exception("method needs to be create/validate/destroy")
 

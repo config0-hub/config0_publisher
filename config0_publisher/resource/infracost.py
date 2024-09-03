@@ -30,20 +30,17 @@ class TFInfracostHelper(TFAppHelper):
         dl_file = f'{self.binary}-{self.arch}'.replace("_","-")
 
         cmds = self.download_cmds()
-        cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && mv {dl_file} {self.path_dir}/{self.binary} > /dev/null) || exit 0')
-        cmds.append(f'chmod 777 {self.path_dir}/{self.binary}')
+        cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && mv {dl_file} {self.bin_dir}/{self.binary} > /dev/null) || exit 0')
+        cmds.append(f'chmod 777 {self.bin_dir}/{self.binary}')
 
         return cmds
 
     def exec_cmds(self):
 
         return [
-            f'cd {self.tf_execdir}; {self.path_dir}/{self.binary} breakdown --path . --out-file {self.app_name}.json --format json --out-file {self.stateful_dir}/output/{self.app_name}.json',
-            f'cd {self.tf_execdir}; {self.path_dir}/{self.binary} --no-color breakdown --path . > {self.stateful_dir}/output/{self.app_name}.log',
-            f'find {self.stateful_dir}'  # testtest456
+            f'cd {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
+            f'cd {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file.output}.out'
             ]
-
-        return cmds
 
     def get_all_cmds(self):
 
