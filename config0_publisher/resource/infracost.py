@@ -37,8 +37,8 @@ class TFInfracostHelper(TFAppHelper):
     def exec_cmds(self):
 
         return [
-            f'cd {self.tf_execdir}; {self.binary} breakdown --path . --out-file {self.app_name}.json --format json --out-file {self.stateful_dir}/output/{self.app_name}.json',
-            f'cd {self.tf_execdir}; {self.binary} --no-color breakdown --path . > {self.stateful_dir}/output/{self.app_name}.log',
+            f'cd {self.tf_execdir}; {self.path_dir}/{self.binary} breakdown --path . --out-file {self.app_name}.json --format json --out-file {self.stateful_dir}/output/{self.app_name}.json',
+            f'cd {self.tf_execdir}; {self.path_dir}/{self.binary} --no-color breakdown --path . > {self.stateful_dir}/output/{self.app_name}.log',
             f'find {self.stateful_dir}'  # testtest456
             ]
 
