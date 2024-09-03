@@ -222,3 +222,9 @@ def get_file_age(file_path):
         time_elapse = None
 
     return time_elapse
+def extract_tar_gz(file_path, extract_path='.'):
+
+    with tarfile.open(file_path, 'r:gz') as tar:
+        # Extract all contents into the specified directory
+        tar.extractall(path=extract_path)
+        print(f'Extracted all files to {extract_path}')

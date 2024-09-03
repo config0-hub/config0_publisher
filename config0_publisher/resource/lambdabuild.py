@@ -3,6 +3,10 @@
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.terraform import TFCmdOnAWS
+from config0_publisher.resource.infracost import TFInfracostHelper
+from config0_publisher.resource.tfsec import TFSecHelper
+from config0_publisher.resource.opa import TFOpaHelper
+
 #from config0_publisher.utilities import print_json
 
 class LambdaParams(TFAwsBaseBuildParams):
@@ -95,6 +99,14 @@ class Lambdabuild(LambdaParams):
                                  arch="linux_amd64"
                                  )
 
+        self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
+                                      envfile="build_env_vars.env",
+                                      binary='tfsec',
+                                      version="1.28.10",
+                                      tmp_bucket=self.tmp_bucket,
+                                      arch="linux_amd64"
+                                      )
+
     def _get_prebuild_cmds(self):
 
         cmds = self.tfcmds.s3_to_local()
@@ -108,6 +120,10 @@ class Lambdabuild(LambdaParams):
 
         if self.method == "create":
             cmds = self.tfcmds.get_tf_apply()
+
+            # testtest456
+            cmds.extend(self.tfsec_cmds.get_all_cmds())
+
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         elif self.method == "validate":
