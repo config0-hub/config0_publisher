@@ -31,7 +31,7 @@ class TFAppHelper:
             self.path_dir = f"/usr/local/bin"
 
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
-        self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/self.base_file_path}"
+        self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/{self.base_file_path}"
         self.dl_file_path = f'$TMPDIR/{self.dl_subdir}/{self.base_file_path}'
 
     def _get_initial_preinstall_cmds(self):
