@@ -10,7 +10,7 @@
 #Copyright (C) Gary Leong - All Rights Reserved
 #Unauthorized copying of this file, via any medium is strictly prohibited
 #Proprietary and confidential
-#Written by Gary Leong  <gary@config0.com, May 11,2019
+#Written by Gary Leong  <gary@config0.com, May 11,2024
 
 import string
 import random
@@ -253,3 +253,29 @@ def eval_str_to_join(str_obj):
             continue
         return True
     return
+
+def dict_to_dict(original_dict,keys_to_include=None,new_dict=None):
+
+    """
+    Create a new dictionary from the original dictionary with only the specified keys.
+
+    Parameters:
+    original_dict (dict): The dictionary to filter.
+    keys_to_include (list): The list of keys to include in the new dictionary.
+
+    Returns:
+    dict: A new dictionary containing only the specified keys.
+    """
+
+    if new_dict is None:
+        new_dict = {}
+
+    if not keys_to_include:
+        return new_dict
+
+    for key in keys_to_include:
+        if key not in original_dict:
+            continue
+        new_dict[key] = original_dict[key]
+
+    return new_dict

@@ -1,14 +1,56 @@
 #!/usr/bin/env python
 
-import logging
-import re
 import os
-#import boto3
-#import gzip
-#from io import BytesIO
-#from time import sleep
-#from time import time
-#from config0_publisher.loggerly import Config0Logger
+from dataclasses import dataclass,field
+
+
+@dataclass
+class DataClassKwargs:
+    '''
+    creates a dataclass by taking keys and values
+    from the provided kwargs
+    '''
+
+    kwargs: field(default_factory=dict) = None
+
+    def __post_init__(self):
+        for k,v in self.kwargs.items():
+            setattr(self,k,v)
+
+
+@dataclass
+class DataClassOsEnvVars:
+    '''
+    creates a dataclass by taking env vars
+    making them lower case as an attribute
+    in a class
+
+    this only works with strings since os env vars
+    are strings
+    '''
+
+    keys: list
+
+    def __post_init__(self):
+
+        for k in self.keys:
+
+            if k not in os.environ:
+                continue
+
+            if not os.environ.get(k):
+                continue
+
+            setattr(self,k.lower(),str(os.environ[k]))
+
+
+def dict_to_classobj(values):
+    return DataClassKwargs(kwargs=values)
+
+
+def os_environ_to_classobj(keys):
+    return DataClassOsEnvVars(keys=keys)
+
 
 class SetClassVarsHelper:
 

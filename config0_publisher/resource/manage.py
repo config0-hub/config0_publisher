@@ -323,7 +323,6 @@ class ResourceCmdHelper:
             "method",
             "share_dir",
             "docker_image",
-            "tf_runtime",
             "mod_execgroup",
             "destroy_env_vars",
             "validate_env_vars"
@@ -344,7 +343,6 @@ class ResourceCmdHelper:
             "validate_env_vars": None,
             "mod_execgroup": None,
             "docker_image": None,
-            "tf_runtime":None,
             "tmpdir": "/tmp",
             "exec_base_dir": os.getcwd()
         }
@@ -377,6 +375,15 @@ class ResourceCmdHelper:
             class_vars = self.syncvars.class_vars
 
         for _k,_v in class_vars.items():
+
+            # check is the class vars already exists
+            # and if not None/False, skip
+            if hasattr(self,_k) and getattr(self,_k):
+                continue
+
+            if os.environ.get("JIFFY_ENHANCED_LOG"):
+                self.logger.debug(f" ## variable set: {_k} -> {_v}")
+
             if _v is None:
                 exp = f"self.{_k}=None"
             elif _v is False:
@@ -385,9 +392,6 @@ class ResourceCmdHelper:
                 exp = f"self.{_k}=True"
             else:
                 exp = f'self.{_k}="{_v}"'
-
-            if os.environ.get("JIFFY_ENHANCED_LOG"):
-                self.logger.debug(f" ## variable set: {_k} -> {_v}")
 
             exec(exp)
 
@@ -679,7 +683,7 @@ class ResourceCmdHelper:
             _var = _env_key.split(_split_key)[1].lower()
 
             if _var in exclude_vars: 
-                self.logger.debug("insert_os_env_prefix_envs - skipping {}".format(_env_key))
+                self.logger.debug("insert_os_env_prefix_envs - excluding {}".format(_env_key))
                 continue
 
             _env_value = os.environ.get(_env_key)
@@ -753,87 +757,6 @@ class ResourceCmdHelper:
         print('_config0_end_output')
 
         return
-
-    def get_state_info(self):
-
-        if not self.postscript_path:
-            self.logger.warn("post script is not set")
-            return
-
-        if not os.path.exists(self.postscript_path):
-            self.logger.warn("post script {} does not exists".format(self.postscript_path))
-            return 
-
-        os.chdir(self.exec_dir)
-        cmd = [ self.postscript_path ]
-
-        try:
-            output = self.execute(cmd,
-                                  output_to_json=False,
-                                  exit_error=True).get("output")
-        except:
-            self.logger.debug("{} failed at dir {}".format(self.postscript_path,self.exec_dir))
-            exit(9)
-
-        # try to get resources from resource file 
-        # in resources directory
-        # ref 34532045732
-        resources = self._get_resource_files()
-
-        if resources: 
-            return resources
-
-        if not output: 
-            return 
-
-        # try to convert output with delimiters to values
-        values = convert_config0_output_to_values(output)
-
-        os.chdir(self.cwd)
-
-        return values
-
-    # add_mod_params is to specified by the inherited class"
-    #def add_mod_params(self):
-    #    return
-
-    def get_resource_details(self):
-
-        resource = self.get_state_info()
-
-        if not resource:
-            return 
-
-        return self.config_resource_details(resource)
-
-    def config_resource_details(self,resource):
-
-        if not isinstance(resource,dict) and not isinstance(resource,list):
-            self.logger.error("resource needs to be a dictionary or list!")
-            return False
-
-        if isinstance(resource,dict):
-            self.add_resource_tags(resource)
-
-            try:
-                self.add_mod_params(resource)
-            except:
-                self.logger.debug("could not add mod params")
-
-        elif isinstance(resource,list):
-            for _resource in resource:
-
-                self.add_resource_tags(_resource)
-
-                if not _resource.get("main"):
-                    continue
-
-                try:
-                    self.add_mod_params(_resource)
-                except:
-                    self.logger.debug("could not add mod params")
-
-        return resource
 
     def _get_docker_env_filepath(self):
 
@@ -1147,31 +1070,6 @@ class ResourceCmdHelper:
         for key_to_delete in keys_to_delete:
             del self.inputargs[key_to_delete]
 
-    def add_resource_tags(self,resource):
-
-        tags = self.get_env_var("RESOURCE_TAGS")
-
-        if not tags: 
-            return
-
-        if resource.get("tags"):
-            return
-
-        tags = [ tag.strip() for tag in tags.split(",") ]
-
-        if not resource.get("tags"): 
-            resource["tags"] = []
-
-        resource["tags"].extend(tags)
-
-        if self.app_name: 
-            resource["tags"].append(self.app_name)
-
-        # remove duplicates
-        resource["tags"] = list(set(resource["tags"]))
- 
-        return resource
-
     def get_hash(self,_object):
         return get_hash(_object)
 
@@ -1374,7 +1272,6 @@ class ResourceCmdHelper:
                               "SCHEDULE_ID",
                               "RUN_ID",
                               "RESOURCE_TYPE",
-                              "RESOURCE_TAGS",
                               "METHOD",
                               "PHASE" ]
 
@@ -1606,7 +1503,7 @@ class ResourceCmdHelper:
 
         self.phase = self.current_phase["name"]
 
-    def create_config0_settings_file(self):
+    def write_config0_settings_file(self):
 
         try:
             value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")

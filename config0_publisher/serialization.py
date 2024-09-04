@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-import json
 import subprocess
 import os
 import pickle
-import zlib
 import gzip
-import base64
 import io
+import json
+import zlib
+import base64
 
 from io import StringIO
 from cryptography.hazmat.primitives.ciphers import Cipher
@@ -18,6 +18,34 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
+
+def convert_b64_to_zlib_b64(token):
+    return compress_and_encode_dict(b64_decode(token))
+
+def compress_and_encode_dict(data):
+
+    # Convert the dictionary to a JSON string
+    json_string = json.dumps(data)
+    
+    # Compress the JSON string
+    compressed_data = zlib.compress(json_string.encode('utf-8'))
+    
+    # Encode the compressed data to base64
+    base64_encoded_data = base64.b64encode(compressed_data)
+    
+    # Convert bytes to string
+    return base64_encoded_data.decode('utf-8')
+
+def decode_and_decompress_string(encoded_str):
+
+    # Convert the base64 string back to bytes
+    compressed_data = base64.b64decode(encoded_str)
+    
+    # Decompress the data
+    json_string = zlib.decompress(compressed_data).decode('utf-8')
+    
+    # Convert back to dictionary
+    return json.loads(json_string)
 
 def convert_to_fernet_key(key):
 
