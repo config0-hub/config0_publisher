@@ -683,8 +683,7 @@ class Testtest456:
                                            exclude_vars)
 
             # this should be set by ResourceCmdHelper
-            self.build_env_vars[
-                "BUILD_TIMEOUT"] = self.build_timeout  # this should be set by Config0SettingsEnvVarHelper
+            self.build_env_vars["BUILD_TIMEOUT"] = self.build_timeout  # this should be set by Config0SettingsEnvVarHelper
 
             if self.docker_image:  # this should be set by Config0SettingsEnvVarHelper
                 self.build_env_vars["DOCKER_IMAGE"] = self.docker_image
