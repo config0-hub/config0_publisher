@@ -22,7 +22,7 @@ def get_tf_install(**kwargs):
     else:
         cmds = [f'echo "downloading {binary}_{version}"']
 
-    bucket_install = f'aws s3 cp {bucket_path} $TMPDIR/{dl_subdir}/{binary}_{version} --quiet && echo "############" && echo \n"### GOT "{binary} from s3/cache\n && echo "############"'
+    bucket_install = f'aws s3 cp {bucket_path} $TMPDIR/{dl_subdir}/{binary}_{version} --quiet && echo "############" && echo \n"### GOT "{binary}" from s3/cache\n && echo "############"'
     terraform_direct = f'echo "########## NEED FRM SOURCE" && cd $TMPDIR/{dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{version}/{binary}_{version}_{arch}.zip -o {binary}_{version} && aws s3 cp {binary}_{version} {bucket_path} --quiet'
     tofu_direct = f'echo "############ NEED FRM SOURCE" && cd $TMPDIR/{dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{version}/{binary}_{version}_{arch}.zip -o {binary}_{version} && aws s3 cp {binary}_{version} {bucket_path} --quiet'
 
