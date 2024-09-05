@@ -689,7 +689,7 @@ class Testtest456:
 
     def _set_runtime_env_vars(self,method="create"):
 
-        # testtest456
+        # build_env_vars only needed when initially creating
         if method == "create":
             return
 
@@ -807,7 +807,6 @@ class Testtest456:
         if self.ssm_name:
             cinputargs["ssm_name"] = self.ssm_name
 
-        # testtest456
         cinputargs.update({
             "version": self.version,
             "binary": self.binary,
