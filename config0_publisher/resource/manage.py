@@ -1239,7 +1239,7 @@ class ResourceCmdHelper:
 
             self.inputargs[_k] = False
 
-    def _add_to_inputargs(self,inputargs=None):
+    def _add_to_inputargs(self,ref,inputargs=None):
 
         if not inputargs:
             return
@@ -1249,7 +1249,7 @@ class ResourceCmdHelper:
             if _k in self.inputargs:
                 continue
 
-            self.logger.debug(f"added to inputargs {_k} -> {_v}")
+            self.logger.debug(f"{ref} - added to inputargs {_k} -> {_v}")
             self.inputargs[_k] = _v
 
     def set_inputargs(self,**kwargs):
@@ -1258,20 +1258,20 @@ class ResourceCmdHelper:
 
         if kwargs.get("inputargs"):
             _inputargs = kwargs["inputargs"]
-            self._add_to_inputargs(_inputargs)
+            self._add_to_inputargs("ref 34524-1",_inputargs)
 
         elif kwargs.get("json_input"):
             _inputargs = to_json(kwargs["json_input"],
                                      exit_error=True)
-            self._add_to_inputargs(_inputargs)
+            self._add_to_inputargs("ref 34524-2",_inputargs)
 
         if kwargs.get("add_app_vars") and self.os_env_prefix:
             _inputargs = self.get_os_env_prefix_envs(remove_os_environ=False)
-            self._add_to_inputargs(_inputargs)
+            self._add_to_inputargs("ref 34524-3",_inputargs)
 
         if kwargs.get("set_env_vars"):
             _inputargs = self.parse_set_env_vars(kwargs["set_env_vars"])
-            self._add_to_inputargs(_inputargs)
+            self._add_to_inputargs("ref 34524-4",_inputargs)
 
         standard_env_vars = [ "JOB_INSTANCE_ID",
                               "SCHEDULE_ID",
@@ -1281,7 +1281,7 @@ class ResourceCmdHelper:
                               "PHASE" ]
 
         _inputargs = self.parse_set_env_vars(standard_env_vars)
-        self._add_to_inputargs(_inputargs)
+        self._add_to_inputargs("ref 34524-5",_inputargs)
         self._set_inputargs_to_false()
 
     # This can be replaced by the inheriting class
