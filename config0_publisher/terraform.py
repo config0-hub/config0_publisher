@@ -101,18 +101,18 @@ class TFConstructor(object):
         elif self.ssm_obj and infracost_api_key:
             self.ssm_obj["INFRACOST_API_COST"] = infracost_api_key
 
-        if not self.stack.stateful_id and not self.ssm_name:
-            return
-
-        if not self.ssm_obj:
-            return
-
         # testtest456
         self.logger.debug("@"*32)
         self.logger.debug("@ ssm obj")
         self.logger.json(self.ssm_obj)
         self.logger.debug("@"*32)
         raise Exception('yo')
+
+        if not self.stack.stateful_id and not self.ssm_name:
+            return
+
+        if not self.ssm_obj:
+            return
 
         value = self._get_ssm_value()
         self._set_ssm_name(value)
