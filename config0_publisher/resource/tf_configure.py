@@ -363,6 +363,12 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self.eval_config0_resource_settings()
         self._set_parse_settings_for_tfstate()
 
+        # testtest456
+        resource_configs = self.tf_configs.get("resource_configs")
+        # testtest456
+        self.logger.json(resource_configs)
+        raise Exception('yoyo2')
+
         # this is probably for configuring if values are provided
         # testtest456
         self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
