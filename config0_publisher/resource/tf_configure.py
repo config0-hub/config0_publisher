@@ -286,7 +286,10 @@ class Config0SettingsEnvVarHelper:
         for k,v in self._vars.items():
             setattr(self,k,v)
             # testtest456
-            self.logger.debug(f'{k} - {nice_json(v)}')
+            #if os.environ.get("JIFFY_ENHANCED_LOG"):
+            self.logger.debug(f'{k} -> {nice_json(v)}')
+
+        self.logger.json(self.tfconfigs)
 
         raise Exception('yoyo')
 
