@@ -945,11 +945,13 @@ terraform {{
                     "added": []
                 }},
             "raw": {"terraform": b64_encode(tfstate_values)},
+            "source_method": "terraform",
+            "main": True,
+            "provider": self.provider,
             "terraform_type": self.terraform_type,
             "resource_type": self.resource_type,
-            "source_method": "terraform",
-            "provider": self.provider,
-            "main": True
+            "stateful_id":self.stateful_id,
+            "remote_stateful_bucket": self.remote_stateful_bucket
         }
 
         if os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"):
