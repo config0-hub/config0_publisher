@@ -141,7 +141,7 @@ class LambdaResourceHelper(AWSCommonConn):
         try:
             lambda_results = json.loads(payload["body"])
         except:
-            lambda_results = json.loads(payload)
+            lambda_results = payload
             lambda_results["status"] = False
             self.results["failed_message"] = " ".join(lambda_results["stackTrace"])
             self.results["output"] = " ".join(lambda_results["stackTrace"])
