@@ -103,7 +103,7 @@ class TFConstructor(object):
 
         # testtest456
         self.logger.debug("@"*32)
-        self.logger.debug("@ ssm obj")
+        self.logger.debug(f"@ ssm name {self.ssm_name}")
         self.logger.json(self.ssm_obj)
         self.logger.debug("@"*32)
         raise Exception('yo')
