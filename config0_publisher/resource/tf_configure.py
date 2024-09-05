@@ -659,6 +659,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
     def configure(self):
 
         self._setup_for_configuration()
+
         self._insert_frm_tfstate_to_values()
         self._insert_resource_values()
         self._insert_resource_labels()

@@ -130,9 +130,10 @@ class Lambdabuild(LambdaParams):
     def _get_build_cmds(self):
 
         if self.method == "create":
-            cmds = self.tfcmds.get_tf_apply()
+            cmds = self.tfsec_cmds.get_all_cmds()
+            cmds.extend(self.infracost_cmds.get_all_cmds())
+            cmds.extend(self.tfcmds.get_tf_apply())
 
-            # testtest456
             #cmds.extend(self.tfsec_cmds.get_all_cmds())
             #cmds.extend(self.infracost_cmds.get_all_cmds())
             #cmds.extend(self.opa_cmds.get_all_cmds())
