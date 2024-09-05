@@ -107,8 +107,12 @@ class LambdaResourceHelper(AWSCommonConn):
         self.build_expire_at = time() + timeout
 
         # Define the configuration for invoking the Lambda function
-        self.logger.json(self._env_vars_to_lambda_format())
-        raise Exception('yo342')
+        env_vars = self._env_vars_to_lambda_format()
+
+        self.logger.debug("*"*32)
+        self.logger.debug("* env vars for lambda build")
+        self.logger.json(env_vars)
+        self.logger.debug("*"*32)
 
         invocation_config = {
             'FunctionName': self.lambda_function_name,
@@ -117,7 +121,7 @@ class LambdaResourceHelper(AWSCommonConn):
             'Payload': json.dumps(
                 {
                     "cmds_b64":self.cmds_b64,
-                    "env_vars_b64":b64_encode(self._env_vars_to_lambda_format()),
+                    "env_vars_b64":b64_encode(env_vars),
                 })
         }
 
