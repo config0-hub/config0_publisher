@@ -108,9 +108,11 @@ class TFConstructor(object):
             return
 
         # testtest456
-        self.logger.debug("+"*32)
+        self.logger.debug("@"*32)
+        self.logger.debug("@ ssm obj")
         self.logger.json(self.ssm_obj)
-        self.logger.debug("+"*32)
+        self.logger.debug("@"*32)
+        raise Exception('yo')
 
         value = self._get_ssm_value()
         self._set_ssm_name(value)
