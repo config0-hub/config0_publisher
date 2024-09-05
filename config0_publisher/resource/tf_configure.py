@@ -896,7 +896,8 @@ terraform {{
             raise Exception(failed_message)
 
         tf_results = self._setup_and_exec_in_aws("create",
-                                                 create_remote_state=self.create_remote_state)
+                                                 create_remote_state=True)  # testtest456
+        #create_remote_state = self.create_remote_state)
 
         self._post_create()
 
