@@ -690,8 +690,9 @@ class Testtest456:
     def _set_runtime_env_vars(self,method="create"):
 
         # build_env_vars only needed when initially creating
-        if method == "create":
-            return
+        # testtest456
+        #if method == "create":
+        #    return
 
         try:
             exclude_vars = list(self.tf_configs["tf_vars"].keys())
