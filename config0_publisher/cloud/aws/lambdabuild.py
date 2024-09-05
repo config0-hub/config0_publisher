@@ -107,6 +107,9 @@ class LambdaResourceHelper(AWSCommonConn):
         self.build_expire_at = time() + timeout
 
         # Define the configuration for invoking the Lambda function
+        self.logger.json(self._env_vars_to_lambda_format())
+        raise Exception('yo342')
+
         invocation_config = {
             'FunctionName': self.lambda_function_name,
             'InvocationType': 'RequestResponse',
@@ -133,10 +136,9 @@ class LambdaResourceHelper(AWSCommonConn):
         self.response = self._trigger_build()
 
         lambda_status = int(self.response["StatusCode"])
+        self.results["lambda_status"] = lambda_status
 
         payload = json.loads(self.response["Payload"].read().decode())
-
-        self.results["lambda_status"] = lambda_status
 
         try:
             lambda_results = json.loads(payload["body"])
