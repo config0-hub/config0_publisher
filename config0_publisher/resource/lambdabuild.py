@@ -87,6 +87,8 @@ class Lambdabuild(LambdaParams):
 
         # testtest456
         print('x0'*32)
+        print(self.binary)
+        print(self.version)
         print(kwargs)
         print('x0'*32)
 
