@@ -9,6 +9,7 @@ from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import b64_decode
 from config0_publisher.serialization import decode_and_decompress_string
 from config0_publisher.loggerly import Config0Logger
+from config0_publisher.loggerly import nice_json
 from config0_publisher.utilities import get_hash
 ###########################
 from config0_publisher.serialization import b64_encode
@@ -284,6 +285,10 @@ class Config0SettingsEnvVarHelper:
 
         for k,v in self._vars.items():
             setattr(self,k,v)
+            # testtest456
+            self.logger.debug(f'{k} - {nice_json(v)}')
+
+        raise Exception('yoyo')
 
 # init and reconfigure (update)
 class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
