@@ -266,6 +266,10 @@ class Config0SettingsEnvVarHelper:
 
     def eval_config0_resource_settings(self,create=None):
 
+        # testtest456
+        self.tf_runtime_env_vars = None
+        # testtest456
+
         if not self._set_frm_config0_resource_settings():
             # assume it is destroying modifing at this point
             return
@@ -367,6 +371,9 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
         # this is probably for configuring if values are provided
         # testtest456
+        self.tf_runtime_env_vars = None
+        # testtest456
+
         self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
         self.stateful_id = self._db_values["stateful_id"]
         self.terraform_type = self._db_values["terraform_type"]
