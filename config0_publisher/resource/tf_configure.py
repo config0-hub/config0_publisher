@@ -1003,6 +1003,7 @@ terraform {{
 
         # environmental variables to include during destruction
         env_vars = {
+            "CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": resource["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"],
             "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
             "STATEFUL_ID": self.stateful_id,
             "BUILD_TIMEOUT": self.build_timeout,
