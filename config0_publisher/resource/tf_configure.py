@@ -1043,6 +1043,8 @@ terraform {{
         _configure = ConfigureTFforConfig0Db(db_values=resource)
         _configure.configure()
         # testtest456
+        self.logger.json(resource)
+        raise Exception('yoyo')
 
         # enter into resource db through
         # file location or through standard out
