@@ -271,8 +271,13 @@ class Config0SettingsEnvVarHelper:
         # testtest456
 
         if not self._set_frm_config0_resource_settings():
+            self._set_tf_runtime()
+            self._set_tf_binary_version()
             # assume it is destroying modifing at this point
             return
+
+        self._set_tf_runtime()
+        self._set_tf_binary_version()
 
         # if it is creating for the first time
         if create:
@@ -285,9 +290,6 @@ class Config0SettingsEnvVarHelper:
 
         if not self._vars.get("provider"):
             self.logger.error("provider should be set")
-
-        self._set_tf_runtime()
-        self._set_tf_binary_version()
 
         for k,v in self._vars.items():
             if os.environ.get("JIFFY_ENHANCED_LOG"):
