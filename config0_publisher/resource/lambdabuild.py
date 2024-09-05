@@ -135,7 +135,6 @@ class Lambdabuild(LambdaParams):
             # testtest456
             #cmds.extend(self.tfsec_cmds.get_all_cmds())
             #cmds.extend(self.infracost_cmds.get_all_cmds())
-
             #cmds.extend(self.opa_cmds.get_all_cmds())
 
         elif self.method == "destroy":

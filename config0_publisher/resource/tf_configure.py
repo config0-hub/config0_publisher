@@ -269,12 +269,7 @@ class Config0SettingsEnvVarHelper:
 
     def eval_config0_resource_settings(self,create=None):
 
-        # testtest456
-        #self.tf_runtime_env_vars = None
-        # testtest456
-
         self._set_frm_config0_resource_settings()
-
         self._set_tf_runtime()
         self._set_tf_binary_version()
 
@@ -370,11 +365,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self.eval_config0_resource_settings()
         self._set_parse_settings_for_tfstate()
 
-        # this is probably for configuring if values are provided
-        # testtest456
-        #self.tf_runtime_env_vars = None
-        # testtest456
-
         self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
         self.stateful_id = self._db_values["stateful_id"]
         self.terraform_type = self._db_values["terraform_type"]
@@ -384,7 +374,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         except:
             self._last_applied_add_keys = []
 
-        # testtest456
         # revisit 324214
         # should we compress this?
         self.tfstate_values = b64_decode(self._db_values["raw"]["terraform"])
@@ -701,28 +690,27 @@ class Testtest456:
     def _set_runtime_env_vars(self,method="create"):
 
         # testtest456
-        #if method not in [ "create" ]:
-        #    return
-
         if method == "create":
-            try:
-                exclude_vars = list(self.tf_configs["tf_vars"].keys())
-            except:
-                exclude_vars = self.exclude_tfvars
+            return
 
-            # insert TF_VAR_* os vars
-            self.insert_os_env_prefix_envs(self.build_env_vars,
-                                           exclude_vars)
+        try:
+            exclude_vars = list(self.tf_configs["tf_vars"].keys())
+        except:
+            exclude_vars = self.exclude_tfvars
 
-            # this should be set by ResourceCmdHelper
-            self.build_env_vars["BUILD_TIMEOUT"] = self.build_timeout  # this should be set by Config0SettingsEnvVarHelper
+        # insert TF_VAR_* os vars
+        self.insert_os_env_prefix_envs(self.build_env_vars,
+                                       exclude_vars)
 
-            if self.docker_image:  # this should be set by Config0SettingsEnvVarHelper
-                self.build_env_vars["DOCKER_IMAGE"] = self.docker_image
+        # this should be set by ResourceCmdHelper
+        self.build_env_vars["BUILD_TIMEOUT"] = self.build_timeout  # this should be set by Config0SettingsEnvVarHelper
 
-            if self.runtime_env_vars:
-                for _k,_v in self.runtime_env_vars.items():
-                    self.build_env_vars[_k] = _v
+        if self.docker_image:  # this should be set by Config0SettingsEnvVarHelper
+            self.build_env_vars["DOCKER_IMAGE"] = self.docker_image
+
+        if self.runtime_env_vars:
+            for _k,_v in self.runtime_env_vars.items():
+                self.build_env_vars[_k] = _v
 
         self.build_env_vars["TF_RUNTIME"] = self.tf_runtime  # this should be set by Config0SettingsEnvVarHelper
         self.build_env_vars["SHARE_DIR"] = self.share_dir  # this should be set by ResourceCmdHelper
@@ -878,12 +866,6 @@ terraform {{
 
         cinputargs = self._get_aws_exec_cinputargs(method=method)
 
-        # testtest456
-        self.logger.debug("+"*32)
-        self.logger.json(cinputargs)
-        self.logger.debug("+"*32)
-        # testtest456
-
         if self.build_method == "lambda":
             _awsbuild = Lambdabuild(**cinputargs)
         elif self.build_method == "codebuild":
@@ -927,8 +909,7 @@ terraform {{
             raise Exception(failed_message)
 
         tf_results = self._setup_and_exec_in_aws("create",
-                                                 create_remote_state=True)  # testtest456
-        #create_remote_state = self.create_remote_state)
+                                                 create_remote_state=self.create_remote_state)
 
         self._post_create()
 
@@ -961,8 +942,8 @@ terraform {{
 
         self.logger.debug("u4324: retrieved data from statefile")
 
-        # testtest456
         # revisit 324214
+        # compress terraform raw?
         values = {
             "last_applied": {
                 "tf": {
@@ -1052,9 +1033,7 @@ terraform {{
         return resource
     def _post_create(self):
 
-        # copy of settings file
-        # revisit 324125
-        # testtest456  no sure this is needed
+        # copy of settings file - not really needed
         #self.write_config0_settings_file()
 
         # it succeeds at this point
@@ -1073,10 +1052,10 @@ terraform {{
 
         os.chdir(self.cwd)
 
-        # testtest456
         if hasattr(self,"drift_protection") and self.drift_protection:
             self._db_values["drift_protection"] = self.drift_protection
 
+        # testtest456  # put this as post db
         _configure = ConfigureTFforConfig0Db(db_values=resource)
         _configure.configure()
         # testtest456
