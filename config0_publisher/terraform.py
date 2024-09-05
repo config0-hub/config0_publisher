@@ -89,17 +89,17 @@ class TFConstructor(object):
 
     def _add_values_to_ssm(self):
 
-        #if self.stack.inputvars.get("infracost_api_key_hash"):
-        #    infracost_api_key = self.stack.b64_decode(self.stack.inputvars["infracost_api_key_hash"])
-        #elif self.stack.inputvars.get("infracost_api_key"):
-        #    infracost_api_key = self.stack.inputvars["infracost_api_key"]
-        #else:
-        #    infracost_api_key = None
+        if self.stack.inputvars.get("infracost_api_key_hash"):
+            infracost_api_key = self.stack.b64_decode(self.stack.inputvars["infracost_api_key_hash"])
+        elif self.stack.inputvars.get("infracost_api_key"):
+            infracost_api_key = self.stack.inputvars["infracost_api_key"]
+        else:
+            infracost_api_key = None
 
-        #if not self.ssm_obj and infracost_api_key:
-        #    self.ssm_obj = { "INFRACOST_API_COST": infracost_api_key }
-        #elif self.ssm_obj and infracost_api_key:
-        #    self.ssm_obj["INFRACOST_API_COST"] = infracost_api_key
+        if not self.ssm_obj and infracost_api_key:
+            self.ssm_obj = { "INFRACOST_API_COST": infracost_api_key }
+        elif self.ssm_obj and infracost_api_key:
+            self.ssm_obj["INFRACOST_API_COST"] = infracost_api_key
 
         if not self.ssm_obj:
             return

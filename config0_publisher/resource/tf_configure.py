@@ -690,7 +690,7 @@ class Testtest456:
 
         # build_env_vars only needed when initially creating
         # testtest456
-        if method == "create":
+        if method != "create":
             return
 
         try:
