@@ -917,6 +917,8 @@ terraform {{
         if self.method == "create":
             self.create()
         elif self.method == "destroy":
+            # testtest456
+            raise Exception('yo')
             self._setup_and_exec_in_aws("destroy")
         elif self.method == "validate":
             self._setup_and_exec_in_aws("validate")
