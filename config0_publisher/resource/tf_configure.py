@@ -602,6 +602,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
                 continue
 
             self._db_values[label_key] = self._db_values[key]
+            self._db_values["last_applied"]["tf"]["added"].append(label_key)
 
     def _insert_resource_labels(self):
 
@@ -610,7 +611,9 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
         for _k,_v in self.resource_labels.items():
             self.logger.debug(f'resource labels: key "{"label-{}".format(_k)}" -> value "{_v}"')
-            self._db_values["label-{}".format(_k)] = _v
+            label_key = f"label-{_k}"
+            self._db_values[label_key] = _v
+            self._db_values["last_applied"]["tf"]["added"].append(label_key)
 
     def _insert_resource_values(self):
         """
@@ -622,6 +625,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         for _k, _v in self.resource_values.items():
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
+            self._db_values["last_applied"]["tf"]["added"].append(_k)
             self._db_values[_k] = _v
 
     def _set_parse_settings_for_tfstate(self):
@@ -665,6 +669,8 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self.logger.debug("#"*32)
         self.logger.debug("#"*32)
         self.logger.json(self._db_values)
+        self.logger.debug("#"*32)
+        self.logger.debug("#"*32)
         self.logger.json(self._db_values["last_applied"]["tf"]["added"])
         self.logger.debug("#"*32)
         self.logger.debug("#"*32)
