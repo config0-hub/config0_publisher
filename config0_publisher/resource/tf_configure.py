@@ -823,7 +823,7 @@ class Testtest456:
         cinputargs.update({
             "version": self.version,
             "binary": self.binary,
-            "binary": self.tf_runtime
+            "tf_runtime": self.tf_runtime
         })
 
         return cinputargs
