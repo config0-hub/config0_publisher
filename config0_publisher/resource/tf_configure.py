@@ -810,6 +810,9 @@ class Testtest456:
             "run_share_dir": self.run_share_dir,
             "app_dir": self.app_dir,
             "remote_stateful_bucket": self.remote_stateful_bucket,
+            "binary": self.binary,
+            "version": self.version,
+            "tf_runtime": self.tf_runtime,
             "aws_region": self.aws_region
         }
 
