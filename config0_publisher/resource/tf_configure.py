@@ -680,10 +680,6 @@ class Testtest456:
 
     def _set_runtime_env_vars(self,method="create"):
 
-        # testtest456
-        self.logger.json(self.tf_configs["tf_vars"])
-        raise Exception('yoyo')
-
         if method == "create":
             try:
                 exclude_vars = list(self.tf_configs["tf_vars"].keys())
@@ -693,6 +689,11 @@ class Testtest456:
             # insert TF_VAR_* os vars
             self.insert_os_env_prefix_envs(self.build_env_vars,
                                            exclude_vars)
+
+            # testtest456
+            #self.logger.json(self.tf_configs["tf_vars"])
+            self.logger.json(self.build_env_vars)
+            raise Exception('yoyo')
 
             # this should be set by ResourceCmdHelper
             self.build_env_vars["BUILD_TIMEOUT"] = self.build_timeout  # this should be set by Config0SettingsEnvVarHelper
