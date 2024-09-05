@@ -234,7 +234,10 @@ class Config0SettingsEnvVarHelper:
 
     def _set_tf_runtime(self):
 
-        tf_runtime = self._vars["tf_configs"].get("tf_runtime")
+        try:
+            tf_runtime = self._vars["tf_configs"].get("tf_runtime")
+        except:
+            tf_runtime = None
 
         if tf_runtime:
             self.logger.debug(f'tf_runtime {tf_runtime} from "tf_configs"')
