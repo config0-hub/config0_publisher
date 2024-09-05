@@ -135,7 +135,11 @@ class LambdaResourceHelper(AWSCommonConn):
         lambda_status = int(self.response["StatusCode"])
 
         payload = json.loads(self.response["Payload"].read().decode())
-        lambda_results = json.loads(payload["body"])
+
+        try:
+            lambda_results = json.loads(payload["body"])
+        except:
+            self.logger.error(payload)
 
         self.results["lambda_status"] = lambda_status
         self.results["lambda_results"] = lambda_results

@@ -1252,7 +1252,7 @@ class ResourceCmdHelper:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug(f"{ref} - added to inputargs {_k} -> {_v}")
             else:
-                self.logger.debug(f"{ref} - added")
+                self.logger.debug(f'{ref} - added key "{_k}"')
 
             self.inputargs[_k] = _v
 
