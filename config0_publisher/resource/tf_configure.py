@@ -674,8 +674,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self.logger.json(self._db_values["last_applied"]["tf"]["added"])
         self.logger.debug("#"*32)
         self.logger.debug("#"*32)
-        raise Exception('yoyo4')
-
 
 class Testtest456:
 
