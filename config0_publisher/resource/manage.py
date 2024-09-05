@@ -1249,7 +1249,11 @@ class ResourceCmdHelper:
             if _k in self.inputargs:
                 continue
 
-            self.logger.debug(f"{ref} - added to inputargs {_k} -> {_v}")
+            if os.environ.get("JIFFY_ENHANCED_LOG"):
+                self.logger.debug(f"{ref} - added to inputargs {_k} -> {_v}")
+            else:
+                self.logger.debug(f"{ref} - added")
+
             self.inputargs[_k] = _v
 
     def set_inputargs(self,**kwargs):
