@@ -364,13 +364,8 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self._set_parse_settings_for_tfstate()
 
         # this is probably for configuring if values are provided
-        self.logger.debug(self.stateful_id)
-        self.logger.debug(self.terraform_type)
-        self.logger.debug(self.remote_stateful_bucket)
-        self.logger.debug("testtest456"*32)
-
-
-        self.remote_stateful_bucket = self._db_values.get("remote_stateful_bucket")
+        # testtest456
+        self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
         self.stateful_id = self._db_values["stateful_id"]
         self.terraform_type = self._db_values["terraform_type"]
 
@@ -714,8 +709,7 @@ class Testtest456:
         self.build_env_vars["STATEFUL_ID"] = self.stateful_id  # this should be set by ResourceCmdHelper
         self.build_env_vars["APP_DIR"] = self.app_dir  # this should be set by ResourceCmdHelper
         self.build_env_vars["APP_NAME"] = self.app_name  # this should be set by ResourceCmdHelper
-        self.build_env_vars[
-            "REMOTE_STATEFUL_BUCKET"] = self.remote_stateful_bucket  # this should be set by ResourceCmdHelper
+        self.build_env_vars["REMOTE_STATEFUL_BUCKET"] = self.remote_stateful_bucket  # this should be set by ResourceCmdHelper
         self.build_env_vars["TMPDIR"] = "/tmp"
 
         # ssm name setting
