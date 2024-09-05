@@ -810,9 +810,6 @@ class Testtest456:
             "run_share_dir": self.run_share_dir,
             "app_dir": self.app_dir,
             "remote_stateful_bucket": self.remote_stateful_bucket,
-            "binary": self.binary,
-            "version": self.version,
-            "tf_runtime": self.tf_runtime,
             "aws_region": self.aws_region
         }
 
@@ -823,11 +820,11 @@ class Testtest456:
             cinputargs["ssm_name"] = self.ssm_name
 
         # testtest456
-        if method == "create":
-            cinputargs.update({
-                "version": self.version,
-                "binary": self.binary
-            })
+        cinputargs.update({
+            "version": self.version,
+            "binary": self.binary,
+            "binary": self.tf_runtime
+        })
 
         return cinputargs
 
