@@ -295,9 +295,6 @@ class Config0SettingsEnvVarHelper:
                 self.logger.debug(f'{k} -> {nice_json(v)}')
             setattr(self,k,v)
 
-            # testtest456
-            self.logger.debug(f'{k} -> {nice_json(v)}')
-
 # init and reconfigure (update)
 class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
@@ -882,14 +879,9 @@ terraform {{
         cinputargs = self._get_aws_exec_cinputargs(method=method)
 
         # testtest456
-        self.logger.debug("#"*32)
-        self.logger.debug("#"*32)
-        self.logger.debug("#"*32)
+        self.logger.debug("+"*32)
         self.logger.json(cinputargs)
-        self.logger.debug("#"*32)
-        self.logger.debug("#"*32)
-        self.logger.debug("#"*32)
-        self.logger.debug("#"*32)
+        self.logger.debug("+"*32)
         # testtest456
 
         if self.build_method == "lambda":
