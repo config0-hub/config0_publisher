@@ -97,9 +97,9 @@ class TFConstructor(object):
             infracost_api_key = None
 
         if not self.ssm_obj and infracost_api_key:
-            self.ssm_obj = { "INFRACOST_API_COST": infracost_api_key }
+            self.ssm_obj = { "INFRACOST_API_KEY": infracost_api_key }
         elif self.ssm_obj and infracost_api_key:
-            self.ssm_obj["INFRACOST_API_COST"] = infracost_api_key
+            self.ssm_obj["INFRACOST_API_KEY"] = infracost_api_key
 
         # testtest456
         self.logger.debug("@"*32)
