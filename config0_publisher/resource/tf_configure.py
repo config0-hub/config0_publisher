@@ -564,6 +564,10 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
     def insert_frm_tfstate_to_values(self):
 
+        self.logger.json(self.tfstate_values["outputs"])
+        self._insert_tf_outputs()
+        raise Exception('yoyo4')
+
         try:
             self._insert_tf_outputs()
         except:
