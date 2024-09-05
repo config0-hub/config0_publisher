@@ -686,7 +686,6 @@ class Testtest456:
     # insert back into TFExecShellHelper
     # fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     #################################################################
-
     def _set_runtime_env_vars(self,method="create"):
 
         # build_env_vars only needed when initially creating
