@@ -914,8 +914,6 @@ terraform {{
             usage()
             print('method "{}" not supported!'.format(self.method))
             exit(4)
-def usage():
-    print('testtest456')
 
     #############################################################
     # post create related
@@ -1012,7 +1010,6 @@ def usage():
             }
 
         return resource
-
     def _post_create(self):
 
         # copy of settings file
@@ -1053,3 +1050,6 @@ def usage():
     #################################################################
     # fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     #################################################################
+
+def usage():
+    print('testtest456')
