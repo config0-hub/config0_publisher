@@ -690,11 +690,6 @@ class Testtest456:
             self.insert_os_env_prefix_envs(self.build_env_vars,
                                            exclude_vars)
 
-            # testtest456
-            #self.logger.json(self.tf_configs["tf_vars"])
-            self.logger.json(self.build_env_vars)
-            raise Exception('yoyo')
-
             # this should be set by ResourceCmdHelper
             self.build_env_vars["BUILD_TIMEOUT"] = self.build_timeout  # this should be set by Config0SettingsEnvVarHelper
 
@@ -891,6 +886,10 @@ terraform {{
 
         if not self.stateful_id:
             self.logger.error("STATEFUL_ID needs to be set")
+
+        # if we render template files, we don't create tfvars file
+        if not self.templify(app_template_vars="TF_EXEC_TEMPLATE_VARS",**self.inputargs):
+            self.exclude_tfvars = self._create_terraform_tfvars()
 
         if not os.path.exists(self.exec_dir):
             failed_message = "terraform directory must exists at {} when creating tf".format(self.exec_dir)
