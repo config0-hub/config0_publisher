@@ -1439,8 +1439,12 @@ class ResourceCmdHelper:
         if results.get("status") is not False:
             return
 
+        print("")
+        print("")
         failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
         print(failed_message)
+        print("")
+        print("")
         exit(43)
 
         # this should also be removed further upstream
