@@ -997,12 +997,6 @@ terraform {{
             "env_vars": env_vars,
         }
 
-        if self.shelloutconfig:
-            resource["mod_params"]["shelloutconfig"] = self.shelloutconfig
-
-        if self.mod_execgroup:
-            resource["mod_params"]["execgroup"] = self.mod_execgroup
-
         if self.destroy_env_vars:
             resource["destroy_params"] = {
                 "env_vars": dict({"METHOD": "destroy"},
@@ -1022,6 +1016,17 @@ terraform {{
             resource["validate_params"] = {
                 "env_vars": {"METHOD": "validate"}
             }
+
+        if self.shelloutconfig:
+            resource["mod_params"]["shelloutconfig"] = self.shelloutconfig
+            resource["destroy_params"]["shelloutconfig"] = self.shelloutconfig
+            resource["validate_params"]["shelloutconfig"] = self.shelloutconfig
+
+        if self.mod_execgroup:
+            resource["mod_params"]["execgroup"] = self.mod_execgroup
+            resource["destroy_params"]["shelloutconfig"] = self.shelloutconfig
+            resource["validate_params"]["shelloutconfig"] = self.shelloutconfig
+
 
         return resource
     def _post_create(self):
