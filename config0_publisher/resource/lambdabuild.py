@@ -85,6 +85,11 @@ class Lambdabuild(LambdaParams):
 
         self.classname = "Lambdabuild"
 
+        # testtest456
+        print('x0'*32)
+        print(kwargs)
+        print('x0'*32)
+
         LambdaParams.__init__(self,**kwargs)
 
         self.tfcmds = TFCmdOnAWS(runtime_env="lambda",

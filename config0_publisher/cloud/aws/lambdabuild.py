@@ -42,9 +42,6 @@ class LambdaResourceHelper(AWSCommonConn):
             "remote_stateful_bucket":None,
             "lambda_function_name":None,
             "run_share_dir":None,
-            "tf_runtime":None,
-            "binary":None,
-            "version":None,
             "share_dir":None
         }
 
