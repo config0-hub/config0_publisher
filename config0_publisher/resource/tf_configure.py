@@ -699,6 +699,10 @@ class Testtest456:
 
     def _set_runtime_env_vars(self,method="create"):
 
+        # testtest456
+        if method not in [ "create" ]:
+            return
+
         if method == "create":
             try:
                 exclude_vars = list(self.tf_configs["tf_vars"].keys())
