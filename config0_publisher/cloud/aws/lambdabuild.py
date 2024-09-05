@@ -157,7 +157,7 @@ class LambdaResourceHelper(AWSCommonConn):
             self.results["status"] = False
             self.results["exitcode"] = "78"
             if not self.results.get("failed_message"):
-            self.results["failed_message"] = "lambda function failed"
+                self.results["failed_message"] = "lambda function failed"
         else:
             self.results["status"] = False
             self.results["exitcode"] = "79"
