@@ -564,11 +564,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
     def _insert_frm_tfstate_to_values(self):
 
-        self._insert_tf_outputs()
-        self.logger.json(self._db_values)
-        #self.logger.json(self._db_values["last_applied"]["tf"]["added"].append(k)
-        raise Exception('yoyo4')
-
         try:
             self._insert_tf_outputs()
         except:
@@ -666,6 +661,15 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
+
+        self.logger.debug("#"*32)
+        self.logger.debug("#"*32)
+        self.logger.json(self._db_values)
+        self.logger.json(self._db_values["last_applied"]["tf"]["added"])
+        self.logger.debug("#"*32)
+        self.logger.debug("#"*32)
+        raise Exception('yoyo4')
+
 
 class Testtest456:
 
