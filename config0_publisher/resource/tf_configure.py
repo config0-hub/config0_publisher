@@ -364,9 +364,9 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self._set_parse_settings_for_tfstate()
 
         # this is probably for configuring if values are provided
-        self.logger.debug(self.remote_stateful_bucket)
         self.logger.debug(self.stateful_id)
         self.logger.debug(self.terraform_type)
+        self.logger.debug(self.remote_stateful_bucket)
         self.logger.debug("testtest456"*32)
 
 
