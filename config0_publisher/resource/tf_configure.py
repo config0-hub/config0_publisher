@@ -363,12 +363,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self.eval_config0_resource_settings()
         self._set_parse_settings_for_tfstate()
 
-        # testtest456
-        resource_configs = self.tf_configs.get("resource_configs")
-        # testtest456
-        self.logger.json(resource_configs)
-        raise Exception('yoyo2')
-
         # this is probably for configuring if values are provided
         # testtest456
         self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
@@ -568,7 +562,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
             self._db_values[k] = v['value']
             self._db_values["last_applied"]["tf"]["added"].append(k)
 
-    def _insert_frm_tfstate_to_values(self):
+    def insert_frm_tfstate_to_values(self):
 
         try:
             self._insert_tf_outputs()
@@ -663,7 +657,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
         self._setup_for_configuration()
 
-        self._insert_frm_tfstate_to_values()
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
