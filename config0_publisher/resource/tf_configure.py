@@ -273,11 +273,7 @@ class Config0SettingsEnvVarHelper:
         self.tf_runtime_env_vars = None
         # testtest456
 
-        if not self._set_frm_config0_resource_settings():
-            self._set_tf_runtime()
-            self._set_tf_binary_version()
-            # assume it is destroying modifing at this point
-            return
+        self._set_frm_config0_resource_settings()
 
         self._set_tf_runtime()
         self._set_tf_binary_version()
