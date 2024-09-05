@@ -136,12 +136,18 @@ class LambdaResourceHelper(AWSCommonConn):
 
         payload = json.loads(self.response["Payload"].read().decode())
 
+        self.results["lambda_status"] = lambda_status
+
         try:
             lambda_results = json.loads(payload["body"])
         except:
-            self.logger.error(payload)
+            lambda_results = json.loads(payload)
+            lambda_results["status"] = False
+            self.results["failed_message"] = " ".join(lambda_results["stackTrace"])
+            self.results["output"] = " ".join(lambda_results["stackTrace"])
+            #self.results["failed_message"] = lambda_results["errorMessage"]
+            #self.results["stack_trace"] = lambda_results["stackTrace"]
 
-        self.results["lambda_status"] = lambda_status
         self.results["lambda_results"] = lambda_results
 
         if lambda_results["status"] is True and lambda_status == 200:
@@ -150,13 +156,16 @@ class LambdaResourceHelper(AWSCommonConn):
         elif lambda_status != 200:
             self.results["status"] = False
             self.results["exitcode"] = "78"
+            if not self.results.get("failed_message"):
             self.results["failed_message"] = "lambda function failed"
         else:
             self.results["status"] = False
             self.results["exitcode"] = "79"
-            self.results["failed_message"] = "execution of cmd in lambda function failed"
+            if not self.results.get("failed_message"):
+                self.results["failed_message"] = "execution of cmd in lambda function failed"
 
-        self.results["output"] = b64_decode(self.response["LogResult"])
+        if not self.results.get("output"):
+            self.results["output"] = b64_decode(self.response["LogResult"])
 
         return self.results
 
