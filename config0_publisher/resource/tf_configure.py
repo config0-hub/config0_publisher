@@ -507,7 +507,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
                         self.logger.debug("tf_exec_add_keys: key {} skipped".format(_key))
                         continue
 
-                    self._db_values["last_applied"]["tf"]["added"].append(_added_bc)
+                    self._db_values["last_applied"]["tf"]["added"].append(_key)
 
                     self.logger.debug('{}: tf key "{}" -> value "{}" added to resource self._db_values'.format(_added_bc,
                                                                                                       _key,
