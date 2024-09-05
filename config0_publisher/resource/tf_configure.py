@@ -562,7 +562,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
             self._db_values[k] = v['value']
             self._db_values["last_applied"]["tf"]["added"].append(k)
 
-    def insert_frm_tfstate_to_values(self):
+    def _insert_frm_tfstate_to_values(self):
 
         self.logger.json(self.tfstate_values["outputs"])
         self._insert_tf_outputs()
@@ -661,6 +661,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
         self._setup_for_configuration()
 
+        self._insert_frm_tfstate_to_values()
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
