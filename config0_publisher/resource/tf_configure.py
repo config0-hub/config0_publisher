@@ -818,10 +818,18 @@ class Testtest456:
         if self.ssm_name:
             cinputargs["ssm_name"] = self.ssm_name
 
-        cinputargs.update({
-            "version": self.version,
-            "binary": self.binary
-        })
+        # testtest456
+        if method == "create":
+            cinputargs.update({
+                "version": self.version,
+                "binary": self.binary
+            })
+
+        # testtest456
+        self.logger.json(cinputargs)
+        raise Exception('a')
+        # testtest456
+
 
         return cinputargs
 
