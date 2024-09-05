@@ -266,7 +266,9 @@ class Config0SettingsEnvVarHelper:
 
     def eval_config0_resource_settings(self,create=None):
 
-        self._set_frm_config0_resource_settings()
+        if not self._set_frm_config0_resource_settings():
+            # assume it is destroying modifing at this point
+            return
 
         # if it is creating for the first time
         if create:
