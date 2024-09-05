@@ -284,15 +284,9 @@ class Config0SettingsEnvVarHelper:
         self._set_tf_binary_version()
 
         for k,v in self._vars.items():
+            if os.environ.get("JIFFY_ENHANCED_LOG"):
+                self.logger.debug(f'{k} -> {nice_json(v)}')
             setattr(self,k,v)
-            # testtest456
-            #if os.environ.get("JIFFY_ENHANCED_LOG"):
-            #self.logger.debug(f'{k} -> {nice_json(v)}')
-            self.logger.debug(f'{k}')
-
-        self.logger.json(self.tf_configs["tf_vars"])
-
-        raise Exception('yoyo')
 
 # init and reconfigure (update)
 class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
@@ -685,6 +679,10 @@ class Testtest456:
     #################################################################
 
     def _set_runtime_env_vars(self,method="create"):
+
+        # testtest456
+        self.logger.json(self.tf_configs["tf_vars"])
+        raise Exception('yoyo')
 
         if method == "create":
             try:
