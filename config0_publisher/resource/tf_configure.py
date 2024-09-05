@@ -270,7 +270,7 @@ class Config0SettingsEnvVarHelper:
     def eval_config0_resource_settings(self,create=None):
 
         # testtest456
-        self.tf_runtime_env_vars = None
+        #self.tf_runtime_env_vars = None
         # testtest456
 
         self._set_frm_config0_resource_settings()
@@ -372,7 +372,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
         # this is probably for configuring if values are provided
         # testtest456
-        self.tf_runtime_env_vars = None
+        #self.tf_runtime_env_vars = None
         # testtest456
 
         self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
@@ -701,8 +701,8 @@ class Testtest456:
     def _set_runtime_env_vars(self,method="create"):
 
         # testtest456
-        if method not in [ "create" ]:
-            return
+        #if method not in [ "create" ]:
+        #    return
 
         if method == "create":
             try:
