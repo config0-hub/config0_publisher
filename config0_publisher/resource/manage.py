@@ -1440,10 +1440,10 @@ class ResourceCmdHelper:
             return
 
         print("")
-        print("")
+        print("_"*32)
         failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
         print(failed_message)
-        print("")
+        print("_"*32)
         print("")
         exit(43)
 
