@@ -291,9 +291,13 @@ class Config0SettingsEnvVarHelper:
             self.logger.error("provider should be set")
 
         for k,v in self._vars.items():
+            # testtest456
+            self.logger.debug(f'{k} -> {nice_json(v)}')
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug(f'{k} -> {nice_json(v)}')
             setattr(self,k,v)
+
+        raise
 
 # init and reconfigure (update)
 class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
