@@ -177,7 +177,7 @@ class Config0SettingsEnvVarHelper:
             "build_env_vars":{}
         }
 
-    def _set_frm_config0_resource_settings(self,raise_on_error=True):
+    def _set_frm_config0_resource_settings(self,raise_on_error=None):
 
         """
         This method initializes the Config0 resource settings.
