@@ -290,7 +290,7 @@ class Config0SettingsEnvVarHelper:
             #self.logger.debug(f'{k} -> {nice_json(v)}')
             self.logger.debug(f'{k}')
 
-        self.logger.json(self.tf_configs)
+        self.logger.json(self.tf_configs["tf_vars"])
 
         raise Exception('yoyo')
 
