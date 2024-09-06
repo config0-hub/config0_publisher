@@ -827,16 +827,14 @@ terraform {{
         cinputargs = self._get_aws_exec_cinputargs(method=method)
 
         if self.build_method == "lambda":
-            self.logger.debug("9a"*32)
             # testtest456
+            self.logger.debug("9a"*32)
             self.logger.json(cinputargs)
             self.logger.debug("9a"*32)
-            raise Exception('yoyo')
-            _awsbuild = Codebuild(**cinputargs)
             _awsbuild = Lambdabuild(**cinputargs)
         elif self.build_method == "codebuild":
-            self.logger.debug("9b"*32)
             # testtest456
+            self.logger.debug("9b"*32)
             self.logger.json(cinputargs)
             self.logger.debug("9b"*32)
             raise Exception('yoyo')
