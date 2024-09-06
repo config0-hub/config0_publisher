@@ -37,6 +37,12 @@ class TFInfracostHelper(TFAppHelper):
 
     def exec_cmds(self,src_build_vars_cmd):
 
+        if not os.environ.get("INFRACOST_API_KEY"):
+            self.logger.debug("+"*32)
+            self.logger.debug("environmental variable INFRACOST_API_KEY not set")
+            self.logger.debug("+"*32)
+            return []
+
         return [
             f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
             f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
