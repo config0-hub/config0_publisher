@@ -406,7 +406,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
             '''
 
             if self._db_values.get(_insertkey):
-                self.logger.warn(f"mapped key {_insertkey} already exists - clobbering")
+                self.logger.debug(f"mapped key {_insertkey} already exists - clobbering")
 
             # see if _refkey is a subkey
             if isinstance(_refkey,dict):
@@ -588,10 +588,7 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
             return
 
         for _k, _v in self.resource_values.items():
-            # testtest456
             self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
-            if os.environ.get("JIFFY_ENHANCED_LOG"):
-                self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
             self._db_values["last_applied"]["tf"]["added"].append(_k)
             self._db_values[_k] = _v
 
