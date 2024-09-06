@@ -323,11 +323,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
             "ses_smtp_password_v4",
         ]
 
-        self.do_not_display = [
-            "AWS_SECRET_ACCESS_KEY",
-            "secret",
-        ]
-
         self.tf_output_skip_keys = [
             "tags",
             "label",
@@ -378,6 +373,27 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         # should we compress this?
         self.tfstate_values = b64_decode(self._db_values["raw"]["terraform"])
 
+    def _insert_tf_map_subkey(self,_insertkey,_refkey):
+
+        if not self._db_values.get(_insertkey):
+            self._db_values[_insertkey] = {}
+
+        self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
+
+        for _sub_insertkey,_sub_refkey in _refkey.items():
+
+            if _sub_refkey not in self._db_values:
+                self.logger.debug(f'mapped ref_key "{_sub_refkey}" not found for sub_insertkey {_sub_insertkey}')
+                continue
+
+            # ref 432523543245
+            # do we want to nest 2 levels deep?
+            if "," in self._db_values[_sub_refkey]:
+                _sub_insertkey2,_subrefkey2 = self._db_values[_sub_refkey].split(",")
+                self._db_values[_insertkey][_sub_insertkey] = {_sub_insertkey2:self._db_values[_sub_refkey.strip()][_subrefkey2.strip()]}
+            else:
+                self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey.strip()]
+
     def _insert_tf_map_keys(self):
 
         if not self.tf_exec_map_keys:
@@ -401,44 +417,10 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
 
             # see if _refkey is a subkey
             if isinstance(_refkey,dict):
-
-                if not self._db_values.get(_insertkey):
-                    self._db_values[_insertkey] = {}
-
-                self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
-
-                for _sub_insertkey,_sub_refkey in _refkey.items():
-
-                    if not self._db_values.get(_sub_refkey):
-                        self.logger.debug(
-                            f'mapped ref_key not found {_sub_refkey} for sub_insertkey {_sub_insertkey}')
-                    # ref 432523543245
-                    # do we want to nest 2 levels deep?
-                    if "," in self._db_values[_sub_refkey]:
-                        _sub_insertkey2,_subrefkey2 = self._db_values[_sub_refkey].split(",")
-
-                        if _sub_insertkey2 not in self.do_not_display:
-                            self.logger.debug('mapped key ["{}"]["{}"]["{}"] -> _sub_refky "{}"'.format(_insertkey,
-                                                                                                        _sub_insertkey,
-                                                                                                        _sub_insertkey2,
-                                                                                                        self._db_values[_sub_refkey.strip()][_subrefkey2.strip()]))
-
-                        self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey.strip()][_subrefkey2.strip()]
-
-                    else:
-                        if _sub_insertkey not in self.do_not_display:
-                            self.logger.debug('mapped key ["{}"]["{}"] -> _sub_refkey "{}"'.format(_insertkey,
-                                                                                                   _sub_insertkey,
-                                                                                                   self._db_values[_sub_refkey.strip()]))
-
-                        self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey]
-
+                self._insert_tf_map_subkey(_insertkey,_refkey)
             elif self._db_values.get(_refkey):
-                if _refkey not in self.do_not_display:
-                    self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
-
                 self._db_values[_insertkey] = self._db_values[_refkey]
-
+                self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
             elif not self._db_values.get(_refkey):
                 self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
 
