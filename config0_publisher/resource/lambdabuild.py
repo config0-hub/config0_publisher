@@ -129,19 +129,17 @@ class Lambdabuild(LambdaParams):
 
     def _get_build_cmds(self):
 
+        src_build_vars_cmd = self.tfcmds.get_src_buildenv_vars_cmd()
+
+        cmds = self.tfsec_cmds.get_all_cmds()
+        cmds.extend(self.infracost_cmds.get_all_cmds(src_build_vars_cmd))
+
         if self.method == "create":
-            src_build_vars_cmd = self.tfcmds.get_src_buildenv_vars_cmd()
-            cmds = self.tfsec_cmds.get_all_cmds()
-            cmds.extend(self.infracost_cmds.get_all_cmds(src_build_vars_cmd))
             cmds.extend(self.tfcmds.get_tf_apply())
-            #cmds.extend(self.tfsec_cmds.get_all_cmds())
-            #cmds.extend(self.infracost_cmds.get_all_cmds())
-            #cmds.extend(self.opa_cmds.get_all_cmds())
+        elif self.method == "validate":
+            cmds.extend(self.tfcmds.get_tf_chk_drift())
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
-        elif self.method == "validate":
-            cmds = self.tfsec_cmds.get_all_cmds()
-            cmds.extend(self.tfcmds.get_tf_chk_drift())
         else:
             raise Exception("method needs to be create/validate/destroy")
 

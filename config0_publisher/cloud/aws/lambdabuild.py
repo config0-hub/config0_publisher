@@ -92,6 +92,7 @@ class LambdaResourceHelper(AWSCommonConn):
             env_vars[_k] = _v
 
         return env_vars
+
     def _trigger_build(self):
 
         # we limit the build to 500 seconds, which is one min

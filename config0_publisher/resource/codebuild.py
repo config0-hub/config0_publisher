@@ -3,7 +3,9 @@
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.terraform import TFCmdOnAWS
-
+from config0_publisher.resource.infracost import TFInfracostHelper
+from config0_publisher.resource.tfsec import TFSecHelper
+from config0_publisher.resource.opa import TFOpaHelper
 
 class CodebuildParams(TFAwsBaseBuildParams):
 
@@ -101,6 +103,20 @@ class Codebuild(CodebuildParams):
                                  arch="linux_amd64"
                                  )
 
+        self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
+                                                envfile="build_env_vars.env",
+                                                binary='infracost',
+                                                version="0.10.39",
+                                                tmp_bucket=self.tmp_bucket,
+                                                arch="linux_amd64")
+
+        self.opa_cmds = TFOpaHelper(runtime_env="lambda",
+                                    envfile="build_env_vars.env",
+                                    binary='opa',
+                                    version="0.68.0",
+                                    tmp_bucket=self.tmp_bucket,
+                                    arch="linux_amd64")
+
     def _add_cmds(self,contents,cmds):
 
         for cmd in cmds:
@@ -134,14 +150,16 @@ class Codebuild(CodebuildParams):
     on-failure: ABORT
     commands:
 '''
+
+        cmds = self.tfsec_cmds.get_all_cmds()
+        cmds.extend(self.infracost_cmds.get_all_cmds())
+
         if self.method == "create":
-            cmds = self.tfsec_cmds.get_all_cmds()
-            cmds.extend(self.infracost_cmds.get_all_cmds())
             cmds.extend(self.tfcmds.get_tf_apply())
+        elif self.method == "validate":
+            cmds.extend(self.tfcmds.get_tf_chk_drift())
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
-        elif self.method == "validate":
-            cmds = self.tfcmds.get_tf_chk_drift()
         else:
             raise Exception("method needs to be create/validate/destroy")
 
