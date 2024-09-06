@@ -39,7 +39,7 @@ class TFInfracostHelper(TFAppHelper):
 
         return [
             f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
-            f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file.output}.out'
+            f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file.output_file}.out'
             ]
 
     def get_all_cmds(self,src_build_vars_cmd):
