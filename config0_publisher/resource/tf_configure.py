@@ -833,6 +833,7 @@ terraform {{
             # testtest456
             self.logger.json(cinputargs)
             self.logger.debug("9b"*32)
+            raise Exception('yoyo')
             _awsbuild = Codebuild(**cinputargs)
         else:
             return False
