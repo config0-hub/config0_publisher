@@ -829,17 +829,8 @@ terraform {{
         # ref 435353245634
         # mod params and env_vars
         if self.build_method == "lambda":
-            # testtest456
-            self.logger.debug("9a"*32)
-            self.logger.json(cinputargs)
-            self.logger.debug("9a"*32)
             _awsbuild = Lambdabuild(**cinputargs)
         elif self.build_method == "codebuild":
-            # testtest456
-            self.logger.debug("9b"*32)
-            self.logger.json(cinputargs)
-            self.logger.debug("9b"*32)
-            raise Exception('yoyo')
             _awsbuild = Codebuild(**cinputargs)
         else:
             return False
