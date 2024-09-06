@@ -787,6 +787,9 @@ class Testtest456:
 
     def _set_build_method(self):
 
+        # testtest456
+        os.environ["USE_LAMBDA"] = True
+
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
             self.build_method = "codebuild"
         elif os.environ.get("USE_LAMBDA"):  # shorter than 900 seconds
