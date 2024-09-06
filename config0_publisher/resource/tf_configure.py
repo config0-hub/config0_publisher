@@ -378,8 +378,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         if not self._db_values.get(_insertkey):
             self._db_values[_insertkey] = {}
 
-        self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
-
         for _sub_insertkey,_sub_refkey in _refkey.items():
 
             if _sub_refkey not in self._db_values:
@@ -391,8 +389,11 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
             if "," in self._db_values[_sub_refkey]:
                 _sub_insertkey2,_subrefkey2 = self._db_values[_sub_refkey].split(",")
                 self._db_values[_insertkey][_sub_insertkey] = {_sub_insertkey2:self._db_values[_sub_refkey.strip()][_subrefkey2.strip()]}
+                self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
+
             else:
                 self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey.strip()]
+                self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
 
     def _insert_tf_map_keys(self):
 
@@ -420,9 +421,14 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
                 self._insert_tf_map_subkey(_insertkey,_refkey)
             elif self._db_values.get(_refkey):
                 self._db_values[_insertkey] = self._db_values[_refkey]
+                self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
                 self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
             elif not self._db_values.get(_refkey):
                 self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
+                # testtest456
+                self.logger.json(self._db_values)
+                self.logger.debug('i0'*32)
+                # testtest456
 
     def _insert_tf_add_keys(self):
 
