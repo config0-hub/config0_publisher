@@ -829,6 +829,9 @@ terraform {{
         if self.build_method == "lambda":
             _awsbuild = Lambdabuild(**cinputargs)
         elif self.build_method == "codebuild":
+            # testtest456
+            self.logger.json(cinputargs)
+            raise Exception("9"*32)
             _awsbuild = Codebuild(**cinputargs)
         else:
             return False

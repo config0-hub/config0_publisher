@@ -112,7 +112,7 @@ class Codebuild(CodebuildParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(lambda_env=None))
+        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(lambda_env=False))
 
         if self.ssm_name:
             cmds.append(self.tfcmds.get_codebuild_ssm_concat())
@@ -135,7 +135,9 @@ class Codebuild(CodebuildParams):
     commands:
 '''
         if self.method == "create":
-            cmds = self.tfcmds.get_tf_apply()
+            cmds = self.tfsec_cmds.get_all_cmds()
+            cmds.extend(self.infracost_cmds.get_all_cmds())
+            cmds.extend(self.tfcmds.get_tf_apply())
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         elif self.method == "validate":
