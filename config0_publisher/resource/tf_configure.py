@@ -774,8 +774,8 @@ class Testtest456:
         ########################################
         # usually associated with destroy/validate
         ########################################
-        elif os.environ.get("CONFIG0_BUILD_ENV_VARS_HASH"):
-            cinputargs["build_env_vars"] = b64_decode(os.environ["CONFIG0_BUILD_ENV_VARS_HASH"])
+        elif os.environ.get("CONFIG0_BUILD_ENV_VARS"):
+            cinputargs["build_env_vars"] = b64_decode(os.environ["CONFIG0_BUILD_ENV_VARS"])
 
         cinputargs.update({
             "version": self.version,
