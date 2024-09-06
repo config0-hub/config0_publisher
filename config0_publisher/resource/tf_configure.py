@@ -649,10 +649,10 @@ class Testtest456:
     #################################################################
     def _set_runtime_env_vars(self,method="create"):
 
+        # ref 43532453
         # build_env_vars only needed when initially creating
-        # testtest456
-        #if method != "create":
-        #    return
+        if method != "create":
+            return
 
         try:
             exclude_vars = list(self.tf_configs["tf_vars"].keys())
@@ -762,11 +762,20 @@ class Testtest456:
             "aws_region": self.aws_region
         }
 
-        if self.build_env_vars:
+        ########################################
+        # usually associated with create
+        ########################################
+        if self.build_env_vars and method == "create":
             cinputargs["build_env_vars"] = self.build_env_vars
 
-        if self.ssm_name:
+        if self.ssm_name and method == "create":
             cinputargs["ssm_name"] = self.ssm_name
+
+        ########################################
+        # usually associated with destroy/validate
+        ########################################
+        elif os.environ.get("CONFIG0_BUILD_ENV_VARS_HASH"):
+            cinputargs["build_env_vars"] = b64_decode(os.environ["CONFIG0_BUILD_ENV_VARS_HASH"])
 
         cinputargs.update({
             "version": self.version,
