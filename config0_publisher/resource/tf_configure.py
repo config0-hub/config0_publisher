@@ -549,16 +549,6 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         except:
             self.logger.warn("_insert_tf_add_keys failed")
 
-        try:
-            self._insert_tf_map_keys()
-        except:
-            self.logger.warn("_insert_tf_map_keys failed")
-
-        try:
-            self._insert_tf_remove_keys()
-        except:
-            self.logger.warn("_insert_tf remove keys failed")
-
         return
 
     # duplicate wertqttetqwetwqtqwt
@@ -637,6 +627,16 @@ class ConfigureTFforConfig0Db(Config0SettingsEnvVarHelper):
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
+
+        try:
+            self._insert_tf_map_keys()
+        except:
+            self.logger.warn("_insert_tf_map_keys failed")
+
+        try:
+            self._insert_tf_remove_keys()
+        except:
+            self.logger.warn("_insert_tf remove keys failed")
 
 class Testtest456:
 
