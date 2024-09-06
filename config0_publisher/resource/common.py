@@ -2,12 +2,16 @@
 
 #from config0_publisher.fileutils import extract_tar_gz
 from time import time
+from config0_publisher.loggerly import Config0Logger
 
 class TFAppHelper:
 
     def __init__(self,**kwargs):
 
         self.classname = "TFAppHelper"
+
+        self.logger = Config0Logger(self.classname,
+                                    logcategory="cloudprovider")
 
         # required
         self.binary = kwargs['binary']
