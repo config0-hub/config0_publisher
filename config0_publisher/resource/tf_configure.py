@@ -651,8 +651,8 @@ class Testtest456:
 
         # build_env_vars only needed when initially creating
         # testtest456
-        if method != "create":
-            return
+        #if method != "create":
+        #    return
 
         try:
             exclude_vars = list(self.tf_configs["tf_vars"].keys())
