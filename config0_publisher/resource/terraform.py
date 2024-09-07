@@ -17,6 +17,7 @@ class TFCmdOnAWS(TFAppHelper):
         self.envfile = kwargs["envfile"]  # e.g. build_env_vars.env
         self.tf_bucket_path = kwargs["tf_bucket_path"]
         self.run_share_dir = kwargs["run_share_dir"]
+        self.ssm_tmp_file = "/tmp"
 
         TFAppHelper.__init__(self,
                              binary=kwargs["binary"],
@@ -63,13 +64,15 @@ class TFCmdOnAWS(TFAppHelper):
                 f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
             ]
 
+        # testtest456
         if lambda_env:
             cmds = [
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
                 f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc',
-                'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
+                'if [ -n "$SSM_NAME" ]; then echo "SSM_NAME: $SSM_NAME"; fi',
                 'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
-                f'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
+                f'if [ -n "$SSM_NAME" ]; then ssm_get -name $SSM_NAME -file {self.ssm_tmp_dir}/.ssm_value || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"; fi',
+                f'if [ -n "$SSM_NAME" ]; then cat {self.ssm_tmp_dir}/.ssm_value"; fi'
             ]
 
         return cmds
@@ -77,12 +80,12 @@ class TFCmdOnAWS(TFAppHelper):
     def get_codebuild_ssm_concat(self):
 
         if not os.environ.get("DEBUG_STATEFUL"):
-            return f'echo $SSM_VALUE | base64 -d >> {self.stateful_dir}/{self.envfile}'
+            return f'echo $SSM_VALUE | base64 -d >> {self.ssm_tmp_dir}/.ssm_value'
 
-        return f'echo $SSM_VALUE | base64 -d >> {self.stateful_dir}/{self.envfile} && cat {self.stateful_dir}/{self.envfile}'
+        return f'echo $SSM_VALUE | base64 -d >> {self.ssm_tmp_dir}/.ssm_value && cat {self.ssm_tmp_dir}/.ssm_value'
 
     def get_src_buildenv_vars_cmd(self):
-        return f'if [ -f /{self.stateful_dir}/{self.envfile} ]; then cd /{self.stateful_dir}/; . ./{self.envfile} ; fi'
+        return f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}; . ./ssm_value ; fi'
 
     def s3_to_local(self):
 
