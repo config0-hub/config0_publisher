@@ -120,6 +120,7 @@ class TFCmdOnAWS(TFAppHelper):
             #ssm_cmd = f'if [ -f /{self.ssm_tmp_dir}/.ssm_value ]; then cd /{self.ssm_tmp_dir}/; . ./.ssm_value; fi'
             #ssm_cmd = f'if [ -f /{self.ssm_tmp_dir}/.ssm_value ]; then cd /{self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi;env| grep INFRA'
             ssm_cmd = f'if [ -f /{self.ssm_tmp_dir}/.ssm_value ]; then cd /{self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi'
+            ssm_cmd = f'if [ -f /{self.ssm_tmp_dir}/.ssm_value ]; then cd /{self.ssm_tmp_dir}/; . ./.ssm_value; fi; env |grep INFRA'
             self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
 
         return self.src_env_files_cmd
