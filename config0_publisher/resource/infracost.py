@@ -46,11 +46,13 @@ class TFInfracostHelper(TFAppHelper):
 
         if src_env_file:
             return [
+                f'echo "executing INFRACOST"',
                 f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
                 f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
             ]
 
         return [
+            f'echo "executing INFRACOST"',
             f'{self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
             f'{self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
             ]
