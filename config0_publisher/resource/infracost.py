@@ -47,8 +47,8 @@ class TFInfracostHelper(TFAppHelper):
         if src_env_file:
             return [
                 f'echo "executing INFRACOST"',
-                f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
-                f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
+                f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "ERROR: looks like INFRACOST failed")',
+                f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out) || (echo "ERROR: looks like INFRACOST failed")'
             ]
 
         return [
