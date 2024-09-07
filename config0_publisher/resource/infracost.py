@@ -37,11 +37,11 @@ class TFInfracostHelper(TFAppHelper):
 
     def exec_cmds(self,src_env_file=None):
 
-        if not os.environ.get("INFRACOST_API_KEY"):
-            self.logger.debug("+"*32)
-            self.logger.debug("environmental variable INFRACOST_API_KEY not set")
-            self.logger.debug("+"*32)
-            return ['echo "ERROR: INFRACOST_API_KEY not set"']
+        #if not os.environ.get("INFRACOST_API_KEY"):
+        #    self.logger.debug("+"*32)
+        #    self.logger.debug("environmental variable INFRACOST_API_KEY not set")
+        #    self.logger.debug("+"*32)
+        #    return ['echo "ERROR: INFRACOST_API_KEY not set"']
 
 
         if src_env_file:
