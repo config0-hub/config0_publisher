@@ -17,7 +17,7 @@ class TFCmdOnAWS(TFAppHelper):
         self.envfile = kwargs["envfile"]  # e.g. build_env_vars.env
         self.tf_bucket_path = kwargs["tf_bucket_path"]
         self.run_share_dir = kwargs["run_share_dir"]
-        self.ssm_tmp_file = "/tmp"
+        self.ssm_tmp_dir = "/tmp"
         self.src_env_files_cmd = None
 
         TFAppHelper.__init__(self,
