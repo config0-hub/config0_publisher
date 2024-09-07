@@ -41,16 +41,18 @@ class TFInfracostHelper(TFAppHelper):
             self.logger.debug("+"*32)
             self.logger.debug("environmental variable INFRACOST_API_KEY not set")
             self.logger.debug("+"*32)
-            return []
+            return ['echo "ERROR: INFRACOST_API_KEY not set"']
 
 
         if src_env_file:
             return [
+                f'echo "executing INFRACOST',
                 f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
                 f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
             ]
 
         return [
+            f'echo "executing INFRACOST',
             f'{self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
             f'{self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
             ]
