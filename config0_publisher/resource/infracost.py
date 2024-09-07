@@ -37,24 +37,17 @@ class TFInfracostHelper(TFAppHelper):
 
     def exec_cmds(self,src_env_file=None):
 
-        #if not os.environ.get("INFRACOST_API_KEY"):
-        #    self.logger.debug("+"*32)
-        #    self.logger.debug("environmental variable INFRACOST_API_KEY not set")
-        #    self.logger.debug("+"*32)
-        #    return ['echo "ERROR: INFRACOST_API_KEY not set"']
-
-
         if src_env_file:
             return [
                 f'echo "executing INFRACOST"',
-                f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "ERROR: looks like INFRACOST failed")',
-                f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "ERROR: looks like INFRACOST failed")'
+                f'({src_env_file} && if [ -n "$INFRACOST_API_KEY" ]; then {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json; fi ) || (echo "WARNING: looks like INFRACOST failed")',
+                f'({src_env_file} && if [ -n "$INFRACOST_API_KEY" ]; then {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ; fi ) || (echo "WARNING: looks like INFRACOST failed")'
             ]
 
         return [
             f'echo "executing INFRACOST"',
-            f'({self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "ERROR: looks like INFRACOST failed")',
-            f'({self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out) || (echo "ERROR: looks like INFRACOST failed")'
+            f'(if [ -n "$INFRACOST_API_KEY" ]; then {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json; fi ) || (echo "WARNING: looks like INFRACOST failed")',
+            f'(if [ -n "$INFRACOST_API_KEY" ]; then {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out; fi ) || (echo "WARNING: looks like INFRACOST failed")'
             ]
 
     def get_all_cmds(self,src_env_file=None):
