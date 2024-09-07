@@ -111,15 +111,20 @@ class TFCmdOnAWS(TFAppHelper):
 
     def _set_src_envfiles_cmd(self,ssm_name=None):
 
-        #base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
-        base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
+        if self.runtime_env == "codebuild":
+            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
+        else:
+            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
 
         if not ssm_name:
             self.src_env_files_cmd = base_cmd
         else:
             # testtest456
-            #ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi'
-            ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi'
+            if self.runtime_env == "codebuild":
+                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi'
+            else:
+                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi'
+
             self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
 
         return self.src_env_files_cmd
