@@ -75,11 +75,11 @@ class TFAppHelper:
             f'echo "##############"; df -h; echo "##############"'
         ]
 
+        cmds.extend(self._get_initial_preinstall_cmds())
+
         return cmds
 
     def download_cmds(self):
-
-        cmds = self._get_initial_preinstall_cmds()
 
         if self.installer_format == "zip":
             _suffix = "zip"
@@ -103,7 +103,7 @@ class TFAppHelper:
         _src_install = f'echo "############" && echo "### NEED to get {base_file_path} from source ### && echo "############"" && curl -L -s {src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
         install_cmd = f'({_bucket_install}) || ({_src_install})'
 
-        cmds.append(install_cmd)
+        cmds = [ install_cmd ]
         cmds.append(f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"')
 
         if self.installer_format == "zip":
