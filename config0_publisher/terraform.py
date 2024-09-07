@@ -55,9 +55,9 @@ class TFConstructor(object):
         self.resource_values = self.stack.get_tagged_vars(tag="db",
                                                           output="dict")
 
-    def _get_ssm_value(self):
+    def _get_ssm_value(self,ssm_format):
 
-        if self.ssm_format == ".env":
+        if ssm_format == ".env":
             return self.stack.to_envfile(self.ssm_obj,
                                          b64=True,
                                          include_export=False)
@@ -112,7 +112,7 @@ class TFConstructor(object):
         if not self.ssm_obj:
             return
 
-        value = self._get_ssm_value()
+        value = self._get_ssm_value(self.ssm_format)
         self._set_ssm_name(value)
 
         if self.ssm_prefix in self.ssm_name:

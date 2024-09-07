@@ -128,13 +128,7 @@ class Codebuild(CodebuildParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(lambda_env=False))
-
-        if self.ssm_name:
-            cmds.append(self.tfcmds.get_codebuild_ssm_concat())
-
-        base_cmd = self.tfcmds.get_src_buildenv_vars_cmd()
-        cmds.append(base_cmd)
+        cmds.extend(self.tfcmds.load_env_files(ssm_name=self.ssm_name))
 
         contents = '''
   pre_build:

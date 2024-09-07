@@ -122,17 +122,14 @@ class Lambdabuild(LambdaParams):
 
         cmds = self.tfcmds.s3_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.get_decrypt_buildenv_vars(lambda_env=True))
-        cmds.append(self.tfcmds.get_src_buildenv_vars_cmd())
+        cmds.extend(self.tfcmds.load_env_files(ssm_name=self.ssm_name))
 
         return cmds
 
     def _get_build_cmds(self):
 
-        src_build_vars_cmd = self.tfcmds.get_src_buildenv_vars_cmd()
-
         cmds = self.tfsec_cmds.get_all_cmds()
-        cmds.extend(self.infracost_cmds.get_all_cmds(src_build_vars_cmd))
+        cmds.extend(self.infracost_cmds.get_all_cmds(self.tfcmds.src_env_files_cmd))
 
         if self.method == "create":
             cmds.extend(self.tfcmds.get_tf_apply())

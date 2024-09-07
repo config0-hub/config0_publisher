@@ -35,7 +35,7 @@ class TFInfracostHelper(TFAppHelper):
 
         return cmds
 
-    def exec_cmds(self,src_build_vars_cmd=None):
+    def exec_cmds(self,src_env_file=None):
 
         if not os.environ.get("INFRACOST_API_KEY"):
             self.logger.debug("+"*32)
@@ -44,10 +44,10 @@ class TFInfracostHelper(TFAppHelper):
             return []
 
 
-        if src_build_vars_cmd:
+        if src_env_file:
             return [
-                f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
-                f'{src_build_vars_cmd} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
+                f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json',
+                f'{src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
             ]
 
         return [
@@ -55,12 +55,12 @@ class TFInfracostHelper(TFAppHelper):
             f'{self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out'
             ]
 
-    def get_all_cmds(self,src_build_vars_cmd=None):
+    def get_all_cmds(self,src_env_file=None):
 
         #if not os.environ.get("INFRACOST_API_KEY"):
         #    return []
 
         cmds = self.install_cmds()
-        cmds.extend(self.exec_cmds(src_build_vars_cmd))
+        cmds.extend(self.exec_cmds(src_env_file))
 
         return cmds
