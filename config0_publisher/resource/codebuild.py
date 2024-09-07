@@ -103,6 +103,14 @@ class Codebuild(CodebuildParams):
                                  arch="linux_amd64"
                                  )
 
+        self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
+                                      envfile="build_env_vars.env",
+                                      binary='tfsec',
+                                      version="1.28.10",
+                                      tmp_bucket=self.tmp_bucket,
+                                      arch="linux_amd64"
+                                      )
+
         self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
                                                 envfile="build_env_vars.env",
                                                 binary='infracost',
