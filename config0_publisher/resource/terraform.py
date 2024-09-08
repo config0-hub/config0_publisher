@@ -113,6 +113,9 @@ class TFCmdOnAWS(TFAppHelper):
 
         if self.runtime_env == "codebuild":
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
+
+            # testtest456
+            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi; env; exit 9'
         else:
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
 
