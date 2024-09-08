@@ -113,7 +113,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         if self.runtime_env == "codebuild":
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
-            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; while IFS= read -r line; do echo "# $line"; eval "$line"; done < ./{self.envfile}; fi; env; exit 9'
+            #base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; while IFS= read -r line; do echo "# $line"; eval "$line"; done < ./{self.envfile}; fi; env; exit 9'
         else:
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
 
@@ -122,7 +122,7 @@ class TFCmdOnAWS(TFAppHelper):
         else:
             # testtest456
             if self.runtime_env == "codebuild":
-                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi'
+                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi; env; exit 9'
             else:
                 ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi'
 
