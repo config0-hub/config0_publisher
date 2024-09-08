@@ -101,14 +101,11 @@ class TFAppHelper:
 
         _hash_delimiter = 'echo "{}"'.format("#"*32)
 
-        _bucket_install_1 = f'aws s3 cp {bucket_path} {dl_file_path}'
+        _bucket_install_1 = f'aws s3 cp {bucket_path} {dl_file_path} --quiet'
         _bucket_install_2 = f'echo "# GOT {base_file_path} from s3 bucket/cache"'
         _src_install_1 = f'echo "# NEED to get {base_file_path} from source"'
         _src_install_2= f'curl -L -s {src_remote_path} -o {dl_file_path}'
-        _src_install_3 = f'aws s3 cp {dl_file_path} {bucket_path}'
-
-        #install_cmd = f'({_bucket_install_1} && {_bucket_install_c} && {_bucket_install_2} && {_bucket_install_c}) || ({_src_install})'
-        #install_cmd = f'aws s3 cp {bucket_path} {dl_file_path}'
+        _src_install_3 = f'aws s3 cp {dl_file_path} {bucket_path} --quiet'
 
         _bucket_install = f'{_bucket_install_1} && {_hash_delimiter} && {_bucket_install_2} && {_hash_delimiter}'
         _src_install = f'{_hash_delimiter} && {_src_install_1} && {_hash_delimiter} && {_src_install_2} && {_src_install_3}'
