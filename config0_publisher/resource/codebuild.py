@@ -103,27 +103,27 @@ class Codebuild(CodebuildParams):
                                  arch="linux_amd64"
                                  )
 
-        self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
-                                      envfile="build_env_vars.env",
-                                      binary='tfsec',
-                                      version="1.28.10",
-                                      tmp_bucket=self.tmp_bucket,
-                                      arch="linux_amd64"
-                                      )
+        #self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
+        #                              envfile="build_env_vars.env",
+        #                              binary='tfsec',
+        #                              version="1.28.10",
+        #                              tmp_bucket=self.tmp_bucket,
+        #                              arch="linux_amd64"
+        #                              )
 
-        self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
-                                                envfile="build_env_vars.env",
-                                                binary='infracost',
-                                                version="0.10.39",
-                                                tmp_bucket=self.tmp_bucket,
-                                                arch="linux_amd64")
+        #self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
+        #                                        envfile="build_env_vars.env",
+        #                                        binary='infracost',
+        #                                        version="0.10.39",
+        #                                        tmp_bucket=self.tmp_bucket,
+        #                                        arch="linux_amd64")
 
-        self.opa_cmds = TFOpaHelper(runtime_env="lambda",
-                                    envfile="build_env_vars.env",
-                                    binary='opa',
-                                    version="0.68.0",
-                                    tmp_bucket=self.tmp_bucket,
-                                    arch="linux_amd64")
+        #self.opa_cmds = TFOpaHelper(runtime_env="lambda",
+        #                            envfile="build_env_vars.env",
+        #                            binary='opa',
+        #                            version="0.68.0",
+        #                            tmp_bucket=self.tmp_bucket,
+        #                            arch="linux_amd64")
 
     def _add_cmds(self,contents,cmds):
 
