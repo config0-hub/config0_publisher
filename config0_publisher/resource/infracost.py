@@ -45,6 +45,7 @@ class TFInfracostHelper(TFAppHelper):
         #    ]
 
         #f'echo "executing INFRACOST without src_env_file"',
+        return ['echo "executing INFRACOST without src_env_file"']
         #f'({self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
 
         return [
