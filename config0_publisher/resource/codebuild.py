@@ -164,10 +164,10 @@ class Codebuild(CodebuildParams):
         # testtest456
         cmds = self.infracost_cmds.get_all_cmds()
 
+        # testtest456
         self.logger.debug('i'*32)
         self.logger.json(cmds)
         self.logger.debug('i'*32)
-        raise Exception('i')
 
         #if self.method == "create":
         #    cmds.extend(self.tfcmds.get_tf_apply())
