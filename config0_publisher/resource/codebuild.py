@@ -6,6 +6,7 @@ from config0_publisher.resource.terraform import TFCmdOnAWS
 from config0_publisher.resource.infracost import TFInfracostHelper
 from config0_publisher.resource.tfsec import TFSecHelper
 from config0_publisher.resource.opa import TFOpaHelper
+from config0_publisher.loggerly import Config0Logger
 
 class CodebuildParams(TFAwsBaseBuildParams):
 
@@ -14,6 +15,10 @@ class CodebuildParams(TFAwsBaseBuildParams):
         TFAwsBaseBuildParams.__init__(self,**kwargs)
 
         self.classname = "CodebuildParams"
+
+        self.logger = Config0Logger(self.classname,
+                                    logcategory="cloudprovider")
+
         self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
