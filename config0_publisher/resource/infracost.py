@@ -37,8 +37,8 @@ class TFInfracostHelper(TFAppHelper):
 
     def exec_cmds(self,src_env_file=None):
 
-        if src_env_file:
-            return []
+        #if src_env_file:
+        #    return [
         #        f'echo "executing INFRACOST with src_env_file"',
         #        f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
         #        f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
@@ -55,8 +55,6 @@ class TFInfracostHelper(TFAppHelper):
         #if not os.environ.get("INFRACOST_API_KEY"):
         #    return []
 
-        # testtest456
-        return self.install_cmds()
         cmds = self.install_cmds()
         cmds.extend(self.exec_cmds(src_env_file))
 
