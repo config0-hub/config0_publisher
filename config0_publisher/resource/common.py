@@ -43,7 +43,7 @@ class TFAppHelper:
 
         self.execdir = f'{self.stateful_dir}/run/{self.app_dir}'  # notice the execution directory is in "run" subdir
 
-        self.base_cmd = f'cd {self.execdir} && {self.bin_dir}/{self.binary}'
+        self.base_cmd = f'cd {self.execdir} && {self.bin_dir}/{self.binary} '
 
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
         self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/{self.base_file_path}"
@@ -99,8 +99,8 @@ class TFAppHelper:
             bucket_path = f'{self.bucket_path}.{_suffix}'
             src_remote_path = f'{self.src_remote_path}.{_suffix}'
 
-        _bucket_install = f'aws s3 cp {bucket_path} {dl_file_path} --quiet && echo "### GOT {base_file_path} from s3 bucket/cache"'
-        _src_install = f'curl -L -s {src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
+        _bucket_install = f'aws s3 cp {bucket_path} {dl_file_path} --quiet && echo "############" && echo "### GOT \"{base_file_path}\" from s3 bucket/cache ###" && echo "############"'
+        _src_install = f'echo "############" && echo "### NEED to get {base_file_path} from source ### && echo "############"" && curl -L -s {src_remote_path} -o {dl_file_path} && aws s3 cp {dl_file_path} {bucket_path} --quiet'
         install_cmd = f'({_bucket_install}) || ({_src_install})'
 
         cmds = [ install_cmd ]
