@@ -14,9 +14,18 @@ def get_tf_install(**kwargs):
     arch = kwargs["arch"]
     bin_dir = kwargs["bin_dir"]
 
-    bucket_install = f'aws s3 cp {bucket_path} $TMPDIR/{dl_subdir}/{binary}_{version} --quiet && echo "############" && echo "### GOT {binary} from s3/cache" && echo "############"'
-    terraform_direct = f'echo "########## NEED FRM SOURCE" && cd $TMPDIR/{dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{version}/{binary}_{version}_{arch}.zip -o {binary}_{version} && aws s3 cp {binary}_{version} {bucket_path} --quiet'
-    tofu_direct = f'echo "############ NEED FRM SOURCE" && cd $TMPDIR/{dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{version}/{binary}_{version}_{arch}.zip -o {binary}_{version} && aws s3 cp {binary}_{version} {bucket_path} --quiet'
+    _hash_delimiter = 'echo "{}"'.format("#" * 32)
+
+    _bucket_install_1 = f'aws s3 cp {bucket_path} $TMPDIR/{dl_subdir}/{binary}_{version} --quiet'
+    _bucket_install_2 = f'echo "# GOT {binary} from s3/cache"'
+    bucket_install = f'{_bucket_install_1} && {_hash_delimiter} && {_bucket_install_2} && {_hash_delimiter}'
+
+    _terraform_direct_1 = f'echo "# NEED {binary}_{version} FROM SOURCE"'
+    _terraform_direct_2 = f'cd $TMPDIR/{dl_subdir} && curl -L -s https://releases.hashicorp.com/terraform/{version}/{binary}_{version}_{arch}.zip -o {binary}_{version}'
+    _terraform_direct_3 = f'aws s3 cp {binary}_{version} {bucket_path} --quiet'
+    terraform_direct = f'{_hash_delimiter} && {_terraform_direct_1} && {_hash_delimiter} && {_terraform_direct_2} && {_terraform_direct_3}'
+    _tofu_direct_2 = f'cd $TMPDIR/{dl_subdir} && curl -L -s https://github.com/opentofu/opentofu/releases/download/v{version}/{binary}_{version}_{arch}.zip -o {binary}_{version}'
+    tofu_direct = f'{_hash_delimiter} && {_terraform_direct_1} && {_hash_delimiter} && {_tofu_direct_2} && {_terraform_direct_3}'
 
     if binary == "terraform":
         _install_cmd = f'({bucket_install} )|| (echo "terraform/tofu not found in local s3 bucket" && {terraform_direct})'
