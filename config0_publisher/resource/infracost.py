@@ -35,22 +35,12 @@ class TFInfracostHelper(TFAppHelper):
 
         return cmds
 
-    def exec_cmds(self,src_env_file=None):
-
-        #if src_env_file:
-        #    return [
-        #        f'echo "executing INFRACOST with src_env_file"',
-        #        f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
-        #        f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
-        #    ]
-
-        #f'echo "executing INFRACOST without src_env_file"',
-        #f'({self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
-        #f'({self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
+    def exec_cmds(self,src_env_file):
 
         return [
-            'echo "executing INFRACOST without src_env_file"',
-            f'({self.base_cmd}) || (echo "WARNING: looks like INFRACOST failed")'
+                f'echo "executing INFRACOST with src_env_file"',
+                f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
+                f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
         ]
 
     def get_all_cmds(self,src_env_file=None):

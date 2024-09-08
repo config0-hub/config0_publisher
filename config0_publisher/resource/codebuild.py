@@ -159,24 +159,20 @@ class Codebuild(CodebuildParams):
 '''
 
         cmds = self.tfsec_cmds.get_all_cmds()
-        cmds.extend(self.infracost_cmds.get_all_cmds())
-
         # testtest456
-        cmds = self.infracost_cmds.get_all_cmds()
+        cmds.append("exit 43")
 
-        # testtest456
-        self.logger.debug('i'*32)
-        self.logger.json(cmds)
-        self.logger.debug('i'*32)
+        # does not work in codebuild
+        #cmds.extend(self.infracost_cmds.get_all_cmds())
 
-        #if self.method == "create":
-        #    cmds.extend(self.tfcmds.get_tf_apply())
-        #elif self.method == "validate":
-        #    cmds.extend(self.tfcmds.get_tf_chk_drift())
-        #elif self.method == "destroy":
-        #    cmds = self.tfcmds.get_tf_destroy()
-        #else:
-        #    raise Exception("method needs to be create/validate/destroy")
+        if self.method == "create":
+            cmds.extend(self.tfcmds.get_tf_apply())
+        elif self.method == "validate":
+            cmds.extend(self.tfcmds.get_tf_chk_drift())
+        elif self.method == "destroy":
+            cmds = self.tfcmds.get_tf_destroy()
+        else:
+            raise Exception("method needs to be create/validate/destroy")
 
         return self._add_cmds(contents,cmds)
 
