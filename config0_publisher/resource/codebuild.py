@@ -156,6 +156,7 @@ class Codebuild(CodebuildParams):
         cmds = self.tfsec_cmds.get_all_cmds()
         cmds.extend(self.infracost_cmds.get_all_cmds())
 
+        # testtest456
         cmds = self.infracost_cmds.get_all_cmds()
 
         #if self.method == "create":
