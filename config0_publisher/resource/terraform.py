@@ -112,8 +112,9 @@ class TFCmdOnAWS(TFAppHelper):
     def _set_src_envfiles_cmd(self,ssm_name=None):
 
         if self.runtime_env == "codebuild":
-            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
-            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi; while IFS= read -r line; do eval "export $line"; done < .env; env; exit 9'
+            _base_cmd_1 = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
+            _base_cmd_2 = 'while IFS= read -r line; do echo "# $line"; eval "$line"; done < .env; env; exit 9'
+            base_cmd = f'{_base_cmd_1} ; {_base_cmd_2}'
         else:
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
 
