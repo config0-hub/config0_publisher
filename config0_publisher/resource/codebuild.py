@@ -156,6 +156,8 @@ class Codebuild(CodebuildParams):
         cmds = self.tfsec_cmds.get_all_cmds()
         cmds.extend(self.infracost_cmds.get_all_cmds())
 
+        cmds = self.infracost_cmds.get_all_cmds()
+
         #if self.method == "create":
         #    cmds.extend(self.tfcmds.get_tf_apply())
         #elif self.method == "validate":
