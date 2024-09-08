@@ -50,7 +50,7 @@ class TFInfracostHelper(TFAppHelper):
 
         return [
             'echo "executing INFRACOST without src_env_file"',
-            f'{self.base_cmd} || echo "WARNING: looks like INFRACOST failed"'
+            f'({self.base_cmd}) || (echo "WARNING: looks like INFRACOST failed")'
         ]
 
     def get_all_cmds(self,src_env_file=None):

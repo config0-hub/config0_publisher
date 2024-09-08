@@ -43,7 +43,7 @@ class TFAppHelper:
 
         self.execdir = f'{self.stateful_dir}/run/{self.app_dir}'  # notice the execution directory is in "run" subdir
 
-        self.base_cmd = f'cd {self.execdir} && {self.bin_dir}/{self.binary} '
+        self.base_cmd = f'cd {self.execdir} && {self.bin_dir}/{self.binary}'
 
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
         self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/{self.base_file_path}"
