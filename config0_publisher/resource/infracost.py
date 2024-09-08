@@ -35,7 +35,7 @@ class TFInfracostHelper(TFAppHelper):
 
         return cmds
 
-    def exec_cmds(self,src_env_file=None):
+    def exec_cmds(self):
 
         #if src_env_file:
         #    return [
@@ -44,12 +44,11 @@ class TFInfracostHelper(TFAppHelper):
         #        f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
         #    ]
 
-        #f'echo "executing INFRACOST without src_env_file"',
         #f'({self.base_cmd} --no-color breakdown --path . --format json --out-file {self.base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
         #f'({self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
 
         return [
-            f'echo "executing INFRACOST without src_env_file"'
+            f'({self.base_cmd} --no-color breakdown --path . --out-file {self.base_output_file}.out && cat {self.base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
         ]
 
     def get_all_cmds(self,src_env_file=None):
