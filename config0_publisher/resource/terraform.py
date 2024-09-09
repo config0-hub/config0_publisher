@@ -141,13 +141,17 @@ class TFCmdOnAWS(TFAppHelper):
     def get_tf_validate(self):
 
         if self.runtime_env == "codebuild":
-            return [
+            cmds = [
                 f'{self.base_cmd} validate > {self.tmp_base_output_file}.validate'
             ]
 
-        return [
+        cmds = [
             f'({self.src_env_files_cmd}) && ({self.base_cmd} validate > {self.tmp_base_output_file}.validate)'
         ]
+
+        cmds.extend(self.local_output_to_s3(suffix="validate",last_apply=None))
+
+        return cmds
 
     def get_tf_init(self):
 
@@ -163,21 +167,26 @@ class TFCmdOnAWS(TFAppHelper):
     def get_tf_plan(self):
 
         if self.runtime_env == "codebuild":
-            return [
+            cmds = [
                 f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
                 f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
             ]
 
-        return [
+        cmds = [
             f'({self.src_env_files_cmd}) && {self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
             f'({self.src_env_files_cmd}) && {self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
         ]
+
+        cmds.extend(self.local_output_to_s3(suffix="tfplan",last_apply=None))
+        cmds.extend(self.local_output_to_s3(suffix="tfplan.json",last_apply=None))
+
+        return cmds
 
     def get_tf_ci(self):
 
         cmds = self.get_tf_init()
         cmds.extend(self.get_tf_validate())
-        cmds.append(self.get_tf_chk_fmt(exit_on_error=True))
+        cmds.extend(self.get_tf_chk_fmt(exit_on_error=True))
         cmds.extend(self.get_tf_plan())
 
         return cmds
@@ -225,10 +234,14 @@ class TFCmdOnAWS(TFAppHelper):
         else:
             cmd = f'{self.base_cmd} fmt -write=false -diff -recursive > {self.tmp_base_output_file}.fmt'
 
-        if self.runtime_env == "codebuild":
-            return cmd
+        if self.runtime_env != "codebuild":
+            cmds = [f'{self.src_env_files_cmd}) && {cmd}']
+        else:
+            cmds = [cmd]
 
-        return f'{self.src_env_files_cmd}) && {cmd}'
+        cmds.extend(self.local_output_to_s3(suffix="fmt",last_apply=None))
+
+        return cmds
 
     def get_tf_chk_drift(self):
 
