@@ -140,7 +140,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_validate(self):
 
-        suffix_cmd = f'{self.base_cmd} validate > {self.tmp_base_output_file}.validate 2>&1'
+        suffix_cmd = f'{self.base_cmd} validate | tee -a {self.tmp_base_output_file}.validate'
 
         if self.runtime_env == "codebuild":
             cmds = [
@@ -157,7 +157,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_init(self):
 
-        suffix_cmd = f'{self.base_cmd} init > {self.tmp_base_output_file}.init 2>&1'
+        suffix_cmd = f'{self.base_cmd} init | tee -a {self.tmp_base_output_file}.init'
 
         if self.runtime_env == "codebuild":
             return [
