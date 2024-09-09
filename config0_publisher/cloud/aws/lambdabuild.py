@@ -94,7 +94,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return env_vars
 
-    def _trigger_build(self,overide_method=None):
+    def _trigger_build(self):
 
         # we limit the build to 500 seconds, which is one min
         # less than 10 minutes
@@ -110,10 +110,6 @@ class LambdaResourceHelper(AWSCommonConn):
 
         # Define the configuration for invoking the Lambda function
         env_vars = self._env_vars_to_lambda_format()
-
-        # testtest456
-        if overide_method in ["validate"]:
-            env_vars["METHOD"] = "validate"
 
         self.logger.debug("*"*32)
         self.logger.debug("* env vars for lambda build")
@@ -133,13 +129,17 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return self.lambda_client.invoke(**invocation_config)
 
-    def _submit(self,overide_method=None):
+    def _submit(self):
 
-        if not hasattr(self,"submit"):
-            self.phase_result = self.new_phase("submit")
+        self.phase_result = self.new_phase("submit")
+
+        # we don't want to clobber the intact
+        # stateful files from creation
+        if self.method == "create":
+            self.upload_to_s3_stateful()
 
         # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
-        self.response = self._trigger_build(overide_method=overide_method)
+        self.response = self._trigger_build()
 
         lambda_status = int(self.response["StatusCode"])
         self.results["lambda_status"] = lambda_status
@@ -175,20 +175,15 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return self.results
 
-    def run(self,overide_method=None):
+    def run(self):
 
-        self._submit(overide_method=overide_method)
+        self._submit()
 
-        method = overide_method
-
-        if not method:
-            method = self.method
-
-        if self.results.get("status") is False and method == "validate":
+        if self.results.get("status") is False and self.method == "validate":
             self.results["failed_message"] = "the resources have drifted"
-        elif self.results.get("status") is False and method == "create":
+        elif self.results.get("status") is False and self.method == "create":
             self.results["failed_message"] = "creation of resources have failed"
-        elif self.results.get("status") is False and method == "destroy":
+        elif self.results.get("status") is False and self.method == "destroy":
             self.results["failed_message"] = "destroying of resources have failed"
 
         return self.results

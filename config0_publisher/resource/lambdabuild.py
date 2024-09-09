@@ -21,8 +21,6 @@ class LambdaParams(TFAwsBaseBuildParams):
         self.lambda_role = kwargs.get("lambda_role",
                                       "config0-assume-poweruser")
 
-        self.lambda_helper = None
-
     def _set_inputargs(self):
 
         self.buildparams = {
@@ -55,9 +53,6 @@ class LambdaParams(TFAwsBaseBuildParams):
 
     def _init_lambda_helper(self):
 
-        if self.lambda_helper:
-            return
-
         self._set_inputargs()
         self.lambda_helper = LambdaResourceHelper(**self.buildparams)
 
@@ -65,19 +60,15 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         self._init_lambda_helper()
         self.lambda_helper.submit(**inputargs)
+
         return self.lambda_helper.results
 
     def retrieve(self,**inputargs):
 
-        self._init_lambda_helper()
+        # get results from phase json file
+        # which should be set
         self.lambda_helper = LambdaResourceHelper(**self.phases_info)
         self.lambda_helper.retrieve(**inputargs)
-        return self.lambda_helper.results
-
-    def upload_to_s3_stateful(self,**inputargs):
-
-        self._init_lambda_helper()
-        self.lambda_helper.upload_to_s3_stateful(**inputargs)
 
         return self.lambda_helper.results
 

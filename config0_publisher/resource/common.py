@@ -21,7 +21,7 @@ class TFAppHelper:
         self.bucket = kwargs.get("bucket")
         self.installer_format = kwargs.get("installer_format")
         self.src_remote_path = kwargs.get("src_remote_path")
-        self.t0 = str(time())
+        self.start_time = str(time())
 
         # advisable
         self.runtime_env = kwargs.get("runtime_env",'codebuild')  # codebuild or lambda

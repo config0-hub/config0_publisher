@@ -471,8 +471,13 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def _submit(self,sparse_env_vars=True):
 
-        if not hasattr(self,"phase_result"):
-            self.phase_result = self.new_phase("submit")
+        self.phase_result = self.new_phase("submit")
+
+        # we don't want to clobber the intact
+        # stateful files from creation
+        if self.method == "create":
+            self.upload_to_s3_stateful()
+            self.phase_result["executed"].append("upload_to_s3")
 
         self._trigger_build(sparse_env_vars=sparse_env_vars)
 
