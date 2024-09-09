@@ -214,13 +214,9 @@ class AWSCommonConn(SetClassVarsHelper):
                      output_to_json=False,
                      exit_error=True)
 
-        # testtest456
-        self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-                                                       f'state/src.{self.stateful_id}.zip')
-
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-                                                           f'state/src.{self.stateful_id}.zip')
+                                                           f'{self.stateful_id}/state/src.{self.stateful_id}.zip')
             status = True
         except:
             status = False
