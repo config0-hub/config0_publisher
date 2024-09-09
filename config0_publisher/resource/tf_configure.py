@@ -859,7 +859,7 @@ terraform {{
             self.create_build_envfile(encrypt=None,
                                       openssl=False)
 
-            _awsbuild.upload_to_s3()
+            _awsbuild.upload_to_s3_stateful()
 
         if self.build_method == "lambda":
             results = _awsbuild.run()
