@@ -18,6 +18,7 @@ import datetime
 import json
 import os
 import hashlib
+from string import ascii_lowercase
 
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.shellouts import mkdir
