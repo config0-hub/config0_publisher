@@ -45,7 +45,7 @@ class TFCmdOnAWS(TFAppHelper):
                 bin_dir=self.bin_dir)
 
     # ref 4354523
-    def load_env_files(self,ssm_name=None):
+    def load_env_files(self):
 
         '''
         # for lambda function, we use the ssm_get python cli
@@ -72,11 +72,10 @@ class TFCmdOnAWS(TFAppHelper):
             ]
 
         # add ssm if needed
-        if ssm_name:
-            cmds.extend(self.get_ssm_concat())
+        cmds.extend(self.get_ssm_concat())
 
         # add sourcing of env files
-        self._set_src_envfiles_cmd(ssm_name=ssm_name)
+        self._set_src_envfiles_cmd()
 
         cmds.append(self.src_env_files_cmd)
 
@@ -93,23 +92,23 @@ class TFCmdOnAWS(TFAppHelper):
 
         cmds = [
             'echo "############"; echo "# SSM_NAME: $SSM_NAME"; echo "############"',
-            f'ssm_get -name $SSM_NAME -file {self.ssm_tmp_dir}/.ssm_value || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
+            f'ssm_get -name $SSM_NAME -file $TMPDIR/.ssm_value > /dev/null 2>&1 || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
         ]
 
-        # f'cat {self.ssm_tmp_dir}/.ssm_value'
+        # f'cat $TMPDIR/.ssm_value'
 
         return cmds
 
     def _get_codebuild_ssm_concat(self):
 
         if os.environ.get("DEBUG_STATEFUL"):
-            cmds = [ f'echo $SSM_VALUE | base64 -d >> {self.ssm_tmp_dir}/.ssm_value && cat {self.ssm_tmp_dir}/.ssm_value' ]
+            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value && cat $TMPDIR/.ssm_value' ]
         else:
-            cmds = [ f'echo $SSM_VALUE | base64 -d >> {self.ssm_tmp_dir}/.ssm_value' ]
+            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value' ]
 
         return cmds
 
-    def _set_src_envfiles_cmd(self,ssm_name=None):
+    def _set_src_envfiles_cmd(self):
 
         # with lambda, the shell is needs env_var with set +a style
 
@@ -119,15 +118,12 @@ class TFCmdOnAWS(TFAppHelper):
         else:
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
 
-        if not ssm_name:
-            self.src_env_files_cmd = base_cmd
+        if self.runtime_env == "codebuild":
+            ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; . ./.ssm_value; fi'
         else:
-            if self.runtime_env == "codebuild":
-                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi'
-            else:
-                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi'
+            ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
 
-            self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
+        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
 
         return self.src_env_files_cmd
 
