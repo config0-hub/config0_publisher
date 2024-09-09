@@ -129,11 +129,11 @@ class TFCmdOnAWS(TFAppHelper):
         cmds = self.reset_dirs()
 
         cmds.extend([
-            'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID"',
-            f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID {self.stateful_dir}/$STATEFUL_ID.zip --quiet',
+            'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip"',
+            f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip {self.stateful_dir}/src.$STATEFUL_ID.zip --quiet',
             f'rm -rf {self.stateful_dir}/run > /dev/null 2>&1 || echo "stateful already removed"',
-            f'unzip -o {self.stateful_dir}/$STATEFUL_ID.zip -d {self.stateful_dir}/run',
-            f'rm -rf {self.stateful_dir}/$STATEFUL_ID.zip'
+            f'unzip -o {self.stateful_dir}/src.$STATEFUL_ID.zip -d {self.stateful_dir}/run',
+            f'rm -rf {self.stateful_dir}/src.$STATEFUL_ID.zip'
         ])
 
         return cmds

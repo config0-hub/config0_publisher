@@ -892,11 +892,13 @@ terraform {{
                                   openssl=False)
 
         tf_results = self._exec_in_aws(method="pre-create")
-        self.logger.debug("a1"*32)
-        self.logger.json(tf_results)
-        self.logger.debug("a1"*32)
-        self.logger.debug(tf_results.keys())
-        self.logger.debug("a1"*32)
+
+        if tf_results.get("status") is True:
+            self.logger.debug("a1"*32)
+            self.logger.json(tf_results)
+            self.logger.debug("a1"*32)
+            self.logger.debug(tf_results.keys())
+            self.logger.debug("a1"*32)
 
         #tf_results = self._exec_in_aws(method="create")
 

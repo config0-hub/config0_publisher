@@ -215,7 +215,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-                                                           self.stateful_id)
+                                                           f'state/src.{self.stateful_id}.zip')
             status = True
         except:
             status = False
