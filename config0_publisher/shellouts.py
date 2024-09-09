@@ -13,17 +13,14 @@
 #Written by Gary Leong  <gary@config0.com, May 11,2019
 
 #import contextlib
-#import sys
-import concurrent.futures
-import time
 import json
 import string
 import os
 import random
 import subprocess
+import sys
 
 from config0_publisher.loggerly import Config0Logger as set_log
-from config0_publisher.utilities import id_generator
 
 def ensure_str(obj,strip=True):
 
@@ -40,6 +37,12 @@ def ensure_str(obj,strip=True):
         return new_obj.strip()
 
     return new_obj
+
+def id_generator(size=6,chars=string.ascii_uppercase+string.digits):
+
+    '''generates id randomly'''
+
+    return ''.join(random.choice(chars) for x in range(size))
 
 def mkdir(directory):
     '''uses the shell to make a directory.'''
@@ -555,10 +558,3 @@ class ShellOutExecute(object):
         self.run()
 
         return self.results
-
-def exec_method_bg(bg_method,args=None,kwargs=None):
-
-    # Use ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit background tasks
-        return executor.submit(bg_method, *args, **kwargs)
