@@ -852,12 +852,6 @@ terraform {{
         else:
             return False
 
-        # submit and run required env file
-        if method == "create":
-            # ref 4354523
-            self.create_build_envfile(encrypt=None,
-                                      openssl=False)
-
         results = _awsbuild.run()
 
         self.eval_log(results,
@@ -890,6 +884,10 @@ terraform {{
         self._set_runtime_env_vars(method="create")
         self.create_aws_tf_backend()
 
+        # submit and run required env file
+        # ref 4354523
+        self.create_build_envfile(encrypt=None,
+                                  openssl=False)
 
         # testtest456
         if self.build_method == "codebuild":
