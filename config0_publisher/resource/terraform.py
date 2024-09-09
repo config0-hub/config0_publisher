@@ -157,7 +157,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_init(self):
 
-        suffix_cmd = f'{self.base_cmd} init) > {self.tmp_base_output_file}.init 2>&1'
+        suffix_cmd = f'{self.base_cmd} init > {self.tmp_base_output_file}.init 2>&1'
 
         if self.runtime_env == "codebuild":
             return [
