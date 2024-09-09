@@ -112,7 +112,7 @@ class LambdaResourceHelper(AWSCommonConn):
         env_vars = self._env_vars_to_lambda_format()
 
         self.logger.debug("#"*32)
-        self.logger.debug("# env vars for lambda build")
+        self.logger.debug("# ref 324523453 env vars for lambda build")
         self.logger.json(env_vars)
         self.logger.debug("#"*32)
 
