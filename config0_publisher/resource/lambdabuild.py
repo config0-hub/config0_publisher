@@ -42,7 +42,8 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         env_vars = {
             "TF_PATH":f"/tmp/config0/bin/{self.binary}",
-            "METHOD":self.method
+            "TMPDIR":"/tmp",   # this needs to be set for the lambda executor/runner
+            "METHOD": self.method
         }
 
         if self.ssm_name:
