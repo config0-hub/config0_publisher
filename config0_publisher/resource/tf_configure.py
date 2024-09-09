@@ -890,13 +890,16 @@ terraform {{
         self._set_runtime_env_vars(method="create")
         self.create_aws_tf_backend()
 
-        tf_results = self._exec_in_aws(method="validate")
 
         # testtest456
-        self.logger.debug("a1"*32)
-        self.logger.json(tf_results)
-        self.logger.debug("a1"*32)
-        raise Exception('sdfas')
+        if self.build_method == "codebuild":
+            self.build_method = "lambda"
+            tf_results = self._exec_in_aws(method="validate")
+            self.logger.debug("a1"*32)
+            self.logger.json(tf_results)
+            self.logger.debug("a1"*32)
+            raise Exception('sdfas')
+            self.build_method = "codebuild"
 
         tf_results = self._exec_in_aws(method="create")
 
