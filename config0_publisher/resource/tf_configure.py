@@ -902,6 +902,10 @@ terraform {{
         #    self.build_method = "codebuild"
 
         tf_results = self._exec_in_aws(method="pre-create")
+        self.logger.debug("a1"*32)
+        self.logger.json(tf_results)
+        self.logger.debug("a1"*32)
+
         #tf_results = self._exec_in_aws(method="create")
 
         self._post_create()
