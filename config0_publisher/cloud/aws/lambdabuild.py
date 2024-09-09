@@ -92,6 +92,16 @@ class LambdaResourceHelper(AWSCommonConn):
 
             env_vars[_k] = _v
 
+        # determine defaults
+        if not env_vars.get("TMPDIR"):
+            env_vars["TMPDIR"] = "/tmp"
+
+        if not env_vars.get("APP_DIR") and self.build_env_vars.get("APP_NAME"):
+            env_vars["APP_DIR"] = "var/tmp/{}".format(self.build_env_vars["APP_NAME"])
+
+        if not env_vars.get("APP_DIR"):
+            env_vars["APP_DIR"] = "var/tmp/terraform"
+
         return env_vars
 
     def _trigger_build(self):
