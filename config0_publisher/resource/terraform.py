@@ -140,13 +140,15 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_validate(self):
 
+        suffix_cmd = f'{self.base_cmd} validate > {self.tmp_base_output_file}.validate 2>&1'
+
         if self.runtime_env == "codebuild":
             cmds = [
-                f'{self.base_cmd} validate > {self.tmp_base_output_file}.validate'
+                f'{suffix_cmd}'
             ]
 
         cmds = [
-            f'({self.src_env_files_cmd}) && ({self.base_cmd} validate > {self.tmp_base_output_file}.validate)'
+            f'({self.src_env_files_cmd}) && ({suffix_cmd})'
         ]
 
         cmds.extend(self.local_output_to_s3(suffix="validate",last_apply=None))
@@ -155,13 +157,15 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_init(self):
 
+        suffix_cmd = f'{self.base_cmd} init) > {self.tmp_base_output_file}.init 2>&1'
+
         if self.runtime_env == "codebuild":
             return [
-                f'({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)'
+                f'{suffix_cmd} || (rm -rf .terraform && {suffix_cmd})'
             ]
 
         return [
-            f'({self.src_env_files_cmd}) && ({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)'
+            f'({self.src_env_files_cmd}) && ({suffix_cmd}) || (rm -rf .terraform && {suffix_cmd})'
         ]
 
     def get_tf_plan(self):
