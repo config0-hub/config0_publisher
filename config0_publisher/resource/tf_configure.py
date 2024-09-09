@@ -21,7 +21,7 @@ from config0_publisher.resource.lambdabuild import Lambdabuild
 
 def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
 
-    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
+    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
 
     data = None
 
@@ -820,7 +820,7 @@ class Testtest456:
 terraform {{
   backend "s3" {{
     bucket = "{self.remote_stateful_bucket}"
-    key    = "{self.stateful_id}.tfstate"
+    key    = "state/{self.stateful_id}.tfstate"
     region = "{self.aws_region}"
   }}
 }}
@@ -891,16 +891,12 @@ terraform {{
         self.create_build_envfile(encrypt=None,
                                   openssl=False)
 
-        tf_results = self._exec_in_aws(method="pre-create")
+        pre_creation = self._exec_in_aws(method="pre-create")
 
-        if tf_results.get("status") is True:
-            self.logger.debug("a1"*32)
-            self.logger.json(tf_results)
-            self.logger.debug("a1"*32)
-            self.logger.debug(tf_results.keys())
-            self.logger.debug("a1"*32)
+        if not pre_creation.get("status"):
+            raise Exception("pre-create failed")
 
-        #tf_results = self._exec_in_aws(method="create")
+        tf_results = self._exec_in_aws(method="create")
 
         self._post_create()
 
@@ -1026,6 +1022,7 @@ terraform {{
 
 
         return resource
+
     def _post_create(self):
 
         # copy of settings file - not really needed
