@@ -99,6 +99,7 @@ class LambdaResourceHelper(AWSCommonConn):
         if not env_vars.get("APP_DIR") and self.build_env_vars.get("APP_NAME"):
             env_vars["APP_DIR"] = "var/tmp/{}".format(self.build_env_vars["APP_NAME"])
 
+        # we need to provide this for lambda to work
         if not env_vars.get("APP_DIR"):
             env_vars["APP_DIR"] = "var/tmp/terraform"
 
