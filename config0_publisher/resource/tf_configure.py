@@ -788,7 +788,8 @@ class Testtest456:
     def _set_build_method(self):
 
         # testtest456
-        #os.environ["USE_CODEBUILD"] = "True"
+        # for testing
+        os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
@@ -829,7 +830,6 @@ terraform {{
     def _setup_and_exec_in_aws(self,method,create_remote_state=None):
 
         self._set_runtime_env_vars(method=method)
-        self._set_build_method()
 
         # use backend to track state file
         if create_remote_state:
@@ -887,14 +887,26 @@ terraform {{
             failed_message = "terraform directory must exists at {} when creating tf".format(self.exec_dir)
             raise Exception(failed_message)
 
-        tf_results = self._setup_and_exec_in_aws("create",
-                                                 create_remote_state=self.create_remote_state)
+        self._set_runtime_env_vars(method="create")
+        self.create_aws_tf_backend()
+
+        tf_results = self._exec_in_aws(method="validate")
+
+        # testtest456
+        self.logger.debug("a1"*32)
+        self.logger.json(tf_results)
+        self.logger.debug("a1"*32)
+        raise Exception('sdfas')
+
+        tf_results = self._exec_in_aws(method="create")
 
         self._post_create()
 
         return tf_results
 
     def run(self):
+
+        self._set_build_method()
 
         if self.method == "create":
             self.create()
