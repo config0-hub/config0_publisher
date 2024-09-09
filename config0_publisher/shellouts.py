@@ -23,6 +23,7 @@ import random
 import subprocess
 
 from config0_publisher.loggerly import Config0Logger as set_log
+from config0_publisher.utilities import id_generator
 
 def ensure_str(obj,strip=True):
 
