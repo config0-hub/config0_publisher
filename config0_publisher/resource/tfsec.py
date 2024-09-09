@@ -32,10 +32,15 @@ class TFSecHelper(TFAppHelper):
 
     def exec_cmds(self):
 
-        return [
+        cmds = [
             f'({self.base_cmd} --no-color --out {self.tmp_base_output_file}.out) || echo "tfsec check failed"',
             f'({self.base_cmd} --no-color --format json --out {self.tmp_base_output_file}.json) || echo "tfsec check with json output failed"'
         ]
+
+        cmds.extend(self.local_output_to_s3(suffix="json",last_apply=None))
+        cmds.extend(self.local_output_to_s3(suffix="out",last_apply=None))
+
+        return cmds
 
     def get_all_cmds(self):
 
