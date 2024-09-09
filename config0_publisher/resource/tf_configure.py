@@ -788,7 +788,7 @@ class Testtest456:
     def _set_build_method(self):
 
         # testtest456
-        os.environ["USE_CODEBUILD"] = "LAMBDA"
+        os.environ["USE_LAMBDA"] = True
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
             self.build_method = "codebuild"
@@ -799,8 +799,8 @@ class Testtest456:
                 self.build_method = "codebuild"
             else:
                 self.build_method = "lambda"
-        else:
-            self.build_method = "local"
+        else:  # the default
+            self.build_method = "lambda"
 
     def create_aws_tf_backend(self):
 
