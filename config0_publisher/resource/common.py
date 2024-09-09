@@ -112,8 +112,10 @@ class TFAppHelper:
 
         install_cmd = f'({_bucket_install}) || ({_src_install})'
 
-        cmds = [ install_cmd ]
-        cmds.append(f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"')
+        cmds = [
+            install_cmd,
+            f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"'
+        ]
 
         if self.installer_format == "zip":
             cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && unzip {base_file_path} > /dev/null) || exit 0')

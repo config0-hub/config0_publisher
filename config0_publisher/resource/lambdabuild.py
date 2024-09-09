@@ -87,7 +87,7 @@ class Lambdabuild(LambdaParams):
 
         LambdaParams.__init__(self,**kwargs)
 
-        self.tfcmds = TFCmdOnAWS(runtime_env="codebuild",
+        self.tfcmds = TFCmdOnAWS(runtime_env="lambda",
                                  run_share_dir=self.run_share_dir,
                                  app_dir=self.app_dir,
                                  envfile="build_env_vars.env",
@@ -96,7 +96,7 @@ class Lambdabuild(LambdaParams):
                                  tf_bucket_path=self.tf_bucket_path,
                                  arch="linux_amd64")
 
-        self.tfsec_cmds = TFSecHelper(runtime_env="codebuild",
+        self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
                                       envfile="build_env_vars.env",
                                       binary='tfsec',
                                       version="1.28.10",
@@ -104,14 +104,14 @@ class Lambdabuild(LambdaParams):
                                       arch="linux_amd64"
                                       )
 
-        self.infracost_cmds = TFInfracostHelper(runtime_env="codebuild",
+        self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
                                                 envfile="build_env_vars.env",
                                                 binary='infracost',
                                                 version="0.10.39",
                                                 tmp_bucket=self.tmp_bucket,
                                                 arch="linux_amd64")
 
-        self.opa_cmds = TFOpaHelper(runtime_env="codebuild",
+        self.opa_cmds = TFOpaHelper(runtime_env="lambda",
                                     envfile="build_env_vars.env",
                                     binary='opa',
                                     version="0.68.0",

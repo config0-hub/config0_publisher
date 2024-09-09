@@ -788,7 +788,7 @@ class Testtest456:
     def _set_build_method(self):
 
         # testtest456
-        os.environ["USE_CODEBUILD"] = "True"
+        os.environ["USE_CODEBUILD"] = "LAMBDA"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
             self.build_method = "codebuild"
@@ -838,10 +838,12 @@ terraform {{
 
         cinputargs = self._get_aws_exec_cinputargs(method=method)
 
+        _awsbuild_lambda = Lambdabuild(**cinputargs)
+
         # ref 435353245634
         # mod params and env_vars
         if self.build_method == "lambda":
-            _awsbuild = Lambdabuild(**cinputargs)
+            _awsbuild = _awsbuild_lambda
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
         else:
