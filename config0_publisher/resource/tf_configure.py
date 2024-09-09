@@ -791,7 +791,9 @@ class Testtest456:
         #os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
-        if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
+        if self.method in ["validate", "check" ]:
+            self.build_method = "lambda"
+        elif os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
             self.build_method = "codebuild"
         elif os.environ.get("USE_LAMBDA"):  # shorter than 900 seconds
             self.build_method = "lambda"
@@ -839,13 +841,14 @@ terraform {{
 
         cinputargs = self._get_aws_exec_cinputargs(method=method)
 
-        _awsbuild_lambda = Lambdabuild(**cinputargs)
-
         # ref 435353245634
         # mod params and env_vars
+        _awsbuild_lambda = None
+
         if self.build_method == "lambda":
-            _awsbuild = _awsbuild_lambda
-        elif self.build_method == "codebuild":
+            _awsbuild = Lambdabuild(**cinputargs)
+        elif self.build_method == "codebuild" and self.method != "destroy":
+            _awsbuild_lambda = Lambdabuild(**cinputargs)
             _awsbuild = Codebuild(**cinputargs)
         else:
             return False
@@ -856,7 +859,16 @@ terraform {{
             self.create_build_envfile(encrypt=None,
                                       openssl=False)
 
-        results = _awsbuild.run()
+            _awsbuild.upload_to_s3()
+
+        if self.build_method == "lambda":
+            results = _awsbuild.run()
+        elif _awsbuild_lambda:
+            _awsbuild_lambda.run(overide_method="validate")
+            init_results = _awsbuild_lambda.run()
+            results = _awsbuild.run()
+        else:
+            results = _awsbuild.run()
 
         self.eval_log(results,
                       prt=True)
@@ -900,6 +912,8 @@ terraform {{
             self._setup_and_exec_in_aws("destroy")
         elif self.method == "validate":
             self._setup_and_exec_in_aws("validate")
+        elif self.method == "check":
+            self._setup_and_exec_in_aws("check")
         else:
             usage()
             print('method "{}" not supported!'.format(self.method))

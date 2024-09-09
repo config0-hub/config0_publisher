@@ -345,6 +345,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             env_vars.append(_env_var)
 
+        _env_var = {'name': "S3_OUTPUT_BASE",
+                    'value': f'{self.tmp_bucket}/{self.s3_output_folder}',
+                    'type': 'PLAINTEXT'}
+
         return env_vars
 
     def _get_avail_codebuild_projects(self,max_queue_size=5):
@@ -429,8 +433,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             self.logger.debug_highlight(f"running job on codebuild project {project_name}")
 
+            env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
+
             inputargs = {"projectName":project_name,
-                         "environmentVariablesOverride":self._env_vars_to_codebuild_format(sparse=sparse_env_vars),
+                         "environmentVariablesOverride":env_vars_codebuild_format,
                          "timeoutInMinutesOverride":timeout,
                          "imageOverride": self.build_image,
                          "computeTypeOverride": self.compute_type,
@@ -465,13 +471,8 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def _submit(self,sparse_env_vars=True):
 
-        self.phase_result = self.new_phase("submit")
-
-        # we don't want to clobber the intact
-        # stateful files from creation
-        if self.method == "create":
-            self.upload_to_s3_stateful()
-            self.phase_result["executed"].append("upload_to_s3")
+        if not hasattr(self,"submit"):
+            self.phase_result = self.new_phase("submit")
 
         self._trigger_build(sparse_env_vars=sparse_env_vars)
 

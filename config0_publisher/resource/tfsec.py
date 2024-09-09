@@ -33,8 +33,8 @@ class TFSecHelper(TFAppHelper):
     def exec_cmds(self):
 
         return [
-            f'({self.base_cmd} --no-color --out {self.base_output_file}.out) || echo "tfsec check failed"',
-            f'({self.base_cmd} --no-color --format json --out {self.base_output_file}.json) || echo "tfsec check with json output failed"'
+            f'({self.base_cmd} --no-color --out {self.tmp_base_output_file}.out) || echo "tfsec check failed"',
+            f'({self.base_cmd} --no-color --format json --out {self.tmp_base_output_file}.json) || echo "tfsec check with json output failed"'
         ]
 
     def get_all_cmds(self):

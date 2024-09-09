@@ -26,8 +26,8 @@ class TFCmdOnAWS(TFAppHelper):
                              arch=kwargs["arch"],
                              runtime_env=kwargs["runtime_env"])
 
+        self.tmp_base_output_file = f'/tmp/{self.app_name}'
         self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}'
-        self.base_generate_file = f'{self.stateful_dir}/generated/{self.app_name}'
 
     def get_tf_install(self):
 
@@ -162,13 +162,13 @@ class TFCmdOnAWS(TFAppHelper):
 
         if self.runtime_env == "codebuild":
             return [
-                f'{self.base_cmd} plan -out={self.base_output_file}/{self.start_time}.tfplan',
-                f'{self.base_cmd} show -no-color -json {self.base_output_file}/{self.start_time}.tfplan > {self.base_output_file}/{self.start_time}.tfplan.json'
+                f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
+                f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
             ]
 
         return [
-            f'({self.src_env_files_cmd}) && {self.base_cmd} plan -out={self.base_output_file}/{self.start_time}.tfplan',
-            f'({self.src_env_files_cmd}) && {self.base_cmd} show -no-color -json {self.base_output_file}/{self.start_time}.tfplan > {self.base_output_file}/{self.start_time}.tfplan.json'
+            f'({self.src_env_files_cmd}) && {self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
+            f'({self.src_env_files_cmd}) && {self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
         ]
 
     def get_ci_check(self):
@@ -185,9 +185,9 @@ class TFCmdOnAWS(TFAppHelper):
         cmds.extend(self.get_tf_plan())
 
         if self.runtime_env == "codebuild":
-            cmds.append(f'({self.base_cmd} apply {self.base_output_file}/{self.start_time}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.base_cmd} apply {self.tmp_base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}/{self.start_time}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.tmp_base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         return cmds
 
@@ -205,9 +205,9 @@ class TFCmdOnAWS(TFAppHelper):
     def get_tf_chk_fmt(self,exit_on_error=True):
 
         if exit_on_error:
-            cmd = f'{self.base_cmd} fmt -check -diff -recursive > {self.base_output_file}/tf-fmt.out'
+            cmd = f'{self.base_cmd} fmt -check -diff -recursive > {self.tmp_base_output_file}-fmt.out'
         else:
-            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive > {self.base_output_file}/tf-fmt.out'
+            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive > {self.tmp_base_output_file}-fmt.out'
 
         if self.runtime_env == "codebuild":
             return cmd

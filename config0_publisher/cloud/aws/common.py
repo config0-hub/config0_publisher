@@ -9,6 +9,7 @@ from time import time
 from config0_publisher.class_helper import SetClassVarsHelper
 from config0_publisher.shellouts import rm_rf
 from config0_publisher.loggerly import Config0Logger
+from config0_publisher.utilities import id_generator2
 from config0_publisher.shellouts import execute3
 
 class AWSCommonConn(SetClassVarsHelper):
@@ -36,6 +37,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.results = kwargs.get("results")
         self.zipfile = None
+        self.s3_output_folder = id_generator2()
 
         if not self.results:
             self.results = {

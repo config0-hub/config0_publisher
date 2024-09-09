@@ -122,6 +122,13 @@ def get_hash(data):
 
     return calculated_hash
 
+def id_generator2(size=6,lowercase=True):
+
+    if lowercase:
+        return id_generator(size=size,chars=ascii_lowercase)
+
+    return id_generator(size=size)
+
 # dup 4523452346
 def id_generator(size=6,chars=string.ascii_uppercase+string.digits):
 

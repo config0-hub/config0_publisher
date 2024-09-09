@@ -25,8 +25,6 @@ class LambdaResourceHelper(AWSCommonConn):
         self.init_env_vars = kwargs.get("init_env_vars")
         self.cmds_b64 = b64_encode(kwargs["cmds"])
 
-        #self.lambda_client = self.session.client('lambda')
-
         self.logs_client = self.session.client('logs')
 
         if not self.results["inputargs"].get("lambda_function_name"):
@@ -62,10 +60,13 @@ class LambdaResourceHelper(AWSCommonConn):
         else:
             env_vars = {}
 
+        env_vars["S3_OUTPUT_BASE"] = f'{self.tmp_bucket}/{self.s3_output_folder}'
+
         _added = []
 
         if not self.build_env_vars:
             return env_vars
+
         pattern = r"^AWS_LAMBDA_"
 
         for _k,_v in self.build_env_vars.items():
@@ -93,7 +94,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return env_vars
 
-    def _trigger_build(self):
+    def _trigger_build(self,overide_method=None):
 
         # we limit the build to 500 seconds, which is one min
         # less than 10 minutes
@@ -109,6 +110,10 @@ class LambdaResourceHelper(AWSCommonConn):
 
         # Define the configuration for invoking the Lambda function
         env_vars = self._env_vars_to_lambda_format()
+
+        # testtest456
+        if overide_method in ["validate"]:
+            env_vars["METHOD"] = "validate"
 
         self.logger.debug("*"*32)
         self.logger.debug("* env vars for lambda build")
@@ -128,17 +133,13 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return self.lambda_client.invoke(**invocation_config)
 
-    def _submit(self):
+    def _submit(self,overide_method=None):
 
-        self.phase_result = self.new_phase("submit")
-
-        # we don't want to clobber the intact
-        # stateful files from creation
-        if self.method == "create":
-            self.upload_to_s3_stateful()
+        if not hasattr(self,"submit"):
+            self.phase_result = self.new_phase("submit")
 
         # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
-        self.response = self._trigger_build()
+        self.response = self._trigger_build(overide_method=overide_method)
 
         lambda_status = int(self.response["StatusCode"])
         self.results["lambda_status"] = lambda_status
@@ -152,8 +153,6 @@ class LambdaResourceHelper(AWSCommonConn):
             lambda_results["status"] = False
             self.results["failed_message"] = " ".join(lambda_results["stackTrace"])
             self.results["output"] = " ".join(lambda_results["stackTrace"])
-            #self.results["failed_message"] = lambda_results["errorMessage"]
-            #self.results["stack_trace"] = lambda_results["stackTrace"]
 
         self.results["lambda_results"] = lambda_results
 
@@ -176,15 +175,20 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return self.results
 
-    def run(self):
+    def run(self,overide_method=None):
 
-        self._submit()
+        self._submit(overide_method=overide_method)
 
-        if self.results.get("status") is False and self.method == "validate":
+        method = overide_method
+
+        if not method:
+            method = self.method
+
+        if self.results.get("status") is False and method == "validate":
             self.results["failed_message"] = "the resources have drifted"
-        elif self.results.get("status") is False and self.method == "create":
+        elif self.results.get("status") is False and method == "create":
             self.results["failed_message"] = "creation of resources have failed"
-        elif self.results.get("status") is False and self.method == "destroy":
+        elif self.results.get("status") is False and method == "destroy":
             self.results["failed_message"] = "destroying of resources have failed"
 
         return self.results

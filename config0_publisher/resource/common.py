@@ -21,7 +21,7 @@ class TFAppHelper:
         self.bucket = kwargs.get("bucket")
         self.installer_format = kwargs.get("installer_format")
         self.src_remote_path = kwargs.get("src_remote_path")
-        self.start_time = str(time())
+        self.t0 = str(time())
 
         # advisable
         self.runtime_env = kwargs.get("runtime_env",'codebuild')  # codebuild or lambda
@@ -50,7 +50,7 @@ class TFAppHelper:
         self.dl_file_path = f'$TMPDIR/{self.dl_subdir}/{self.base_file_path}'
 
         self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}'
-        self.base_generate_file = f'{self.stateful_dir}/generated/{self.app_name}'
+        self.tmp_base_output_file = f'/tmp/{self.app_name}'
 
     def _get_initial_preinstall_cmds(self):
 

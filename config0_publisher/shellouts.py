@@ -40,12 +40,6 @@ def ensure_str(obj,strip=True):
 
     return new_obj
 
-def id_generator(size=6,chars=string.ascii_uppercase+string.digits):
-
-    '''generates id randomly'''
-
-    return ''.join(random.choice(chars) for x in range(size))
-
 def mkdir(directory):
     '''uses the shell to make a directory.'''
 
