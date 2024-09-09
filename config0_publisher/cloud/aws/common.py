@@ -181,6 +181,7 @@ class AWSCommonConn(SetClassVarsHelper):
         rm_rf(self.zipfile)
 
     def s3_stateful_to_share_dir(self):
+
         if not self.stateful_id:
             return
 

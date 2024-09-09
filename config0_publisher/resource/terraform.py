@@ -208,6 +208,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         # testtest456  # download plan from bucket
         #cmds.extend(self.get_tf_plan())
+        cmds.extend(self.s3_file_to_local(suffix="tfplan",last_apply=None))
 
         if self.runtime_env == "codebuild":
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
