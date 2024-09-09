@@ -43,17 +43,17 @@ class LambdaResourceHelper(AWSCommonConn):
             "share_dir":None
         }
 
-    def _env_vars_to_lambda_format(self,sparse=True):
+    def _env_vars_to_lambda_format(self):
 
         skip_keys = [ "AWS_ACCESS_KEY_ID",
                       "AWS_SECRET_ACCESS_KEY",
                       "AWS_SESSION_TOKEN" ]
 
-        sparse_keys = [ "STATEFUL_ID",
-                        "REMOTE_STATEFUL_BUCKET",
-                        "TMPDIR",
-                        "APP_DIR",
-                        "SSM_NAME" ]
+        minimum_keys = [ "STATEFUL_ID",
+                         "REMOTE_STATEFUL_BUCKET",
+                         "TMPDIR",
+                         "APP_DIR",
+                         "SSM_NAME" ]
 
         if self.init_env_vars:
             env_vars = self.init_env_vars
@@ -78,7 +78,7 @@ class LambdaResourceHelper(AWSCommonConn):
             if _k in skip_keys:
                 continue
 
-            if sparse and _k not in sparse_keys:
+            if _k not in minimum_keys:
                 continue
 
             if re.search(pattern, _k):
