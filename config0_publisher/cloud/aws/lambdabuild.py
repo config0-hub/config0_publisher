@@ -146,7 +146,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         # we don't want to clobber the intact
         # stateful files from creation
-        if self.method == "create":
+        if self.method in ["create","pre-create"]:
             self.upload_to_s3_stateful()
 
         # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
@@ -192,6 +192,12 @@ class LambdaResourceHelper(AWSCommonConn):
 
         if self.results.get("status") is False and self.method == "validate":
             self.results["failed_message"] = "the resources have drifted"
+        elif self.results.get("status") is False and self.method == "check":
+            self.results["failed_message"] = "the resources failed check"
+        elif self.results.get("status") is False and self.method == "pre-create":
+            self.results["failed_message"] = "the resources failed pre-create"
+        elif self.results.get("status") is False and self.method == "apply":
+            self.results["failed_message"] = "applying of resources have failed"
         elif self.results.get("status") is False and self.method == "create":
             self.results["failed_message"] = "creation of resources have failed"
         elif self.results.get("status") is False and self.method == "destroy":

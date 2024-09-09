@@ -26,9 +26,6 @@ class TFCmdOnAWS(TFAppHelper):
                              arch=kwargs["arch"],
                              runtime_env=kwargs["runtime_env"])
 
-        self.tmp_base_output_file = f'/tmp/{self.app_name}'
-        self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}'
-
     def get_tf_install(self):
 
         '''
@@ -127,7 +124,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         return self.src_env_files_cmd
 
-    def s3_to_local(self):
+    def s3_tfpkg_to_local(self):
 
         cmds = self.reset_dirs()
 
@@ -141,17 +138,26 @@ class TFCmdOnAWS(TFAppHelper):
 
         return cmds
 
+    def get_tf_validate(self):
+
+        if self.runtime_env == "codebuild":
+            return [
+                f'{self.base_cmd} validate > {self.tmp_base_output_file}.validate'
+            ]
+
+        return [
+            f'({self.src_env_files_cmd}) && ({self.base_cmd} validate > {self.tmp_base_output_file}.validate)'
+        ]
+
     def get_tf_init(self):
 
         if self.runtime_env == "codebuild":
             return [
-                f'({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)',
-                f'{self.base_cmd} validate'
+                f'({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)'
             ]
 
         return [
-            f'({self.src_env_files_cmd}) && ({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)',
-            f'({self.src_env_files_cmd}) && ({self.base_cmd} validate)'
+            f'({self.src_env_files_cmd}) && ({self.base_cmd} init) || (rm -rf .terraform && {self.base_cmd} init)'
         ]
 
     def get_tf_plan(self):
@@ -167,23 +173,37 @@ class TFCmdOnAWS(TFAppHelper):
             f'({self.src_env_files_cmd}) && {self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
         ]
 
-    def get_ci_check(self):
+    def get_tf_ci(self):
 
         cmds = self.get_tf_init()
+        cmds.extend(self.get_tf_validate())
         cmds.append(self.get_tf_chk_fmt(exit_on_error=True))
         cmds.extend(self.get_tf_plan())
+
+        return cmds
+
+    def get_tf_pre_create(self):
+
+        cmds = self.get_tf_init()
+        cmds.extend(self.get_tf_validate())
+        cmds.extend(self.get_tf_plan())
+        # testtest456  # upload plan to bucket
+        #cmds.extend(self.get_tf_plan())
 
         return cmds
 
     def get_tf_apply(self):
 
         cmds = self.get_tf_init()
-        cmds.extend(self.get_tf_plan())
+        cmds.extend(self.get_tf_validate())
+
+        # testtest456  # download plan from bucket
+        #cmds.extend(self.get_tf_plan())
 
         if self.runtime_env == "codebuild":
-            cmds.append(f'({self.base_cmd} apply {self.tmp_base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.tmp_base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         return cmds
 
@@ -201,9 +221,9 @@ class TFCmdOnAWS(TFAppHelper):
     def get_tf_chk_fmt(self,exit_on_error=True):
 
         if exit_on_error:
-            cmd = f'{self.base_cmd} fmt -check -diff -recursive > {self.tmp_base_output_file}-fmt.out'
+            cmd = f'{self.base_cmd} fmt -check -diff -recursive > {self.tmp_base_output_file}.fmt'
         else:
-            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive > {self.tmp_base_output_file}-fmt.out'
+            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive > {self.tmp_base_output_file}.fmt'
 
         if self.runtime_env == "codebuild":
             return cmd
@@ -213,6 +233,7 @@ class TFCmdOnAWS(TFAppHelper):
     def get_tf_chk_drift(self):
 
         cmds = self.get_tf_init()
+
         if self.runtime_env == "codebuild":
             cmds.extend([
                 f'{self.base_cmd} refresh',
@@ -225,6 +246,7 @@ class TFCmdOnAWS(TFAppHelper):
             ])
 
         return cmds
+
 
 ##################################################################################
 # scratch

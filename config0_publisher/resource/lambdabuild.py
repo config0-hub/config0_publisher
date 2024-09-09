@@ -127,7 +127,7 @@ class Lambdabuild(LambdaParams):
 
     def _get_prebuild_cmds(self):
 
-        cmds = self.tfcmds.s3_to_local()
+        cmds = self.tfcmds.s3_tfpkg_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
         cmds.extend(self.tfcmds.load_env_files())
 
@@ -139,13 +139,17 @@ class Lambdabuild(LambdaParams):
         cmds.extend(self.infracost_cmds.get_all_cmds(self.tfcmds.src_env_files_cmd))
 
         if self.method == "create":
-            cmds.extend(self.tfcmds.get_tf_apply())
+            cmds = self.tfcmds.get_tf_apply()
+        elif self.method == "pre-create":
+            cmds.extend(self.tfcmds.get_tf_pre_create())
         elif self.method == "validate":
             cmds.extend(self.tfcmds.get_tf_chk_drift())
+        elif self.method == "check":
+            cmds.extend(self.tfcmds.get_tf_ci())
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         else:
-            raise Exception("method needs to be create/validate/destroy")
+            raise Exception("method needs to be create/validate/pre-create/check/apply/destroy")
 
         return cmds
 

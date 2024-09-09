@@ -750,7 +750,7 @@ class Testtest456:
 
         return _tfvars.keys()
 
-    # aws codebuild/lambda are the tf executors for apply/destroy/validate
+    # aws codebuild/lambda are the tf executors for apply/destroy/apply/pre-create/validate
     def _get_aws_exec_cinputargs(self,method="create"):
 
         cinputargs = {
@@ -765,15 +765,17 @@ class Testtest456:
         ########################################
         # usually associated with create
         ########################################
-        if self.build_env_vars and method == "create":
-            cinputargs["build_env_vars"] = self.build_env_vars
+        if method in ["apply","create","pre-create"]:
+            if self.build_env_vars:
+                cinputargs["build_env_vars"] = self.build_env_vars
 
-        if self.ssm_name and method == "create":
-            cinputargs["ssm_name"] = self.ssm_name
+            if self.ssm_name:
+                cinputargs["ssm_name"] = self.ssm_name
 
         ########################################
-        # usually associated with destroy/validate
+        # usually associated with destroy/validate/check
         ########################################
+        # testtest456
         elif os.environ.get("CONFIG0_BUILD_ENV_VARS"):
             cinputargs["build_env_vars"] = b64_decode(os.environ["CONFIG0_BUILD_ENV_VARS"])
 
@@ -789,14 +791,14 @@ class Testtest456:
 
         # testtest456
         # for testing
-        os.environ["USE_CODEBUILD"] = "True"
+        #os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
             self.build_method = "codebuild"
         elif os.environ.get("USE_LAMBDA"):  # shorter than 900 seconds
             self.build_method = "lambda"
-        elif self.method in ["validate", "check"]:
+        elif self.method in ["validate", "check", "pre-create"]:
             self.build_method = "lambda"
         elif os.environ.get("USE_AWS",True):  # select codebuild or lambda
             if int(self.build_timeout) > 600:
@@ -899,7 +901,8 @@ terraform {{
         #    raise Exception('sdfas')
         #    self.build_method = "codebuild"
 
-        tf_results = self._exec_in_aws(method="create")
+        tf_results = self._exec_in_aws(method="pre-create")
+        #tf_results = self._exec_in_aws(method="create")
 
         self._post_create()
 

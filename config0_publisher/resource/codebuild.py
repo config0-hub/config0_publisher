@@ -112,7 +112,7 @@ class Codebuild(CodebuildParams):
 
     def _get_codebuildspec_prebuild(self):
 
-        cmds = self.tfcmds.s3_to_local()
+        cmds = self.tfcmds.s3_tfpkg_to_local()
         cmds.extend(self.tfcmds.get_tf_install())
         cmds.extend(self.tfcmds.load_env_files())
 
@@ -130,18 +130,15 @@ class Codebuild(CodebuildParams):
     on-failure: ABORT
     commands:
 '''
-        # ref 435254
-        #cmds = self.tfsec_cmds.get_all_cmds()
-        #cmds.extend(self.infracost_cmds.get_all_cmds())
 
-        if self.method == "create":
+        # codebuild is limited to create,apply, and destroy
+        # lambda will handle validation, pre-create,check
+        if self.method in ["create", "apply"]:
             cmds = self.tfcmds.get_tf_apply()
-        elif self.method == "validate":
-            cmds = self.tfcmds.get_tf_chk_drift()
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         else:
-            raise Exception("method needs to be create/validate/destroy")
+            raise Exception("method needs to be create/apply/destroy")
 
         return self._add_cmds(contents,cmds)
 
