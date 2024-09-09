@@ -140,7 +140,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_validate(self):
 
-        suffix_cmd = f'{self.base_cmd} validate | tee -a {self.tmp_base_output_file}.validate'
+        suffix_cmd = f'{self.base_cmd} validate | tee -a /tmp/{self.stateful_id}.log'
 
         if self.runtime_env == "codebuild":
             cmds = [
@@ -151,13 +151,13 @@ class TFCmdOnAWS(TFAppHelper):
             f'({self.src_env_files_cmd}) && ({suffix_cmd})'
         ]
 
-        cmds.extend(self.local_output_to_s3(suffix="validate",last_apply=None))
-
         return cmds
 
     def get_tf_init(self):
 
-        suffix_cmd = f'{self.base_cmd} init | tee -a {self.tmp_base_output_file}.init'
+
+        suffix_cmd = f'{self.base_cmd} init | tee -a /tmp/{self.stateful_id}.log'
+
 
         if self.runtime_env == "codebuild":
             return [
@@ -172,12 +172,12 @@ class TFCmdOnAWS(TFAppHelper):
 
         if self.runtime_env == "codebuild":
             cmds = [
-                f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
+                f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan | tee -a /tmp/{self.stateful_id}.log',
                 f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
             ]
 
         cmds = [
-            f'({self.src_env_files_cmd}) && {self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
+            f'({self.src_env_files_cmd}) && {self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan | tee -a /tmp/{self.stateful_id}.log',
             f'({self.src_env_files_cmd}) && {self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
         ]
 
@@ -212,9 +212,9 @@ class TFCmdOnAWS(TFAppHelper):
         cmds.extend(self.s3_file_to_local(suffix="tfplan",last_apply=None))
 
         if self.runtime_env == "codebuild":
-            cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan | tee -a /tmp/{self.stateful_id}.log) || ({self.base_cmd} destroy -auto-approve | tee -a /tmp/{self.stateful_id}.log && exit 9)')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan | tee -a /tmp/{self.stateful_id}.log) || ({self.base_cmd} destroy -auto-approve | tee -a /tmp/{self.stateful_id}.log && exit 9)')
 
         return cmds
 
@@ -223,18 +223,18 @@ class TFCmdOnAWS(TFAppHelper):
         cmds = self.get_tf_init()
 
         if self.runtime_env == "codebuild":
-            cmds.append(f'{self.base_cmd} destroy -auto-approve')
+            cmds.append(f'{self.base_cmd} destroy -auto-approve | tee -a /tmp/{self.stateful_id}.log')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && {self.base_cmd} destroy -auto-approve')
+            cmds.append(f'({self.src_env_files_cmd}) && {self.base_cmd} destroy -auto-approve | tee -a /tmp/{self.stateful_id}.log')
 
         return cmds
 
     def get_tf_chk_fmt(self,exit_on_error=True):
 
         if exit_on_error:
-            cmd = f'{self.base_cmd} fmt -check -diff -recursive > {self.tmp_base_output_file}.fmt'
+            cmd = f'{self.base_cmd} fmt -check -diff -recursive | tee -a /tmp/{self.stateful_id}.log'
         else:
-            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive > {self.tmp_base_output_file}.fmt'
+            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive | tee -a /tmp/{self.stateful_id}.log'
 
         if self.runtime_env != "codebuild":
             cmds = [f'{self.src_env_files_cmd}) && {cmd}']
@@ -251,13 +251,13 @@ class TFCmdOnAWS(TFAppHelper):
 
         if self.runtime_env == "codebuild":
             cmds.extend([
-                f'{self.base_cmd} refresh',
-                f'{self.base_cmd} plan -detailed-exitcode'
+                f'{self.base_cmd} refresh | tee -a /tmp/{self.stateful_id}.log',
+                f'{self.base_cmd} plan -detailed-exitcode | tee -a /tmp/{self.stateful_id}.log'
             ])
         else:
             cmds.extend([
-                f'({self.src_env_files_cmd}) && {self.base_cmd} refresh',
-                f'({self.src_env_files_cmd}) && {self.base_cmd} plan -detailed-exitcode'
+                f'({self.src_env_files_cmd}) && {self.base_cmd} refresh | tee -a /tmp/{self.stateful_id}.log',
+                f'({self.src_env_files_cmd}) && {self.base_cmd} plan -detailed-exitcode | tee -a /tmp/{self.stateful_id}.log'
             ])
 
         return cmds
