@@ -60,7 +60,6 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         self._init_lambda_helper()
         self.lambda_helper.submit(**inputargs)
-
         return self.lambda_helper.results
 
     def retrieve(self,**inputargs):
@@ -69,6 +68,15 @@ class LambdaParams(TFAwsBaseBuildParams):
         # which should be set
         self.lambda_helper = LambdaResourceHelper(**self.phases_info)
         self.lambda_helper.retrieve(**inputargs)
+        return self.lambda_helper.results
+
+    def upload_to_s3(self,**inputargs):
+
+        if not hasattr(self,"submit"):
+            self.phase_result = self.new_phase("submit")
+
+        self.lambda_helper.upload_to_s3(**inputargs)
+        self.phase_result["executed"].append("upload_to_s3")
 
         return self.lambda_helper.results
 

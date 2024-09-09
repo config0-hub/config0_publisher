@@ -51,9 +51,13 @@ class LambdaResourceHelper(AWSCommonConn):
 
         sparse_keys = [ "STATEFUL_ID",
                         "REMOTE_STATEFUL_BUCKET",
-                        "TMPDIR",
-                        "APP_DIR",
                         "SSM_NAME" ]
+
+        print(self.init_env_vars)
+        print(self.init_env_vars)
+        print(self.init_env_vars)
+        print(self.init_env_vars)
+        raise
 
         if self.init_env_vars:
             env_vars = self.init_env_vars
@@ -111,10 +115,10 @@ class LambdaResourceHelper(AWSCommonConn):
         # Define the configuration for invoking the Lambda function
         env_vars = self._env_vars_to_lambda_format()
 
-        self.logger.debug("*"*32)
-        self.logger.debug("* env vars for lambda build")
+        self.logger.debug("#"*32)
+        self.logger.debug("# env vars for lambda build")
         self.logger.json(env_vars)
-        self.logger.debug("*"*32)
+        self.logger.debug("#"*32)
 
         invocation_config = {
             'FunctionName': self.lambda_function_name,
