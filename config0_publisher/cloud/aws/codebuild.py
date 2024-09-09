@@ -471,7 +471,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def _submit(self,sparse_env_vars=True):
 
-        if not hasattr(self,"submit"):
+        if not hasattr(self,"phase_result"):
             self.phase_result = self.new_phase("submit")
 
         self._trigger_build(sparse_env_vars=sparse_env_vars)

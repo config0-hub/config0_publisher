@@ -38,12 +38,6 @@ def ensure_str(obj,strip=True):
 
     return new_obj
 
-def id_generator(size=6,chars=string.ascii_uppercase+string.digits):
-
-    '''generates id randomly'''
-
-    return ''.join(random.choice(chars) for x in range(size))
-
 def mkdir(directory):
     '''uses the shell to make a directory.'''
 
@@ -204,11 +198,11 @@ class ShellOutExecute(object):
 
         if not self.exit_file:
             self.exit_file = os.path.join(self.tmpdir,
-                                          id_generator(10, chars=string.ascii_lowercase))
+                                          self._id_generator(10, chars=string.ascii_lowercase))
 
         if not self.logfile:
             self.logfile = os.path.join(self.tmpdir,
-                                        id_generator(10, chars=string.ascii_lowercase))
+                                        self._id_generator(10, chars=string.ascii_lowercase))
 
         self.logfile_handle = None
 
@@ -219,6 +213,9 @@ class ShellOutExecute(object):
                         "failed_message": None,
                         "output": None,
                         "exitcode": None}
+
+    def _id_generator(self,size=6,chars=string.ascii_uppercase+string.digits):
+        return ''.join(random.choice(chars) for x in range(size))
 
     def _set_cwd(self):
 

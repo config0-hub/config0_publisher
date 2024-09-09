@@ -73,6 +73,7 @@ class AWSCommonConn(SetClassVarsHelper):
                 "output": None,
                 "logs": []
                 }
+
     def set_class_vars_frm_results(self):
 
         for k,v in self.results["inputargs"].items():

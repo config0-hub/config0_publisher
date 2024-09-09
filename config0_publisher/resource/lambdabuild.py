@@ -77,12 +77,7 @@ class LambdaParams(TFAwsBaseBuildParams):
     def upload_to_s3_stateful(self,**inputargs):
 
         self._init_lambda_helper()
-
-        if not hasattr(self,"submit"):
-            self.phase_result = self.new_phase("submit")
-
         self.lambda_helper.upload_to_s3_stateful(**inputargs)
-        self.phase_result["executed"].append("upload_to_s3")
 
         return self.lambda_helper.results
 
