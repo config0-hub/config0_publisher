@@ -3,9 +3,6 @@
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.terraform import TFCmdOnAWS
-from config0_publisher.resource.infracost import TFInfracostHelper
-from config0_publisher.resource.tfsec import TFSecHelper
-from config0_publisher.resource.opa import TFOpaHelper
 
 class CodebuildParams(TFAwsBaseBuildParams):
 
@@ -103,27 +100,8 @@ class Codebuild(CodebuildParams):
                                  arch="linux_amd64"
                                  )
 
-        #self.tfsec_cmds = TFSecHelper(runtime_env="lambda",
-        #                              envfile="build_env_vars.env",
-        #                              binary='tfsec',
-        #                              version="1.28.10",
-        #                              tmp_bucket=self.tmp_bucket,
-        #                              arch="linux_amd64"
-        #                              )
-
-        #self.infracost_cmds = TFInfracostHelper(runtime_env="lambda",
-        #                                        envfile="build_env_vars.env",
-        #                                        binary='infracost',
-        #                                        version="0.10.39",
-        #                                        tmp_bucket=self.tmp_bucket,
-        #                                        arch="linux_amd64")
-
-        #self.opa_cmds = TFOpaHelper(runtime_env="lambda",
-        #                            envfile="build_env_vars.env",
-        #                            binary='opa',
-        #                            version="0.68.0",
-        #                            tmp_bucket=self.tmp_bucket,
-        #                            arch="linux_amd64")
+        # ref 435254
+        # we will do tfsec, infracost, and opa in lambda
 
     def _add_cmds(self,contents,cmds):
 
@@ -152,16 +130,14 @@ class Codebuild(CodebuildParams):
     on-failure: ABORT
     commands:
 '''
-        # runnint tfsec and infracost in lambda functions
+        # ref 435254
         #cmds = self.tfsec_cmds.get_all_cmds()
         #cmds.extend(self.infracost_cmds.get_all_cmds())
 
-        cmds = []
-
         if self.method == "create":
-            cmds.extend(self.tfcmds.get_tf_apply())
+            cmds = self.tfcmds.get_tf_apply()
         elif self.method == "validate":
-            cmds.extend(self.tfcmds.get_tf_chk_drift())
+            cmds = self.tfcmds.get_tf_chk_drift()
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         else:

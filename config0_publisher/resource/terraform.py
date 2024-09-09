@@ -65,7 +65,7 @@ class TFCmdOnAWS(TFAppHelper):
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
                 f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
             ]
-        else:  # lambda # testtest456
+        else:
             cmds = [
                 f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
                 f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc'
@@ -111,6 +111,8 @@ class TFCmdOnAWS(TFAppHelper):
 
     def _set_src_envfiles_cmd(self,ssm_name=None):
 
+        # with lambda, the shell is needs env_var with set +a style
+
         if self.runtime_env == "codebuild":
             #base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; while IFS= read -r line; do echo "# $line"; eval "$line"; done < ./{self.envfile}; fi'
             base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
@@ -120,9 +122,8 @@ class TFCmdOnAWS(TFAppHelper):
         if not ssm_name:
             self.src_env_files_cmd = base_cmd
         else:
-            # testtest456
             if self.runtime_env == "codebuild":
-                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi9'
+                ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; . ./.ssm_value; fi'
             else:
                 ssm_cmd = f'if [ -f {self.ssm_tmp_dir}/.ssm_value ]; then cd {self.ssm_tmp_dir}/; set -a; . ./.ssm_value; set +a; fi'
 
