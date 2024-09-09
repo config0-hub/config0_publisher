@@ -891,19 +891,11 @@ terraform {{
         self.create_build_envfile(encrypt=None,
                                   openssl=False)
 
-        # testtest456
-        #if self.build_method == "codebuild":
-        #    self.build_method = "lambda"
-        #    tf_results = self._exec_in_aws(method="validate")
-        #    self.logger.debug("a1"*32)
-        #    self.logger.json(tf_results)
-        #    self.logger.debug("a1"*32)
-        #    raise Exception('sdfas')
-        #    self.build_method = "codebuild"
-
         tf_results = self._exec_in_aws(method="pre-create")
         self.logger.debug("a1"*32)
         self.logger.json(tf_results)
+        self.logger.debug("a1"*32)
+        self.logger.debug(tf_results.keys())
         self.logger.debug("a1"*32)
 
         #tf_results = self._exec_in_aws(method="create")
