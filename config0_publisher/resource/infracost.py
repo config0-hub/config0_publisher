@@ -41,7 +41,7 @@ class TFInfracostHelper(TFAppHelper):
         cmds = [
             f'echo "executing INFRACOST"',
             f'({src_env_file} &&  {self.base_cmd} --no-color breakdown --path . --format json --out-file {self.tmp_base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
-            f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.tmp_base_output_file}.out && cat {self.tmp_base_output_file}.out ) || (echo "WARNING: looks like INFRACOST failed")'
+            f'({src_env_file} && {self.base_cmd} --no-color breakdown --path . --out-file {self.tmp_base_output_file}.out && cat {self.tmp_base_output_file}.out | tee -a /tmp/$STATEFUL_ID.log ) || (echo "WARNING: looks like INFRACOST failed")'
         ]
 
         cmds.extend(self.local_output_to_s3(suffix="json",last_apply=None))
