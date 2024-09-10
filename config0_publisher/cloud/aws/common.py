@@ -218,7 +218,10 @@ class AWSCommonConn(SetClassVarsHelper):
                      output_to_json=False,
                      exit_error=True)
 
-        s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}'
+        s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}.zip'
+
+        if not s3_dst.endswith(".zip"):
+            s3_dst = f'{s3_dst}.zip'
 
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}",
