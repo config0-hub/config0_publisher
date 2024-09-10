@@ -901,6 +901,8 @@ terraform {{
 
         if not pre_creation.get("status"):
             raise Exception("pre-create failed")
+        else:
+            self.logger.debug("pre-creation succeeded")
 
         if _use_codebuild:
             self.build_method = 'codebuild'
