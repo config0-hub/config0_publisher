@@ -212,7 +212,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         # ref 452345235
         # we keep the app_dir
-        cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile}."
+        cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile} ."
 
         self.execute(cmd,
                      output_to_json=False,
