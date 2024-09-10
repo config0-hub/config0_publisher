@@ -139,7 +139,7 @@ class AWSCommonConn(SetClassVarsHelper):
                                               self.stateful_id)
 
         self.zipfile = os.path.join("/tmp",
-                                    self.stateful_id)
+                                    f'{self.stateful_id}.zip')
 
         # we hard wire to us-east-1 to avoid
         # any environmental variable changes the region
@@ -171,6 +171,7 @@ class AWSCommonConn(SetClassVarsHelper):
         os.system(cmd)
 
     def _rm_zipfile(self):
+
         if not self.zipfile:
             return
 
@@ -211,24 +212,23 @@ class AWSCommonConn(SetClassVarsHelper):
 
         # ref 452345235
         # we keep the app_dir
-        cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile}.zip ."
+        cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile}."
 
         self.execute(cmd,
                      output_to_json=False,
                      exit_error=True)
 
-        # ref 4353253452354
-        s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}.zip'
+        s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}'
 
         try:
-            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
+            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}",
                                                            s3_dst)
             status = True
         except:
             status = False
 
         if os.environ.get("DEBUG_STATEFUL"):
-            self.logger.debug(f"zipfile file {self.zipfile}.zip")
+            self.logger.debug(f"zipfile file {self.zipfile}")
         else:
             self._rm_zipfile()
 
