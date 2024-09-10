@@ -192,6 +192,7 @@ class TFCmdOnAWS(TFAppHelper):
         cmds.extend(self._get_tf_validate())
         cmds.extend(self.get_tf_chk_fmt(exit_on_error=True))
         cmds.extend(self._get_tf_plan())
+        cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
         return cmds
 
@@ -200,6 +201,7 @@ class TFCmdOnAWS(TFAppHelper):
         cmds = self._get_tf_init()
         cmds.extend(self._get_tf_validate())
         cmds.extend(self._get_tf_plan())
+        cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
         # testtest456  # upload plan to bucket
         #cmds.extend(self._get_tf_plan())
 
@@ -215,6 +217,8 @@ class TFCmdOnAWS(TFAppHelper):
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan | tee -a /tmp/$STATEFUL_ID.log) || ({self.base_cmd} destroy -auto-approve | tee -a /tmp/$STATEFUL_ID.log && exit 9)')
         else:
             cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan | tee -a /tmp/$STATEFUL_ID.log) || ({self.base_cmd} destroy -auto-approve | tee -a /tmp/$STATEFUL_ID.log && exit 9)')
+
+        cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
         return cmds
 
@@ -259,6 +263,8 @@ class TFCmdOnAWS(TFAppHelper):
                 f'({self.src_env_files_cmd}) && {self.base_cmd} refresh | tee -a /tmp/$STATEFUL_ID.log',
                 f'({self.src_env_files_cmd}) && {self.base_cmd} plan -detailed-exitcode | tee -a /tmp/$STATEFUL_ID.log'
             ])
+
+        cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
         return cmds
 

@@ -138,9 +138,9 @@ class TFAppHelper:
         base_cmd = f'aws s3 cp {srcfile} s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID'
 
         if last_apply:
-            cmd = f'{base_cmd}/last_apply/{_filename}'
+            cmd = f'{base_cmd}/last_apply/{_filename} || echo "trouble uploading output file"'
         else:
-            cmd = f'{base_cmd}/last_run/{_filename}'
+            cmd = f'{base_cmd}/last_run/{_filename} || echo "trouble uploading output file"'
 
         return [cmd]
 
