@@ -138,7 +138,7 @@ class Lambdabuild(LambdaParams):
         cmds = self.tfsec_cmds.get_all_cmds()
         cmds.extend(self.infracost_cmds.get_all_cmds(self.tfcmds.src_env_files_cmd))
 
-        if self.method == "create":
+        if self.method in ["create","apply"]:
             cmds = self.tfcmds.get_tf_apply()
         elif self.method == "pre-create":
             cmds.extend(self.tfcmds.get_tf_pre_create())

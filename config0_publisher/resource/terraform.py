@@ -69,7 +69,7 @@ class TFCmdOnAWS(TFAppHelper):
             ]
 
         # add ssm if needed
-        cmds.extend(self.get_ssm_concat())
+        cmds.extend(self._get_ssm_concat())
 
         # add sourcing of env files
         self._set_src_envfiles_cmd()
@@ -78,7 +78,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         return cmds
 
-    def get_ssm_concat(self):
+    def _get_ssm_concat(self):
 
         if self.runtime_env == "codebuild":
             return self._get_codebuild_ssm_concat()
@@ -138,7 +138,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         return cmds
 
-    def get_tf_validate(self):
+    def _get_tf_validate(self):
 
         suffix_cmd = f'{self.base_cmd} validate | tee -a /tmp/$STATEFUL_ID.log'
 
@@ -153,7 +153,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         return cmds
 
-    def get_tf_init(self):
+    def _get_tf_init(self):
 
 
         suffix_cmd = f'{self.base_cmd} init | tee -a /tmp/$STATEFUL_ID.log'
@@ -168,7 +168,7 @@ class TFCmdOnAWS(TFAppHelper):
             f'({self.src_env_files_cmd}) && ({suffix_cmd}) || (rm -rf .terraform && {suffix_cmd})'
         ]
 
-    def get_tf_plan(self):
+    def _get_tf_plan(self):
 
         if self.runtime_env == "codebuild":
             cmds = [
@@ -188,27 +188,27 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_ci(self):
 
-        cmds = self.get_tf_init()
-        cmds.extend(self.get_tf_validate())
+        cmds = self._get_tf_init()
+        cmds.extend(self._get_tf_validate())
         cmds.extend(self.get_tf_chk_fmt(exit_on_error=True))
-        cmds.extend(self.get_tf_plan())
+        cmds.extend(self._get_tf_plan())
 
         return cmds
 
     def get_tf_pre_create(self):
 
-        cmds = self.get_tf_init()
-        cmds.extend(self.get_tf_validate())
-        cmds.extend(self.get_tf_plan())
+        cmds = self._get_tf_init()
+        cmds.extend(self._get_tf_validate())
+        cmds.extend(self._get_tf_plan())
         # testtest456  # upload plan to bucket
-        #cmds.extend(self.get_tf_plan())
+        #cmds.extend(self._get_tf_plan())
 
         return cmds
 
     def get_tf_apply(self):
 
-        cmds = self.get_tf_init()
-        cmds.extend(self.get_tf_validate())
+        cmds = self._get_tf_init()
+        cmds.extend(self._get_tf_validate())
         cmds.extend(self.s3_file_to_local(suffix="tfplan",last_apply=None))
 
         if self.runtime_env == "codebuild":
@@ -220,7 +220,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_destroy(self):
 
-        cmds = self.get_tf_init()
+        cmds = self._get_tf_init()
 
         if self.runtime_env == "codebuild":
             cmds.append(f'{self.base_cmd} destroy -auto-approve | tee -a /tmp/$STATEFUL_ID.log')
@@ -247,7 +247,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_chk_drift(self):
 
-        cmds = self.get_tf_init()
+        cmds = self._get_tf_init()
 
         if self.runtime_env == "codebuild":
             cmds.extend([

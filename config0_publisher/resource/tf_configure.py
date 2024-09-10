@@ -791,7 +791,7 @@ class Testtest456:
 
         # testtest456
         # for testing
-        #os.environ["USE_CODEBUILD"] = "True"
+        os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
@@ -891,10 +891,19 @@ terraform {{
         self.create_build_envfile(encrypt=None,
                                   openssl=False)
 
+        if self.build_method == "codebuild":
+            self.build_method = "lambda"  # we run pre-create in lambda first
+            _use_codebuild = True
+        else:
+            _use_codebuild = None
+
         pre_creation = self._exec_in_aws(method="pre-create")
 
         if not pre_creation.get("status"):
             raise Exception("pre-create failed")
+
+        if _use_codebuild:
+            self.build_method = 'codebuild'
 
         tf_results = self._exec_in_aws(method="create")
 
