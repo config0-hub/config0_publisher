@@ -189,6 +189,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.logger.debug(f"upload_bucket {self.upload_bucket} and download file state/src.{self.stateful_id}.zip")
 
+        # ref 4353253452354
         self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/state/src.{self.stateful_id}.zip",
                                                          self.zipfile)
 
@@ -216,9 +217,12 @@ class AWSCommonConn(SetClassVarsHelper):
                      output_to_json=False,
                      exit_error=True)
 
+        # ref 4353253452354
+        s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}.zip'
+
         try:
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}.zip",
-                                                           f'{self.stateful_id}/state/src.{self.stateful_id}.zip')
+                                                           s3_dst)
             status = True
         except:
             status = False
@@ -229,11 +233,11 @@ class AWSCommonConn(SetClassVarsHelper):
             self._rm_zipfile()
 
         if status is False:
-            _log = f"zip file failed to upload to {self.upload_bucket}/{self.stateful_id}"
+            _log = f"zip file failed to upload to {s3_dst}"
             self.logger.error(_log)
             raise Exception(_log)
         else:
-            _log = f"zip file uploaded to {self.upload_bucket}/{self.stateful_id}"
+            _log = f"zip file uploaded to {s3_dst}"
             self.logger.debug_highlight(_log)
             self.phase_result["logs"].append(_log)
 

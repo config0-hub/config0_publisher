@@ -21,7 +21,7 @@ from config0_publisher.resource.lambdabuild import Lambdabuild
 
 def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
 
-    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
+    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
 
     data = None
 
@@ -820,7 +820,7 @@ class Testtest456:
 terraform {{
   backend "s3" {{
     bucket = "{self.remote_stateful_bucket}"
-    key    = "state/{self.stateful_id}.tfstate"
+    key    = "{self.stateful_id}/state/{self.stateful_id}.tfstate"
     region = "{self.aws_region}"
   }}
 }}
