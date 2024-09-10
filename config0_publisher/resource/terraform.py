@@ -156,7 +156,6 @@ class TFCmdOnAWS(TFAppHelper):
 
     def _get_tf_init(self):
 
-        #suffix_cmd = f'{self.base_cmd} init >> /tmp/$STATEFUL_ID.log 2&>1'
         suffix_cmd = f'{self.base_cmd} init'
 
         if self.runtime_env == "codebuild":
@@ -201,9 +200,6 @@ class TFCmdOnAWS(TFAppHelper):
         cmds = self._get_tf_init()
         cmds.extend(self._get_tf_validate())
         cmds.extend(self._get_tf_plan())
-        #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
-        # testtest456  # upload plan to bucket
-        #cmds.extend(self._get_tf_plan())
 
         return cmds
 
@@ -267,71 +263,3 @@ class TFCmdOnAWS(TFAppHelper):
         #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
         return cmds
-
-
-##################################################################################
-# scratch
-##################################################################################
-# def local_to_s3(self):
-
-#    # this does not work in lambda
-#    # so we won't use it for now
-#    cmds = [
-#      '(cd {self.stateful_dir}/run/$APP_DIR && aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate terraform-tfstate) || echo "s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID.tfstate does not exists"',
-#      'cd {self.stateful_dir}/run && zip -r {self.stateful_dir}.zip . ',
-#      'cd {self.stateful_dir}/run && aws s3 cp {self.stateful_dir}.zip s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID',
-#      'cd {self.stateful_dir}/run && rm -rf {self.stateful_dir}.zip '
-#    ]
-
-#    return cmds
-
-
-# example of using encryption for both codebuild/lambda but
-# but keeping as reference though practically harder to use
-# for updates
-#def load_env_files(self,decrypt=None,lambda_env=True):
-#
-#    '''
-#    # for lambda function, we use the ssm_get python cli
-#    #'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile}'
-#    #'[ -n "$SSM_NAME" ] && echo "SSM_NAME: $SSM_NAME" || echo "SSM_NAME not set"'
-#    '''
-#
-#    # this is envfile path in the app dir
-#    # e.g. var/tmp/terraform/build_env_vars.env
-#
-#    envfile = os.path.join(self.app_dir,
-#                           self.envfile)
-#
-#    if not decrypt:
-#        if not lambda_env:
-#            cmds = [
-#                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
-#            ]
-#
-#        if lambda_env:
-#            cmds = [
-#                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc',
-#                'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
-#                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
-#                f'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
-#            ]
-#    else:
-#        if not lambda_env:
-#            cmds = [
-#                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:$STATEFUL_ID -base64 | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
-#             ]
-#
-#        if lambda_env:
-#            cmds = [
-#                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-#                f'/tmp/decrypt -s $STATEFUL_ID -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc',
-#                'if [ -n "$SSM_NAME" ]; then echo $SSM_NAME; fi',
-#                'if [ -z "$SSM_NAME" ]; then echo "SSM_NAME not set"; fi',
-#                f'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile} || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
-#            ]
-#
-#    return cmds
