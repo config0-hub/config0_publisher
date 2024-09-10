@@ -189,7 +189,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.logger.debug(f"upload_bucket {self.upload_bucket} and download file state/src.{self.stateful_id}.zip")
 
-        self.s3.Bucket(self.upload_bucket).download_file(f"state/src.{self.stateful_id}.zip",
+        self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/state/src.{self.stateful_id}.zip",
                                                          self.zipfile)
 
         self._reset_share_dir()
