@@ -21,6 +21,7 @@ from config0_publisher.resource.lambdabuild import Lambdabuild
 
 def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
 
+    # ref 4353253452354
     cmd = f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
 
     data = None
