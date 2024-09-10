@@ -792,7 +792,7 @@ class Testtest456:
 
         # testtest456
         # for testing
-        #os.environ["USE_CODEBUILD"] = "True"
+        os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
