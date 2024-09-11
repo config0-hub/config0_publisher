@@ -508,10 +508,15 @@ class ConfigureTFConfig0Db:
         ###############################################################
         # testtest456
         ###############################################################
-        #tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
-        #                                         self.stateful_id)
+        tf_filter = ConfigureFilterTF(self._db_values,
+                                      tf_query_params
+                                      )
+        tf_filter.get()
 
-        #tf_filter = ConfigureFilterTF()
+        self.logger.debug('i'*32)
+        self.logger.json(tf_filter._db_values)
+        self.logger.debug('j'*32)
+        raise Exception
         ###############################################################
         # testtest456
         ###############################################################
@@ -525,11 +530,28 @@ class ConfigureTFConfig0Db:
 # init and reconfigure (update)
 class ConfigureFilterTF:
 
-    def __init__(self):
+    def __init__(self,db_values,tf_query_params):
 
         self.classname = "Config0ResourceTFVars"
 
+        self.logger = Config0Logger(self.classname,
+                                    logcategory="cloudprovider")
+
+        ################################################
+        # testtest456
+        ################################################
         self._db_values = db_values
+        self.tf_query_params = tf_query_params
+        ################################################
+
+        self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
+        self.stateful_id = self._db_values["stateful_id"]
+        self.terraform_type = self._db_values["terraform_type"]
+
+        self.tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
+                                                      self.stateful_id)
+
+    def _init_tf_configs(self):
 
         self.skip_keys= [
             "sensitive_attributes",
@@ -546,24 +568,23 @@ class ConfigureFilterTF:
             "labels",
         ]
 
+        if self.tf_query_params.get("map_keys"):
+            self.map_keys = self.tf_query_params["map_keys"]
+        else:
+            self.map_keys = {}
+
+        if self.tf_query_params.get("include_keys"):
+            self.include_keys = self.tf_query_params["include_keys"]
+        else:
+            self.include_keys = []
+
         self.exclude_keys = [
             "private",
             "secret",
         ]
 
-        self.include_keys = []
-        self.map_keys = {}
-        self.tfstate_values = {}
-
-        if not self._db_values:
-            failed_message = "db_values cannot be empty"
-            raise Exception(failed_message)
-
-    def _setup_for_configuration(self):
-
-        self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
-        self.stateful_id = self._db_values["stateful_id"]
-        self.terraform_type = self._db_values["terraform_type"]
+        if self.tf_query_params.get("exclude_keys"):
+            self.exclude_keys.extend(self.tf_query_params["exclude_keys"])
 
     def _insert_tf_map_subkey(self,_insertkey,_refkey):
 
@@ -578,7 +599,7 @@ class ConfigureFilterTF:
             # we only go 2 levels down
             self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey.strip()]
 
-    def _insert_tf_map_keys(self):
+    def _apply_map_keys(self):
 
         if not self.map_keys:
             return
@@ -606,9 +627,10 @@ class ConfigureFilterTF:
             elif not self._db_values.get(_refkey):
                 self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
 
-    def _insert_tf_add_keys(self):
+    def _apply_include_keys(self):
 
         count = 0
+
         for resource in self.tfstate_values["resources"]:
             type = resource["type"]
             name = resource["name"]
@@ -620,7 +642,7 @@ class ConfigureFilterTF:
         # after to allowing querying of resources
         if count > 1:
             existing_names = []
-            self.logger.warn(f"more than one instance terraform type {self.terrraform_type}/count {count} - skipping to avoid duplicates")
+            self.logger.warn(f"more than one instance terraform type {self.terraform_type}/count {count} - skipping to avoid duplicates")
             if self._db_values.get("main") and self._db_values.get("name") and self._db_values.get("terraform_type") and not self._db_values.get("id"):
                 name = self._db_values["name"]
                 if name in existing_names:
@@ -649,22 +671,22 @@ class ConfigureFilterTF:
                     if _key in self._db_values:
                         continue
 
-                    if _key in self.tf_exec_skip_keys:
-                        self.logger.debug('tf_exec_skip_keys: tf instance attribute key "{}" skipped'.format(_key))
+                    if _key in self.skip_keys:
+                        self.logger.debug('skip_keys: tf instance attribute key "{}" skipped'.format(_key))
                         continue
 
-                    # we add if tf_exec_add_key not set, all, or key is in it
-                    if not self.add_keys:
-                        _added_bc = "tf_exec_add_keys=None"
-                    elif self.add_keys == "all":
-                        _added_bc = "tf_exec_add_keys=all"
-                    elif _key in self.add_keys:
-                        _added_bc = "tf_exec_add_keys/key{} found".format(_key)
+                    # we add if skip_keys not set, all, or key is in it
+                    if not self.include_keys:
+                        _added_bc = "skip_keys=None"
+                    elif self.include_keys == "all":
+                        _added_bc = "skip_keys=all"
+                    elif _key in self.include_keys:
+                        _added_bc = "skip_keys/key{} found".format(_key)
                     else:
                         _added_bc = None
 
                     if not _added_bc:
-                        self.logger.debug("tf_exec_add_keys: key {} skipped".format(_key))
+                        self.logger.debug("skip_keys: key {} skipped".format(_key))
                         continue
 
                     self.logger.debug('{}: tf key "{}" -> value "{}" added to resource self._db_values'.format(_added_bc,
@@ -685,10 +707,15 @@ class ConfigureFilterTF:
                         self._db_values[_key] = _value
                 break
 
-    def _insert_tf_remove_keys(self):
+    def _apply_remove_keys(self):
 
         if not self.exclude_keys:
             return
+
+        for _key in self._db_values:
+            if _key not in self.exclude_keys:
+                continue
+            del self._db_values[_key]
 
         return
 
@@ -715,20 +742,16 @@ class ConfigureFilterTF:
 
             self._db_values[k] = v['value']
 
+    def get(self):
 
-    def filter(self):
+        self._init_tf_configs()
 
-        self._setup_for_configuration()
+        self._insert_tf_outputs()
+        self._apply_include_keys()
+        self._apply_map_keys()
+        self._apply_remove_keys()
 
-        try:
-            self._insert_tf_map_keys()
-        except:
-            self.logger.warn("_insert_tf_map_keys failed")
-
-        try:
-            self._insert_tf_remove_keys()
-        except:
-            self.logger.warn("_insert_tf remove keys failed")
+        return self._db_values
 
 class Testtest456(ConfigureTFConfig0Db):
 
