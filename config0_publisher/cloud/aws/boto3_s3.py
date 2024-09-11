@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import boto3
 import base64
 import pickle
@@ -17,10 +18,11 @@ def dict_to_s3(data, bucket_name, bucket_key):
 
     try:
         # Serialize the dictionary using pickle
-        serialized_data = pickle.dumps(data)
+        json_data = json.dumps(data)
+        #serialized_data = pickle.dumps(data)
 
         # Encode the serialized data to Base64
-        base64_data = base64.b64encode(serialized_data).decode('utf-8')
+        base64_data = base64.b64encode(json_data).decode('utf-8')
 
         # Upload the Base64 string to S3
         s3.put_object(Bucket=bucket_name,
@@ -48,10 +50,11 @@ def s3_to_dict(bucket_name, bucket_key):
         base64_data = response['Body'].read().decode('utf-8')
 
         # Decode the Base64 string
-        serialized_data = base64.b64decode(base64_data)
+        json_data = base64.b64decode(base64_data)
 
         # Deserialize the data back to dictionary
-        data = pickle.loads(serialized_data)
+        #data = pickle.loads(serialized_data)
+        data = json.loads(json_data)
 
         return data
 
