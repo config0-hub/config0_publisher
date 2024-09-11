@@ -4,6 +4,7 @@
 import os
 import json
 from ast import literal_eval
+from time import sleep
 
 from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import b64_decode
@@ -287,11 +288,11 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
 
         self.classname = "ConfigureTFConfig0Db"
 
+        print("#-"*32)
         print(self.classname)
         print(self.classname)
-        print(self.classname)
-        print(self.classname)
-        raise Exception('yoyo')
+        print("#-"*32)
+        sleep(4)
 
         self.std_labels_keys = [
             "region",
