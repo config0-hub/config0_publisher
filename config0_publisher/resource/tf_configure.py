@@ -282,7 +282,7 @@ class Config0SettingsEnvVarHelper:
                 self.logger.debug(f'{k} -> {nice_json(v)}')
             setattr(self,k,v)
 
-class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
+class ConfigureTFConfig0Db:
 
     def __init__(self):
 
@@ -293,11 +293,6 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
         print(self.classname)
         print(self.classname)
         print("#-"*32)
-
-        Config0SettingsEnvVarHelper.__init__(self,
-                                             CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH=os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH"),
-                                             CONFIG0_RESOURCE_EXEC_SETTINGS_HASH=os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"))
-
 
         self.std_labels_keys = [
             "region",
