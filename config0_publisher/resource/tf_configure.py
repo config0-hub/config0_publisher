@@ -294,6 +294,11 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
         print(self.classname)
         print("#-"*32)
 
+        Config0SettingsEnvVarHelper.__init__(self,
+                                             CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH=os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH"),
+                                             CONFIG0_RESOURCE_EXEC_SETTINGS_HASH=os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"))
+
+
         self.std_labels_keys = [
             "region",
             "provider",
@@ -801,7 +806,7 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
         except:
             self.logger.warn("_insert_tf remove keys failed")
 
-class Testtest456:
+class Testtest456(ConfigureTFConfig0Db):
 
     def __init__(self):
 
@@ -1075,8 +1080,6 @@ terraform {{
             self.build_method = 'codebuild'
 
         tf_results = self._exec_in_aws(method="create")
-
-        ConfigureTFConfig0Db.__init__(self)
 
         self.post_create()
 
