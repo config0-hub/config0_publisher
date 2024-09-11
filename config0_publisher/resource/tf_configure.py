@@ -283,7 +283,7 @@ class Config0SettingsEnvVarHelper:
 
 class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
 
-    def __init__(self,db_values):
+    def __init__(self):
 
         self.classname = "ConfigureTFConfig0Db"
 
@@ -799,7 +799,7 @@ class Testtest456:
 
         print("This is only for testing and served as a placeholder")
 
-        ConfigureTFConfig0Db.__init__()
+        ConfigureTFConfig0Db.__init__(self)
 
     #################################################################
     # fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
