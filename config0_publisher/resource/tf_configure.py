@@ -288,12 +288,6 @@ class ConfigureTFConfig0Db:
 
         self.classname = "ConfigureTFConfig0Db"
 
-        # testtest456
-        print("#-"*32)
-        print(self.classname)
-        print(self.classname)
-        print("#-"*32)
-
         self.std_labels_keys = [
             "region",
             "provider",
@@ -324,11 +318,6 @@ class ConfigureTFConfig0Db:
         # revisit 324214
         # compress terraform raw?
         values = {
-            "last_applied": {
-                "tf": {
-                    "exec": {},
-                    "added": []
-                }},
             "source_method": "terraform",
             "main": True,
             "provider": self.provider,
@@ -337,10 +326,6 @@ class ConfigureTFConfig0Db:
             "stateful_id":self.stateful_id,
             "remote_stateful_bucket": self.remote_stateful_bucket
         }
-
-        # testtest456
-        #if os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"):
-        #    values["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"] = os.environ["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"]
 
         # special case of ssm_name/secrets
         if self.ssm_name:
@@ -362,8 +347,9 @@ class ConfigureTFConfig0Db:
         '''
 
         # environmental variables to include during destruction
+        # testtest456
+        #"CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH,
         env_vars = {
-            "CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH,
             "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
             "STATEFUL_ID": self.stateful_id,
             "BUILD_TIMEOUT": self.build_timeout,
@@ -410,10 +396,56 @@ class ConfigureTFConfig0Db:
 
         return resource
 
+    # testtest456
+    ##################################################
+    # at creation
+    ##################################################
+    # duplicate wertqttetqwetwqtqwt
+
+    def _insert_standard_resource_labels(self):
+
+        for key in self.std_labels_keys:
+
+            if not self._db_values.get(key):
+                self.logger.debug('source standard label key "{}" not found'.format(key))
+                continue
+
+            label_key = "label-{}".format(key)
+
+            if self._db_values.get(label_key):
+                self.logger.debug('label key "{}" already found'.format(label_key))
+                continue
+
+            self._db_values[label_key] = self._db_values[key]
+            self._db_values["last_applied"]["tf"]["added"].append(label_key)
+
+    def _insert_resource_labels(self):
+
+        if not self.resource_labels:
+            return
+
+        for _k,_v in self.resource_labels.items():
+            self.logger.debug(f'resource labels: key "{"label-{}".format(_k)}" -> value "{_v}"')
+            label_key = f"label-{_k}"
+            self._db_values[label_key] = _v
+            self._db_values["last_applied"]["tf"]["added"].append(label_key)
+
+    def _insert_resource_values(self):
+        """
+        This method inserts the resource self._db_values into the output self._db_values.
+        """
+        if not self.resource_values:
+            return
+
+        for _k, _v in self.resource_values.items():
+            self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
+            self._db_values["last_applied"]["tf"]["added"].append(_k)
+            self._db_values[_k] = _v
+
     def post_create(self):
 
         # copy of settings file - not really needed
-        #self.write_config0_settings_file()
+        self.write_config0_settings_file()
 
         # it succeeds at this point
         # parse tfstate file
@@ -433,6 +465,16 @@ class ConfigureTFConfig0Db:
 
         if hasattr(self,"drift_protection") and self.drift_protection:
             self._db_values["drift_protection"] = self.drift_protection
+
+        db_resource_params = {
+            "std_labels_keys":self.std_labels_keys,
+            "resource_labels":self.resource_labels,
+            "resource_values":self.resource_values
+        }
+
+        self._insert_resource_values()
+        self._insert_resource_labels()
+        self._insert_standard_resource_labels()
 
         # testtest456  # put this as post db
         #_configure = ConfigureFilterTF(db_values=resource)
@@ -502,10 +544,6 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
         if not self._db_values:
             failed_message = "db_values cannot be empty for configuration for config0 db"
             raise Exception(failed_message)
-
-        Config0SettingsEnvVarHelper.__init__(self,
-                                             CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH=self._db_values.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH"),
-                                             CONFIG0_RESOURCE_EXEC_SETTINGS_HASH=self._db_values.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"))
 
     def _setup_for_configuration(self):
 
@@ -708,65 +746,6 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
         if resource_configs and resource_configs.get("map_keys"):
             self.tf_exec_map_keys = resource_configs["map_keys"]
 
-    def _insert_frm_tfstate_to_values(self):
-
-        try:
-            self._insert_tf_outputs()
-        except:
-            self.logger.warn("_insert_tf_outputs failed")
-
-        try:
-            self._insert_tf_add_keys()
-        except:
-            self.logger.warn("_insert_tf_add_keys failed")
-
-        return
-
-    # testtest456
-    ##################################################
-    # at creation
-    ##################################################
-    # duplicate wertqttetqwetwqtqwt
-    def _insert_standard_resource_labels(self):
-
-        for key in self.std_labels_keys:
-
-            if not self._db_values.get(key):
-                self.logger.debug('source standard label key "{}" not found'.format(key))
-                continue
-
-            label_key = "label-{}".format(key)
-
-            if self._db_values.get(label_key):
-                self.logger.debug('label key "{}" already found'.format(label_key))
-                continue
-
-            self._db_values[label_key] = self._db_values[key]
-            self._db_values["last_applied"]["tf"]["added"].append(label_key)
-
-    def _insert_resource_labels(self):
-
-        if not self.resource_labels:
-            return
-
-        for _k,_v in self.resource_labels.items():
-            self.logger.debug(f'resource labels: key "{"label-{}".format(_k)}" -> value "{_v}"')
-            label_key = f"label-{_k}"
-            self._db_values[label_key] = _v
-            self._db_values["last_applied"]["tf"]["added"].append(label_key)
-
-    def _insert_resource_values(self):
-        """
-        This method inserts the resource self._db_values into the output self._db_values.
-        """
-        if not self.resource_values:
-            return
-
-        for _k, _v in self.resource_values.items():
-            self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
-            self._db_values["last_applied"]["tf"]["added"].append(_k)
-            self._db_values[_k] = _v
-
 
     # testtest456
     # not used
@@ -784,12 +763,6 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
     def configure(self):
 
         self._setup_for_configuration()
-
-        # query
-        #self._insert_frm_tfstate_to_values()
-        self._insert_resource_values()
-        self._insert_resource_labels()
-        self._insert_standard_resource_labels()
 
         try:
             self._insert_tf_map_keys()
