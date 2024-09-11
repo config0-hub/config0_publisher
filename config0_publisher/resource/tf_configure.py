@@ -688,6 +688,10 @@ class ConfigureFilterTF:
                         self.logger.debug("include_keys: key {} skipped".format(_key))
                         continue
 
+                    if self._db_values.get(_key):
+                        self.logger.debug("include_keys: key {} values {} already exists - skipping".format(_key,_value))
+                        continue
+
                     self.logger.debug('{}: tf key "{}" -> value "{}" added to resource self._db_values'.format(_added_bc,
                                                                                                                _key,
                                                                                                                _value))
