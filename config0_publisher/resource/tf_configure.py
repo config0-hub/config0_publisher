@@ -279,14 +279,14 @@ class Config0SettingsEnvVarHelper:
 
         return self._vars["binary"],self._vars["version"]
 
-    def eval_config0_resource_settings(self,create=None):
+    def eval_config0_resource_settings(self,method=None):
 
         self._set_frm_config0_resource_settings()
         self._set_tf_runtime()
         self._set_tf_binary_version()
 
         # if it is creating for the first time
-        if create:
+        if method == "create":
 
             if not self._vars.get("resource_type"):
                 raise Exception("resource_type needs to be set")
