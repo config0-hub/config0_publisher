@@ -16,9 +16,29 @@ from config0_publisher.utilities import get_hash
 from config0_publisher.serialization import b64_encode
 from config0_publisher.resource.codebuild import Codebuild
 from config0_publisher.resource.lambdabuild import Lambdabuild
+from config0_publisher.cloud.aws.boto3_s3 import dict_to_s3
+from config0_publisher.cloud.aws.boto3_s3 import s3_to_s3
 ###########################
 
 #from config0_publisher.class_helper import dict_to_classobj
+
+def write_config0_settings_file(stateful_id=None,value=None,primary=True):
+
+    if not value:
+        try:
+            value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
+        except:
+            value = None
+
+    if not value:
+        return
+
+    _file = os.path.join("/tmp",
+                         stateful_id,
+                         "config0_resource_settings_hash")
+
+    with open(_file,"w") as file:
+        file.write(value)
 
 def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
 
@@ -295,29 +315,11 @@ class ConfigureTFConfig0Db:
             "resource_type",
         ]
 
-    #############################################################
-    # post create related
-    #############################################################
-    def _get_init_db_values(self):
-
-        #####################################################
-        # testtest456
-        #####################################################
-        #tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
-        #                                         self.stateful_id)
-
-        #if not tfstate_values:
-        #    self.logger.debug("u4324: no data to retrieved from statefile")
-        #    return False
-
-        #self.logger.debug("u4324: retrieved data from statefile")
-
-        #"raw": {"terraform": b64_encode(tfstate_values)},
-        #####################################################
+    def _set_init_db_values(self):
 
         # revisit 324214
         # compress terraform raw?
-        values = {
+        self._db_values = {
             "source_method": "terraform",
             "main": True,
             "provider": self.provider,
@@ -329,11 +331,11 @@ class ConfigureTFConfig0Db:
 
         # special case of ssm_name/secrets
         if self.ssm_name:
-            values["ssm_name"] = self.ssm_name
+            self._db_values["ssm_name"] = self.ssm_name
 
-        return values
+        return self._db_values
 
-    def _insert_mod_params(self,resource):
+    def _insert_mod_params(self):
 
         '''
         - we typically load the modifications parameters along with created resource like a
@@ -360,41 +362,39 @@ class ConfigureTFConfig0Db:
         env_vars["TF_RUNTIME"] = self.tf_runtime
 
         # Create mod params resource arguments and reference
-        resource["mod_params"] = {
+        self._db_values["mod_params"] = {
             "env_vars": env_vars,
         }
 
         if self.destroy_env_vars:
-            resource["destroy_params"] = {
+            self._db_values["destroy_params"] = {
                 "env_vars": dict({"METHOD": "destroy"},
                                  **self.destroy_env_vars)
             }
         else:
-            resource["destroy_params"] = {
+            self._db_values["destroy_params"] = {
                 "env_vars": {"METHOD": "destroy"}
             }
 
         if self.validate_env_vars:
-            resource["validate_params"] = {
+            self._db_values["validate_params"] = {
                 "env_vars": dict({"METHOD": "validate"},
                                  **self.validate_env_vars)
             }
         else:
-            resource["validate_params"] = {
+            self._db_values["validate_params"] = {
                 "env_vars": {"METHOD": "validate"}
             }
 
         if self.shelloutconfig:
-            resource["mod_params"]["shelloutconfig"] = self.shelloutconfig
-            resource["destroy_params"]["shelloutconfig"] = self.shelloutconfig
-            resource["validate_params"]["shelloutconfig"] = self.shelloutconfig
+            self._db_values["mod_params"]["shelloutconfig"] = self.shelloutconfig
+            self._db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
+            self._db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
 
         if self.mod_execgroup:
-            resource["mod_params"]["execgroup"] = self.mod_execgroup
-            resource["destroy_params"]["shelloutconfig"] = self.shelloutconfig
-            resource["validate_params"]["shelloutconfig"] = self.shelloutconfig
-
-        return resource
+            self._db_values["mod_params"]["execgroup"] = self.mod_execgroup
+            self._db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
+            self._db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
 
     # testtest456
     ##################################################
@@ -417,7 +417,6 @@ class ConfigureTFConfig0Db:
                 continue
 
             self._db_values[label_key] = self._db_values[key]
-            self._db_values["last_applied"]["tf"]["added"].append(label_key)
 
     def _insert_resource_labels(self):
 
@@ -428,7 +427,6 @@ class ConfigureTFConfig0Db:
             self.logger.debug(f'resource labels: key "{"label-{}".format(_k)}" -> value "{_v}"')
             label_key = f"label-{_k}"
             self._db_values[label_key] = _v
-            self._db_values["last_applied"]["tf"]["added"].append(label_key)
 
     def _insert_resource_values(self):
         """
@@ -439,13 +437,23 @@ class ConfigureTFConfig0Db:
 
         for _k, _v in self.resource_values.items():
             self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
-            self._db_values["last_applied"]["tf"]["added"].append(_k)
             self._db_values[_k] = _v
 
-    def post_create(self):
+    def get_query_settings_for_tfstate(self):
 
-        # copy of settings file - not really needed
-        self.write_config0_settings_file()
+        # new version of resource setttings
+        resource_configs = self.tf_configs.get("resource_configs")
+
+        if not resource_configs:
+            return {}
+
+        return {
+            "include_keys":resource_configs.get("include_keys"),
+            "exclude_keys": resource_configs.get("exclude_keys"),
+            "map_keys": resource_configs.get("map_keys")
+        }
+
+    def post_create(self):
 
         # it succeeds at this point
         # parse tfstate file
@@ -453,38 +461,60 @@ class ConfigureTFConfig0Db:
 
         self.logger.debug("u4324: getting resource from standard init_tfstate_to_output")
 
-        resource = self._get_init_db_values()
+        self._set_init_db_values()
 
-        if not resource:
+        if not self._db_values:
             self.logger.warn("u4324: resource info is not found in the output")
             return
 
-        self._insert_mod_params(resource)
+        self._insert_mod_params()
 
         os.chdir(self.cwd)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
             self._db_values["drift_protection"] = self.drift_protection
 
-        db_resource_params = {
-            "std_labels_keys":self.std_labels_keys,
-            "resource_labels":self.resource_labels,
-            "resource_values":self.resource_values
-        }
-
+        # write apply and query parameters to s3 bucket
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
 
-        # testtest456  # put this as post db
-        #_configure = ConfigureFilterTF(db_values=resource)
-        #_configure.configure()
-        # testtest456
-
-        # enter into resource db through
-        # file location or through standard out
-        self.write_resource_to_json_file(resource,
+        # enter into resource db file location
+        self.write_resource_to_json_file(self._db_values,
                                          must_exist=True)
+
+        db_resource_params = {
+            "std_labels":self.std_labels_keys,
+            "labels":self.resource_labels,
+            "values":self.resource_values
+        }
+
+        tf_query_params = self.get_query_settings_for_tfstate()
+
+        s3_base_key = f'{self.stateful_id}/main'
+
+        dict_to_s3({"config0_resource_exec_settings_hash":self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH},
+                   self.remote_stateful_bucket,
+                   f'{s3_base_key}/init/config0_resource_exec_settings_hash.{self.stateful_id}')
+
+        dict_to_s3(db_resource_params,
+                   self.remote_stateful_bucket,
+                   f'{s3_base_key}/applied/resource_configs_params.{self.stateful_id}')
+
+        dict_to_s3(tf_query_params,
+                   self.remote_stateful_bucket,
+                   f'{s3_base_key}/query/execution/tf_query_params.{self.stateful_id}')
+
+        ###############################################################
+        # testtest456
+        ###############################################################
+        #tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
+        #                                         self.stateful_id)
+
+        #tf_filter = ConfigureFilterTF()
+        ###############################################################
+        # testtest456
+        ###############################################################
 
         return True
 
@@ -493,32 +523,20 @@ class ConfigureTFConfig0Db:
     #################################################################
 
 # init and reconfigure (update)
-class ConfigureFilterTF(Config0SettingsEnvVarHelper):
+class ConfigureFilterTF:
 
-    def __init__(self,db_values):
-
-        '''
-        self.get_hash => import get_hash
-        self.tfstate_values => _get_tfstate_file_remote()_
-
-        self.remote_stateful_bucket = values["remote_stateful_bucket"]
-        self.stateful_id = values["stateful_id"]
-        self.terraform_type = values["terraform_type"]
-
-        self.tf_exec_skip_keys = values["last_applied"]["tf"]["exec"]["skip_keys"]
-        self.tf_exec_add_keys = values["last_applied"]["tf"]["exec"]["add_keys"]
-        self.tf_exec_map_keys = values["last_applied"]["tf"]["exec"]["map_keys"] = self.tf_exec_map_keys
-        self.tf_exec_remove_keys = values["last_applied"]["tf"]["exec"]["remove_keys"]
-        '''
+    def __init__(self):
 
         self.classname = "Config0ResourceTFVars"
 
-        self.tf_exec_skip_keys = [
+        self._db_values = db_values
+
+        self.skip_keys= [
             "sensitive_attributes",
             "ses_smtp_password_v4",
         ]
 
-        self.tf_output_skip_keys = [
+        self.output_skip_keys = [
             "tags",
             "label",
             "tag",
@@ -528,46 +546,25 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
             "labels",
         ]
 
-        self.tf_exec_add_keys = []
-
-        self.tf_exec_remove_keys = [
+        self.exclude_keys = [
             "private",
             "secret",
         ]
 
-        self.tf_exec_map_keys = {}
+        self.include_keys = []
+        self.map_keys = {}
         self.tfstate_values = {}
 
-        self._db_values = db_values
-        self._last_applied_add_keys = []
-
         if not self._db_values:
-            failed_message = "db_values cannot be empty for configuration for config0 db"
+            failed_message = "db_values cannot be empty"
             raise Exception(failed_message)
 
     def _setup_for_configuration(self):
-
-        self.eval_config0_resource_settings()
-        self._set_parse_settings_for_tfstate()
 
         self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
         self.stateful_id = self._db_values["stateful_id"]
         self.terraform_type = self._db_values["terraform_type"]
 
-        try:
-            self._last_applied_add_keys = self._db_values["last_applied"]["tf"]["exec"]["add_keys"]
-        except:
-            self._last_applied_add_keys = []
-
-        # revisit 324214
-        # should we compress this?
-        #self.tfstate_values = b64_decode(self._db_values["raw"]["terraform"])
-
-    # testtest456
-    ##################################################
-    # at query
-    ##################################################
-    
     def _insert_tf_map_subkey(self,_insertkey,_refkey):
 
         if not self._db_values.get(_insertkey):
@@ -580,16 +577,13 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
 
             # we only go 2 levels down
             self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey.strip()]
-            self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
 
     def _insert_tf_map_keys(self):
 
-        if not self.tf_exec_map_keys:
+        if not self.map_keys:
             return
 
-        self._db_values["last_applied"]["tf"]["exec"]["map_keys"] = self.tf_exec_map_keys
-
-        for _insertkey,_refkey in self.tf_exec_map_keys.items():
+        for _insertkey,_refkey in self.map_keys.items():
 
             '''
             # _insertkey = "p1"
@@ -608,7 +602,6 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
                 self._insert_tf_map_subkey(_insertkey,_refkey)
             elif self._db_values.get(_refkey):
                 self._db_values[_insertkey] = self._db_values[_refkey]
-                self._db_values["last_applied"]["tf"]["added"].append(_insertkey)
                 self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
             elif not self._db_values.get(_refkey):
                 self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
@@ -639,9 +632,6 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
                 })
             return
 
-        self._db_values["last_applied"]["tf"]["exec"]["skip_keys"] = self.tf_exec_skip_keys
-        self._db_values["last_applied"]["tf"]["exec"]["add_keys"] = self.tf_exec_add_keys
-
         for resource in self.tfstate_values["resources"]:
 
             if resource["type"] == self.terraform_type:
@@ -664,11 +654,11 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
                         continue
 
                     # we add if tf_exec_add_key not set, all, or key is in it
-                    if not self.tf_exec_add_keys:
+                    if not self.add_keys:
                         _added_bc = "tf_exec_add_keys=None"
-                    elif self.tf_exec_add_keys == "all":
+                    elif self.add_keys == "all":
                         _added_bc = "tf_exec_add_keys=all"
-                    elif _key in self.tf_exec_add_keys:
+                    elif _key in self.add_keys:
                         _added_bc = "tf_exec_add_keys/key{} found".format(_key)
                     else:
                         _added_bc = None
@@ -676,8 +666,6 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
                     if not _added_bc:
                         self.logger.debug("tf_exec_add_keys: key {} skipped".format(_key))
                         continue
-
-                    self._db_values["last_applied"]["tf"]["added"].append(_key)
 
                     self.logger.debug('{}: tf key "{}" -> value "{}" added to resource self._db_values'.format(_added_bc,
                                                                                                       _key,
@@ -699,10 +687,8 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
 
     def _insert_tf_remove_keys(self):
 
-        if not self.tf_exec_remove_keys:
+        if not self.exclude_keys:
             return
-
-        self._db_values["last_applied"]["tf"]["exec"]["remove_keys"] = self.tf_exec_remove_keys
 
         return
 
@@ -716,13 +702,11 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
         if not outputs:
             return
 
-        self._db_values["last_applied"]["tf"]["exec"]["outputs"] = outputs
-
         # put outputs in
         for k,v in outputs.items():
 
             # skip certain keys
-            if k in self.tf_output_skip_keys:
+            if k in self.output_skip_keys:
                 continue
 
             # already set and exists
@@ -730,37 +714,9 @@ class ConfigureFilterTF(Config0SettingsEnvVarHelper):
                 continue
 
             self._db_values[k] = v['value']
-            self._db_values["last_applied"]["tf"]["added"].append(k)
-
-    def _set_parse_settings_for_tfstate(self):
-
-        # new version of resource setttings
-        resource_configs = self.tf_configs.get("resource_configs")
-
-        if resource_configs and resource_configs.get("include_keys"):
-            self.tf_exec_add_keys = resource_configs["include_keys"]
-
-        if resource_configs and resource_configs.get("exclude_keys"):
-            self.tf_exec_remove_keys.extend(resource_configs["exclude_keys"])
-
-        if resource_configs and resource_configs.get("map_keys"):
-            self.tf_exec_map_keys = resource_configs["map_keys"]
 
 
-    # testtest456
-    # not used
-    # to_delete
-    #def _remove_and_record_existing_values(self):
-
-    #    if not self._last_applied_add_keys:
-    #        return
-
-    #    for _k in self._last_applied_add_keys:
-    #        if _k not in self._db_values:
-    #            continue
-    #        self._db_removed_values[_k] = self._db_values[_k]
-
-    def configure(self):
+    def filter(self):
 
         self._setup_for_configuration()
 

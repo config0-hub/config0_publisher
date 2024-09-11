@@ -1515,21 +1515,3 @@ class ResourceCmdHelper:
             self.current_phase = self.phases_params[self.method][0]  # first phase
 
         self.phase = self.current_phase["name"]
-
-    def write_config0_settings_file(self):
-
-        try:
-            value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
-        except:
-            value = None
-
-        if not value:
-            return
-
-        _file = os.path.join(
-            self.run_share_dir,
-            self.app_dir,
-            "config0_resource_settings_hash")
-
-        with open(_file, "w") as file:
-            file.write(value)
