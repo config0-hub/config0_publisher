@@ -169,9 +169,6 @@ class Config0SettingsEnvVarHelper:
         self.logger = Config0Logger(self.classname,
                                     logcategory="cloudprovider")
 
-        self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH = kwargs.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH")
-        self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH = kwargs.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
-
         self._vars = {
             "runtime_env_vars":{},
             "exclude_tfvars":[],
@@ -184,24 +181,17 @@ class Config0SettingsEnvVarHelper:
         This method initializes the Config0 resource settings.
         """
 
+        self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH")
+        self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
+
         if self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH:
-            CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH = self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH
-        else:
-            CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH")
-
-        if self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH:
-            CONFIG0_RESOURCE_EXEC_SETTINGS_HASH = self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH
-        else:
-            CONFIG0_RESOURCE_EXEC_SETTINGS_HASH = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
-
-        if CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH:
             try:
-                _settings = decode_and_decompress_string(CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH)
+                _settings = decode_and_decompress_string(self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH)
             except:
                 _settings = {}  # probably destroy
-        elif CONFIG0_RESOURCE_EXEC_SETTINGS_HASH:
+        elif self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH:
             try:
-                _settings = b64_decode(CONFIG0_RESOURCE_EXEC_SETTINGS_HASH)
+                _settings = b64_decode(self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH)
             except:
                 _settings = {}  # probably destroy
         else:
@@ -365,7 +355,7 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
 
         # environmental variables to include during destruction
         env_vars = {
-            "CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": resource["CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"],
+            "CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH,
             "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
             "STATEFUL_ID": self.stateful_id,
             "BUILD_TIMEOUT": self.build_timeout,
@@ -410,10 +400,9 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
             resource["destroy_params"]["shelloutconfig"] = self.shelloutconfig
             resource["validate_params"]["shelloutconfig"] = self.shelloutconfig
 
-
         return resource
 
-    def _post_create(self):
+    def post_create(self):
 
         # copy of settings file - not really needed
         #self.write_config0_settings_file()
@@ -1077,7 +1066,7 @@ terraform {{
 
         tf_results = self._exec_in_aws(method="create")
 
-        self._post_create()
+        self.post_create()
 
         return tf_results
 
