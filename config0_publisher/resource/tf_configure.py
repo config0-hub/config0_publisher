@@ -516,6 +516,9 @@ class ConfigureTFConfig0Db:
         self.logger.debug('i'*32)
         self.logger.json(tf_filter._db_values)
         self.logger.debug('j'*32)
+
+        self.write_resource_to_json_file(self._db_values,
+                                         must_exist=True)
         ###############################################################
         # testtest456
         ###############################################################
