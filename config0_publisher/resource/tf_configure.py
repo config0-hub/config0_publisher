@@ -516,7 +516,6 @@ class ConfigureTFConfig0Db:
         self.logger.debug('i'*32)
         self.logger.json(tf_filter._db_values)
         self.logger.debug('j'*32)
-        raise Exception
         ###############################################################
         # testtest456
         ###############################################################
@@ -677,21 +676,21 @@ class ConfigureFilterTF:
 
                     # we add if skip_keys not set, all, or key is in it
                     if not self.include_keys:
-                        _added_bc = "skip_keys=None"
+                        _added_bc = "include_key == None"
                     elif self.include_keys == "all":
-                        _added_bc = "skip_keys=all"
+                        _added_bc = "include_key == all"
                     elif _key in self.include_keys:
-                        _added_bc = "skip_keys/key{} found".format(_key)
+                        _added_bc = "include_key/key {} found".format(_key)
                     else:
                         _added_bc = None
 
                     if not _added_bc:
-                        self.logger.debug("skip_keys: key {} skipped".format(_key))
+                        self.logger.debug("include_keys: key {} skipped".format(_key))
                         continue
 
                     self.logger.debug('{}: tf key "{}" -> value "{}" added to resource self._db_values'.format(_added_bc,
-                                                                                                      _key,
-                                                                                                      _value))
+                                                                                                               _key,
+                                                                                                               _value))
 
                     if isinstance(_value,list):
                         try:
