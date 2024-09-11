@@ -799,6 +799,8 @@ class Testtest456:
 
         print("This is only for testing and served as a placeholder")
 
+        ConfigureTFConfig0Db.__init__()
+
     #################################################################
     # fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     # insert 3453452345
