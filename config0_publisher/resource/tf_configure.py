@@ -287,12 +287,19 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
 
         self.classname = "ConfigureTFConfig0Db"
 
+        print(self.classname)
+        print(self.classname)
+        print(self.classname)
+        print(self.classname)
+        raise Exception('yoyo')
+
         self.std_labels_keys = [
             "region",
             "provider",
             "source_method",
             "resource_type",
         ]
+
     #############################################################
     # post create related
     #############################################################
