@@ -288,11 +288,11 @@ class ConfigureTFConfig0Db(Config0SettingsEnvVarHelper):
 
         self.classname = "ConfigureTFConfig0Db"
 
+        # testtest456
         print("#-"*32)
         print(self.classname)
         print(self.classname)
         print("#-"*32)
-        sleep(4)
 
         self.std_labels_keys = [
             "region",
@@ -1075,6 +1075,8 @@ terraform {{
             self.build_method = 'codebuild'
 
         tf_results = self._exec_in_aws(method="create")
+
+        ConfigureTFConfig0Db.__init__(self)
 
         self.post_create()
 
