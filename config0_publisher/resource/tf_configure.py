@@ -447,16 +447,16 @@ class ConfigureTFConfig0Db:
                 except:
                     self._db_values["id"] = None
 
-                if not self._db_values["id"]:
+                if not self._db_values.get("id"):
                     try:
                         self._db_values["id"] = resource["instances"][0]["attributes"]["arn"]
                     except:
                         self._db_values["id"] = None
 
-            if not self._db_values["id"]:
+            if not self._db_values.get("id"):
                 self._db_values["id"] = self.stateful_id
 
-        if not self._db_values["_id"]:
+        if not self._db_values.get("_id"):
             self._db_values["_id"] = self.stateful_id
 
     def post_create(self):
