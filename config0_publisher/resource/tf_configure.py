@@ -11,55 +11,18 @@ from config0_publisher.serialization import b64_decode
 from config0_publisher.serialization import decode_and_decompress_string
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.loggerly import nice_json
+from jiffycommon.utilities import id_generator2
 from config0_publisher.utilities import get_hash
 ###########################
 from config0_publisher.serialization import b64_encode
 from config0_publisher.resource.codebuild import Codebuild
 from config0_publisher.resource.lambdabuild import Lambdabuild
+from config0_publisher.resource.terraform import get_tfstate_file_remote
 from config0_publisher.cloud.aws.boto3_s3 import dict_to_s3
-from config0_publisher.cloud.aws.boto3_s3 import s3_to_dict
+#from config0_publisher.cloud.aws.boto3_s3 import s3_to_dict
 ###########################
 
 #from config0_publisher.class_helper import dict_to_classobj
-
-def write_config0_settings_file(stateful_id=None,value=None,primary=True):
-
-    if not value:
-        try:
-            value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
-        except:
-            value = None
-
-    if not value:
-        return
-
-    _file = os.path.join("/tmp",
-                         stateful_id,
-                         "config0_resource_settings_hash")
-
-    with open(_file,"w") as file:
-        file.write(value)
-
-def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
-
-    # ref 4353253452354
-    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
-
-    data = None
-
-    execute3(cmd,
-             output_to_json=False,
-             exit_error=True)
-
-    tfstate_file = f"/tmp/{stateful_id}.tfstate"
-
-    # read output file
-    with open(tfstate_file) as json_file:
-        data = json.load(json_file)
-
-    os.system(f'rm -rf {tfstate_file}')
-
-    return data
 
 def get_tf_bool(value):
 
@@ -239,7 +202,6 @@ class Config0SettingsEnvVarHelper:
         if tf_runtime_settings_hash:
             os.environ["TF_RUNTIME_SETTINGS"] = tf_runtime_settings_hash
             tf_runtime_settings = b64_decode(tf_runtime_settings_hash)
-
             self._vars["tf_configs"] = tf_runtime_settings["tf_configs"]
             self._vars["tf_runtime_env_vars"] = tf_runtime_settings.get("env_vars")  # ref 4532643623642
             self._vars["terraform_type"] = self._vars["tf_configs"].get("terraform_type")
@@ -317,8 +279,6 @@ class ConfigureTFConfig0Db:
 
     def _set_init_db_values(self):
 
-        # revisit 324214
-        # compress terraform raw?
         self._db_values = {
             "source_method": "terraform",
             "main": True,
@@ -428,6 +388,23 @@ class ConfigureTFConfig0Db:
             label_key = f"label-{_k}"
             self._db_values[label_key] = _v
 
+    def _insert_maps(self):
+        """
+        This method inserts the resource self._db_values into the output self._db_values.
+        """
+
+
+        if not self.tf_configs.get("maps"):
+            return
+
+        for _k,_v in self.tf_configs.get("maps").items():
+
+            if not self._db_values.get(_k):
+                continue
+
+            self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
+            self._db_values[_k] = _v
+
     def _insert_resource_values(self):
         """
         This method inserts the resource self._db_values into the output self._db_values.
@@ -442,16 +419,45 @@ class ConfigureTFConfig0Db:
     def get_query_settings_for_tfstate(self):
 
         # new version of resource setttings
-        resource_configs = self.tf_configs.get("resource_configs")
+        tf_configs_for_resource = self.tf_configs.get("resource_configs")
 
-        if not resource_configs:
+        if not tf_configs_for_resource:
             return {}
 
         return {
-            "include_keys":resource_configs.get("include_keys"),
-            "exclude_keys": resource_configs.get("exclude_keys"),
-            "map_keys": resource_configs.get("map_keys")
+            "include_keys":tf_configs_for_resource.get("include_keys"),
+            "exclude_keys": tf_configs_for_resource.get("exclude_keys"),
+            "maps": tf_configs_for_resource.get("maps")
         }
+
+    def _config_db_values(self):
+
+        tfstate_values = get_tfstate_file_remote(self.remote_state_bucket,
+                                                 self.stateful_id)
+
+        if not self._db_values.get("id"):
+
+            for resource in tfstate_values["resources"]:
+
+                if resource["type"] != self.terraform_type:
+                    continue
+
+                try:
+                    self._db_values["id"] = resource["instances"][0]["attributes"]["id"]
+                except:
+                    self._db_values["id"] = None
+
+                if not self._db_values["id"]:
+                    try:
+                        self._db_values["id"] = resource["instances"][0]["attributes"]["arn"]
+                    except:
+                        self._db_values["id"] = None
+
+            if not self._db_values["id"]:
+                self._db_values["id"] = self.stateful_id
+
+        if not self._db_values["_id"]:
+            self._db_values["_id"] = self.stateful_id
 
     def post_create(self):
 
@@ -478,6 +484,11 @@ class ConfigureTFConfig0Db:
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
+        # testtest456
+        self._insert_maps()
+
+        # insert id and _id
+        self._config_db_values()
 
         # enter into resource db file location
         self.write_resource_to_json_file(self._db_values,
@@ -489,7 +500,7 @@ class ConfigureTFConfig0Db:
             "values":self.resource_values
         }
 
-        tf_query_params = self.get_query_settings_for_tfstate()
+        tf_filter_params = self.get_query_settings_for_tfstate()
 
         s3_base_key = f'{self.stateful_id}/main'
 
@@ -501,263 +512,15 @@ class ConfigureTFConfig0Db:
                    self.remote_stateful_bucket,
                    f'{s3_base_key}/applied/resource_configs_params.{self.stateful_id}')
 
-        dict_to_s3(tf_query_params,
+        dict_to_s3(tf_filter_params,
                    self.remote_stateful_bucket,
-                   f'{s3_base_key}/query/execution/tf_query_params.{self.stateful_id}')
-
-        ###############################################################
-        # testtest456
-        ###############################################################
-        tf_filter = ConfigureFilterTF(self._db_values,
-                                      tf_query_params
-                                      )
-        tf_filter.get()
-
-        self.logger.debug('i'*32)
-        self.logger.json(tf_filter._db_values)
-        self.logger.debug('j'*32)
-
-        self.write_resource_to_json_file(self._db_values,
-                                         must_exist=True)
-        ###############################################################
-        # testtest456
-        ###############################################################
+                   f'{s3_base_key}/query/execution/tf_filter_params.{self.stateful_id}')
 
         return True
 
     #################################################################
     # fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     #################################################################
-
-# init and reconfigure (update)
-class ConfigureFilterTF:
-
-    def __init__(self,db_values,tf_query_params):
-
-        self.classname = "Config0ResourceTFVars"
-
-        self.logger = Config0Logger(self.classname,
-                                    logcategory="cloudprovider")
-
-        ################################################
-        # testtest456
-        ################################################
-        self._db_values = db_values
-        self.tf_query_params = tf_query_params
-        ################################################
-
-        self.remote_stateful_bucket = self._db_values["remote_stateful_bucket"]
-        self.stateful_id = self._db_values["stateful_id"]
-        self.terraform_type = self._db_values["terraform_type"]
-
-        self.tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
-                                                      self.stateful_id)
-
-    def _init_tf_configs(self):
-
-        self.skip_keys= [
-            "sensitive_attributes",
-            "ses_smtp_password_v4",
-        ]
-
-        self.output_skip_keys = [
-            "tags",
-            "label",
-            "tag",
-            "_id",
-            "resource_type",
-            "provider",
-            "labels",
-        ]
-
-        if self.tf_query_params.get("map_keys"):
-            self.map_keys = self.tf_query_params["map_keys"]
-        else:
-            self.map_keys = {}
-
-        if self.tf_query_params.get("include_keys"):
-            self.include_keys = self.tf_query_params["include_keys"]
-        else:
-            self.include_keys = []
-
-        self.exclude_keys = [
-            "private",
-            "secret",
-        ]
-
-        if self.tf_query_params.get("exclude_keys"):
-            self.exclude_keys.extend(self.tf_query_params["exclude_keys"])
-
-    def _insert_tf_map_subkey(self,_insertkey,_refkey):
-
-        if not self._db_values.get(_insertkey):
-            self._db_values[_insertkey] = {}
-
-        for _sub_insertkey,_sub_refkey in _refkey.items():
-            if _sub_refkey not in self._db_values:
-                self.logger.debug(f'mapped ref_key "{_sub_refkey}" not found for sub_insertkey {_sub_insertkey}')
-                continue
-
-            # we only go 2 levels down
-            self._db_values[_insertkey][_sub_insertkey] = self._db_values[_sub_refkey.strip()]
-
-    def _apply_map_keys(self):
-
-        if not self.map_keys:
-            return
-
-        for _insertkey,_refkey in self.map_keys.items():
-
-            '''
-            # _insertkey = "p1"
-            # _refkey = "q1"
-
-            # _insertkey = values
-            # _refkey = {"a":"b","c":"d"}
-            # values["values"]["a"] = values["b"]
-            '''
-
-            if self._db_values.get(_insertkey):
-                self.logger.debug(f"mapped key {_insertkey} already exists - clobbering")
-
-            # see if _refkey is a subkey
-            if isinstance(_refkey,dict):
-                self._insert_tf_map_subkey(_insertkey,_refkey)
-            elif self._db_values.get(_refkey):
-                self._db_values[_insertkey] = self._db_values[_refkey]
-                self.logger.debug(f'4523465: mapped key ["{_insertkey}"] -> _refkey "{_refkey}"')
-            elif not self._db_values.get(_refkey):
-                self.logger.warn(f'mapped key: refkey not found "{_refkey} for insertkey "{_insertkey}"')
-
-    def _apply_include_keys(self):
-
-        count = 0
-
-        for resource in self.tfstate_values["resources"]:
-            type = resource["type"]
-            name = resource["name"]
-            if resource["type"] == self.terraform_type:
-                self.logger.debug(f'name: {name}, type: {type} matched found')
-                count += 1
-
-        # if more than instance of the terraform type, it's better to parse the statefile
-        # after to allowing querying of resources
-        if count > 1:
-            existing_names = []
-            self.logger.warn(f"more than one instance terraform type {self.terraform_type}/count {count} - skipping to avoid duplicates")
-            if self._db_values.get("main") and self._db_values.get("name") and self._db_values.get("terraform_type") and not self._db_values.get("id"):
-                name = self._db_values["name"]
-                if name in existing_names:
-                    raise Exception("cannot determine id => name + terraform_type + main are not unique")
-                self._db_values["id"] = get_hash({
-                    "name": self._db_values["name"],
-                    "terraform_type": self._db_values["terraform_type"],
-                    "main": "True"
-                })
-            return
-
-        for resource in self.tfstate_values["resources"]:
-
-            if resource["type"] == self.terraform_type:
-
-                self.logger.debug("-" * 32)
-                self.logger.debug("instance attribute keys")
-                self.logger.debug(list(resource["instances"][0]["attributes"].keys()))
-                self.logger.debug("-" * 32)
-
-                for _key,_value in resource["instances"][0]["attributes"].items():
-
-                    if not _value:
-                        continue
-
-                    if _key in self._db_values:
-                        continue
-
-                    if _key in self.skip_keys:
-                        self.logger.debug('skip_keys: tf instance attribute key "{}" skipped'.format(_key))
-                        continue
-
-                    # we add if skip_keys not set, all, or key is in it
-                    if not self.include_keys:
-                        _added_bc = "include_key == None"
-                    elif self.include_keys == "all":
-                        _added_bc = "include_key == all"
-                    elif _key in self.include_keys:
-                        _added_bc = "include_key/key {} found".format(_key)
-                    else:
-                        _added_bc = None
-
-                    if not _added_bc:
-                        self.logger.debug("include_keys: key {} skipped".format(_key))
-                        continue
-
-                    if self._db_values.get(_key):
-                        self.logger.debug("include_keys: key {} values {} already exists - skipping".format(_key,_value))
-                        continue
-
-                    self.logger.debug('{}: tf key "{}" -> value "{}" added to resource self._db_values'.format(_added_bc,
-                                                                                                               _key,
-                                                                                                               _value))
-
-                    if isinstance(_value,list):
-                        try:
-                            self._db_values[_key] = ",".join(_value)
-                        except:
-                            self._db_values[_key] = _value
-                    elif isinstance(_value,dict):
-                        try:
-                            self._db_values[_key] = json.dumps(_value)
-                        except:
-                            self._db_values[_key] = _value
-                    else:
-                        self._db_values[_key] = _value
-                break
-
-    def _apply_remove_keys(self):
-
-        if not self.exclude_keys:
-            return
-
-        for _key in self._db_values:
-            if _key not in self.exclude_keys:
-                continue
-            del self._db_values[_key]
-
-        return
-
-    def _insert_tf_outputs(self):
-
-        try:
-            outputs = self.tfstate_values["outputs"]
-        except:
-            outputs = None
-
-        if not outputs:
-            return
-
-        # put outputs in
-        for k,v in outputs.items():
-
-            # skip certain keys
-            if k in self.output_skip_keys:
-                continue
-
-            # already set and exists
-            if self._db_values.get(k):
-                continue
-
-            self._db_values[k] = v['value']
-
-    def get(self):
-
-        self._init_tf_configs()
-
-        self._insert_tf_outputs()
-        self._apply_include_keys()
-        self._apply_map_keys()
-        self._apply_remove_keys()
-
-        return self._db_values
 
 class Testtest456(ConfigureTFConfig0Db):
 

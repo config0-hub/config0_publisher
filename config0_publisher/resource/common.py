@@ -138,9 +138,9 @@ class TFAppHelper:
         base_cmd = f'aws s3 cp {srcfile} s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID'
 
         if last_apply:
-            cmd = f'{base_cmd}/last_apply/{_filename} || echo "trouble uploading output file"'
+            cmd = f'{base_cmd}/applied/{_filename} || echo "trouble uploading output file"'
         else:
-            cmd = f'{base_cmd}/last_run/{_filename} || echo "trouble uploading output file"'
+            cmd = f'{base_cmd}/cur/{_filename} || echo "trouble uploading output file"'
 
         return [cmd]
 
@@ -155,8 +155,8 @@ class TFAppHelper:
         _filename = os.path.basename(dstfile)
 
         if last_apply:
-            cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/last_apply/{_filename} {dstfile}'
+            cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/applied/{_filename} {dstfile}'
         else:
-            cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/last_run/{_filename} {dstfile}'
+            cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/cur/{_filename} {dstfile}'
 
         return [cmd]

@@ -1,5 +1,24 @@
 from config0_publisher.utilities import to_json
 
+
+def write_config0_settings_file(stateful_id=None,value=None):
+
+    if not value:
+        try:
+            value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
+        except:
+            value = None
+
+    if not value:
+        return
+
+    _file = os.path.join("/tmp",
+                         stateful_id,
+                         "config0_resource_settings_hash")
+
+    with open(_file,"w") as file:
+        file.write(value)
+
 def convert_config0_output_to_values(output):
 
     record_on = None

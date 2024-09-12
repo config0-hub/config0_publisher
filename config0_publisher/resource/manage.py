@@ -68,9 +68,6 @@ def _to_json(output):
 
     return output
 
-class MissingEnvironmentVariable(Exception):
-    pass
-
 class ResourceCmdHelper:
 
     def __init__(self,**kwargs):
@@ -815,7 +812,7 @@ class ResourceCmdHelper:
         if not must_exists:
             return
 
-        raise MissingEnvironmentVariable("{} does not exist".format(variable))
+        raise Exception(f"{variable} does not exist")
 
     def print_json(self,values):
         print_json(values)

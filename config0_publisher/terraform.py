@@ -12,8 +12,31 @@
 #Proprietary and confidential
 #Written by Gary Leong  <gary@config0.com, March 11,2023
 
+import json
 import os
+from config0_publisher.shellouts import execute3
 from config0_publisher.loggerly import Config0Logger
+
+def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
+
+    # ref 4353253452354
+    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
+
+    data = None
+
+    execute3(cmd,
+             output_to_json=False,
+             exit_error=True)
+
+    tfstate_file = f"/tmp/{stateful_id}.tfstate"
+
+    # read output file
+    with open(tfstate_file) as json_file:
+        data = json.load(json_file)
+
+    os.system(f'rm -rf {tfstate_file}')
+
+    return data
 
 class TFConstructor(object):
 
@@ -31,7 +54,6 @@ class TFConstructor(object):
         self.terraform_type = kwargs["terraform_type"]
         self.tf_runtime = kwargs.get("tf_runtime")
         self.docker_image = kwargs.get("docker_image")
-        self.include_raw = kwargs.get("include_raw",True)
 
         self.ssm_format = kwargs.get("ssm_format", ".env")
         self.ssm_obj = kwargs.get("ssm_obj")
@@ -290,10 +312,9 @@ class TFConstructor(object):
         env_vars["METHOD"] = "create"
 
         _configs = {
-            "include_raw": self.include_raw,
             "include_keys": self.include_keys,
             "exclude_keys": self.exclude_keys,
-            "map_keys": self.maps,
+            "maps": self.maps,
             "values": self.resource_values,
             "env_vars": env_vars,
             "output_keys": self.output_keys,
