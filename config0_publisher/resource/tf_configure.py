@@ -432,7 +432,7 @@ class ConfigureTFConfig0Db:
 
     def _config_db_values(self):
 
-        tfstate_values = get_tfstate_file_remote(self.remote_state_bucket,
+        tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
                                                  self.stateful_id)
 
         if not self._db_values.get("id"):
