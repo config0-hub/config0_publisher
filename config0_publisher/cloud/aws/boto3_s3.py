@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
+#import pickle
 import json
 import boto3
 import base64
-import pickle
 from botocore.exceptions import NoCredentialsError, ClientError
 
 def dict_to_s3(data, bucket_name, bucket_key):
