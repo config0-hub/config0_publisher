@@ -17,7 +17,7 @@ from config0_publisher.utilities import get_hash
 from config0_publisher.serialization import b64_encode
 from config0_publisher.resource.codebuild import Codebuild
 from config0_publisher.resource.lambdabuild import Lambdabuild
-from config0_publisher.resource.terraform import get_tfstate_file_remote
+from config0_publisher.terraform import get_tfstate_file_remote
 from config0_publisher.cloud.aws.boto3_s3 import dict_to_s3
 #from config0_publisher.cloud.aws.boto3_s3 import s3_to_dict
 ###########################
