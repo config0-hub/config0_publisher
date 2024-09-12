@@ -487,6 +487,11 @@ class ConfigureTFConfig0Db:
         # testtest456
         self._insert_maps()
 
+        # default script to process the tfstate and
+        # merge it the db_values for a complete response
+        if not self._db_values.get("_eval_state_script"):
+            self._db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
+
         # insert id and _id
         self._config_db_values()
 
