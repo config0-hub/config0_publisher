@@ -279,7 +279,7 @@ class ConfigureTFConfig0Db:
 
     def _set_init_db_values(self):
 
-        self._db_values = {
+        self.db_values = {
             "source_method": "terraform",
             "main": True,
             "provider": self.provider,
@@ -291,9 +291,9 @@ class ConfigureTFConfig0Db:
 
         # special case of ssm_name/secrets
         if self.ssm_name:
-            self._db_values["ssm_name"] = self.ssm_name
+            self.db_values["ssm_name"] = self.ssm_name
 
-        return self._db_values
+        return self.db_values
 
     def _insert_mod_params(self):
 
@@ -322,39 +322,39 @@ class ConfigureTFConfig0Db:
         env_vars["TF_RUNTIME"] = self.tf_runtime
 
         # Create mod params resource arguments and reference
-        self._db_values["mod_params"] = {
+        self.db_values["mod_params"] = {
             "env_vars": env_vars,
         }
 
         if self.destroy_env_vars:
-            self._db_values["destroy_params"] = {
+            self.db_values["destroy_params"] = {
                 "env_vars": dict({"METHOD": "destroy"},
                                  **self.destroy_env_vars)
             }
         else:
-            self._db_values["destroy_params"] = {
+            self.db_values["destroy_params"] = {
                 "env_vars": {"METHOD": "destroy"}
             }
 
         if self.validate_env_vars:
-            self._db_values["validate_params"] = {
+            self.db_values["validate_params"] = {
                 "env_vars": dict({"METHOD": "validate"},
                                  **self.validate_env_vars)
             }
         else:
-            self._db_values["validate_params"] = {
+            self.db_values["validate_params"] = {
                 "env_vars": {"METHOD": "validate"}
             }
 
         if self.shelloutconfig:
-            self._db_values["mod_params"]["shelloutconfig"] = self.shelloutconfig
-            self._db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
-            self._db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
+            self.db_values["mod_params"]["shelloutconfig"] = self.shelloutconfig
+            self.db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
+            self.db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
 
         if self.mod_execgroup:
-            self._db_values["mod_params"]["execgroup"] = self.mod_execgroup
-            self._db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
-            self._db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
+            self.db_values["mod_params"]["execgroup"] = self.mod_execgroup
+            self.db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
+            self.db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
 
     # testtest456
     ##################################################
@@ -366,17 +366,17 @@ class ConfigureTFConfig0Db:
 
         for key in self.std_labels_keys:
 
-            if not self._db_values.get(key):
+            if not self.db_values.get(key):
                 self.logger.debug('source standard label key "{}" not found'.format(key))
                 continue
 
             label_key = "label-{}".format(key)
 
-            if self._db_values.get(label_key):
+            if self.db_values.get(label_key):
                 self.logger.debug('label key "{}" already found'.format(label_key))
                 continue
 
-            self._db_values[label_key] = self._db_values[key]
+            self.db_values[label_key] = self.db_values[key]
 
     def _insert_resource_labels(self):
 
@@ -386,11 +386,11 @@ class ConfigureTFConfig0Db:
         for _k,_v in self.resource_labels.items():
             self.logger.debug(f'resource labels: key "{"label-{}".format(_k)}" -> value "{_v}"')
             label_key = f"label-{_k}"
-            self._db_values[label_key] = _v
+            self.db_values[label_key] = _v
 
     def _insert_maps(self):
         """
-        This method inserts the resource self._db_values into the output self._db_values.
+        This method inserts the resource self.db_values into the output self.db_values.
         """
 
 
@@ -399,22 +399,22 @@ class ConfigureTFConfig0Db:
 
         for _k,_v in self.tf_configs.get("maps").items():
 
-            if not self._db_values.get(_k):
+            if not self.db_values.get(_k):
                 continue
 
             self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
-            self._db_values[_k] = _v
+            self.db_values[_k] = _v
 
     def _insert_resource_values(self):
         """
-        This method inserts the resource self._db_values into the output self._db_values.
+        This method inserts the resource self.db_values into the output self.db_values.
         """
         if not self.resource_values:
             return
 
         for _k, _v in self.resource_values.items():
             self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
-            self._db_values[_k] = _v
+            self.db_values[_k] = _v
 
     def get_query_settings_for_tfstate(self):
 
@@ -435,7 +435,7 @@ class ConfigureTFConfig0Db:
         tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
                                                  self.stateful_id)
 
-        if not self._db_values.get("id"):
+        if not self.db_values.get("id"):
 
             for resource in tfstate_values["resources"]:
 
@@ -443,21 +443,21 @@ class ConfigureTFConfig0Db:
                     continue
 
                 try:
-                    self._db_values["id"] = resource["instances"][0]["attributes"]["id"]
+                    self.db_values["id"] = resource["instances"][0]["attributes"]["id"]
                 except:
-                    self._db_values["id"] = None
+                    self.db_values["id"] = None
 
-                if not self._db_values.get("id"):
+                if not self.db_values.get("id"):
                     try:
-                        self._db_values["id"] = resource["instances"][0]["attributes"]["arn"]
+                        self.db_values["id"] = resource["instances"][0]["attributes"]["arn"]
                     except:
-                        self._db_values["id"] = None
+                        self.db_values["id"] = None
 
-            if not self._db_values.get("id"):
-                self._db_values["id"] = self.stateful_id
+            if not self.db_values.get("id"):
+                self.db_values["id"] = self.stateful_id
 
-        if not self._db_values.get("_id"):
-            self._db_values["_id"] = self.stateful_id
+        if not self.db_values.get("_id"):
+            self.db_values["_id"] = self.stateful_id
 
     def post_create(self):
 
@@ -469,7 +469,7 @@ class ConfigureTFConfig0Db:
 
         self._set_init_db_values()
 
-        if not self._db_values:
+        if not self.db_values:
             self.logger.warn("u4324: resource info is not found in the output")
             return
 
@@ -478,7 +478,7 @@ class ConfigureTFConfig0Db:
         os.chdir(self.cwd)
 
         if hasattr(self,"drift_protection") and self.drift_protection:
-            self._db_values["drift_protection"] = self.drift_protection
+            self.db_values["drift_protection"] = self.drift_protection
 
         # write apply and query parameters to s3 bucket
         self._insert_resource_values()
@@ -489,14 +489,14 @@ class ConfigureTFConfig0Db:
 
         # default script to process the tfstate and
         # merge it the db_values for a complete response
-        if not self._db_values.get("_eval_state_script"):
-            self._db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
+        if not self.db_values.get("_eval_state_script"):
+            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
 
         # insert id and _id
         self._config_db_values()
 
         # enter into resource db file location
-        self.write_resource_to_json_file(self._db_values,
+        self.write_resource_to_json_file(self.db_values,
                                          must_exist=True)
 
         db_resource_params = {
