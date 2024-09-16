@@ -14,255 +14,14 @@ from config0_publisher.loggerly import nice_json
 from jiffycommon.utilities import id_generator2
 from config0_publisher.utilities import get_hash
 ###########################
+from config0_publisher.resource.tf_vars import tf_iter_to_str
+from config0_publisher.resource.tf_vars import get_tf_bool
 from config0_publisher.serialization import b64_encode
 from config0_publisher.resource.codebuild import Codebuild
 from config0_publisher.resource.lambdabuild import Lambdabuild
 from config0_publisher.terraform import get_tfstate_file_remote
 from config0_publisher.cloud.aws.boto3_s3 import dict_to_s3
 #from config0_publisher.cloud.aws.boto3_s3 import s3_to_dict
-###########################
-
-#from config0_publisher.class_helper import dict_to_classobj
-
-def get_tf_bool(value):
-
-    bool_none = [ "None",
-                  "none",
-                  "null",
-                  "NONE",
-                  "None",
-                  None ]
-
-    bool_false = [ "false",
-                   "False",
-                   "FALSE",
-                   False ]
-
-    bool_true = [ "TRUE",
-                  "true",
-                  "True",
-                  True ]
-
-    if value in bool_none:
-        return 'null'
-
-    if value in bool_false:
-        return 'false'
-
-    if value in bool_true:
-        return 'true'
-
-    return value
-
-def tf_map_list_fix_value(_value):
-
-    # check object type
-    # convert to string
-    if isinstance(_value,dict):
-        _value = json.dumps(_value)
-
-    if isinstance(_value,list):
-        _value = json.dumps(_value)
-
-    # check if string object is a list or dict
-    _map_list_prefixes = ["[","{"]
-    _map_list_suffixes = ["]","}"]
-
-    _status = None
-
-    try:
-        _first_char = _value[0]
-    except:
-        _first_char = None
-
-    if not _first_char:
-        msg = "cannot determine first character for _value {} type {}".format(_value,
-                                                                              type(_value))
-
-        raise Exception(msg)
-
-    if _value[0] not in _map_list_prefixes:
-        return _value,_status
-
-    # map or list?
-    _status = True
-    _value = _value.replace("'",'"')
-
-    if _value[0] not in _map_list_prefixes and _value[0] in ["'",'"']:
-        msg = "the first character should be {}".format(_map_list_prefixes)
-        raise Exception(msg)
-
-    if _value[-1] not in _map_list_suffixes and _value[-1] in ["'",'"']:
-        msg = "the last character should be {}".format(_map_list_suffixes)
-        raise Exception(msg)
-
-    return _value,_status
-
-def tf_number_value(value):
-
-    try:
-        value0 = value[0]
-    except:
-        value0 = None
-
-    if value0 and value0 in [ "0", 0 ]:
-        return 0,False
-
-    if "." in str(value):
-
-        try:
-            eval_value = float(value)
-            value_type = "float"
-        except:
-            eval_value = value
-            value_type = None
-    else:
-
-        try:
-            eval_value = int(value)
-            value_type = "int"
-        except:
-            eval_value = value
-            value_type = None
-
-    return eval_value,value_type
-
-def tf_iter_to_str(obj):
-
-    if isinstance(obj,list) or isinstance(obj,dict):
-        try:
-            new_obj = json.dumps(literal_eval(json.dumps(obj)))
-        except:
-            new_obj = json.dumps(obj).replace("'",'"')
-
-        return new_obj
-
-    try:
-        new_obj = json.dumps(literal_eval(obj))
-    except:
-        new_obj = obj
-
-    return new_obj
-
-class Config0SettingsEnvVarHelper:
-
-    def __init__(self,**kwargs):
-
-        self.classname = "Config0SettingsEnvVarHelper"
-
-        self.logger = Config0Logger(self.classname,
-                                    logcategory="cloudprovider")
-
-        self._vars = {
-            "runtime_env_vars":{},
-            "exclude_tfvars":[],
-            "build_env_vars":{}
-        }
-
-    def _set_frm_config0_resource_settings(self,raise_on_error=None):
-
-        """
-        This method initializes the Config0 resource settings.
-        """
-
-        self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH")
-        self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
-
-        if self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH:
-            try:
-                _settings = decode_and_decompress_string(self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH)
-            except:
-                _settings = {}  # probably destroy
-        elif self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH:
-            try:
-                _settings = b64_decode(self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH)
-            except:
-                _settings = {}  # probably destroy
-        else:
-            _settings = {}
-
-        if not _settings:
-            failed_message = "The settings is empty for CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"
-            if raise_on_error:
-                raise Exception(failed_message)
-            self.logger.error(failed_message)
-            return
-
-        resource_runtime_settings_hash = _settings.get("resource_runtime_settings_hash")
-        tf_runtime_settings_hash = _settings.get("tf_runtime_settings_hash")
-
-        if resource_runtime_settings_hash:
-            resource_runtime_settings = b64_decode(resource_runtime_settings_hash)
-
-            self._vars["provider"] = resource_runtime_settings.get("provider")
-            self._vars["resource_type"] = resource_runtime_settings.get("type")
-            self._vars["resource_values"] = resource_runtime_settings.get("values")
-            self._vars["resource_labels"] = resource_runtime_settings.get("labels")
-
-        if tf_runtime_settings_hash:
-            os.environ["TF_RUNTIME_SETTINGS"] = tf_runtime_settings_hash
-            tf_runtime_settings = b64_decode(tf_runtime_settings_hash)
-            self._vars["tf_configs"] = tf_runtime_settings["tf_configs"]
-            self._vars["tf_runtime_env_vars"] = tf_runtime_settings.get("env_vars")  # ref 4532643623642
-            self._vars["terraform_type"] = self._vars["tf_configs"].get("terraform_type")
-
-    def _set_tf_runtime(self):
-
-        try:
-            tf_runtime = self._vars["tf_configs"].get("tf_runtime")
-        except:
-            tf_runtime = None
-
-        if tf_runtime:
-            self.logger.debug(f'tf_runtime {tf_runtime} from "tf_configs"')
-            self._vars["tf_runtime"] = tf_runtime
-            return tf_runtime
-
-        tf_runtime = os.environ.get("TF_RUNTIME")
-
-        if tf_runtime:
-            self.logger.debug(f'tf_runtime {tf_runtime} from env var "TF_RUNTIME"')
-        else:
-            tf_runtime = "tofu:1.6.2"
-            self.logger.debug(f'using default tf_runtime "{tf_runtime}"')
-
-        self._vars["tf_runtime"] = tf_runtime
-
-        return tf_runtime
-
-    def _set_tf_binary_version(self):
-
-        try:
-            self._vars["binary"],self._vars["version"] = self._vars["tf_runtime"].split(":")
-        except:
-            self.logger.debug(f'could not evaluate tf_runtime - using default {self._vars["tf_runtime"]}"')
-            self._vars["binary"] = "tofu"
-            self._vars["version"] = "1.6.2"
-
-        return self._vars["binary"],self._vars["version"]
-
-    def eval_config0_resource_settings(self,method=None):
-
-        self._set_frm_config0_resource_settings()
-        self._set_tf_runtime()
-        self._set_tf_binary_version()
-
-        # if it is creating for the first time
-        if method == "create":
-
-            if not self._vars.get("resource_type"):
-                raise Exception("resource_type needs to be set")
-
-            if not self._vars.get("terraform_type"):
-                raise Exception("terraform_type needs to be set")
-
-        if not self._vars.get("provider"):
-            self.logger.error("provider should be set")
-
-        for k,v in self._vars.items():
-            if os.environ.get("JIFFY_ENHANCED_LOG"):
-                self.logger.debug(f'{k} -> {nice_json(v)}')
-            setattr(self,k,v)
 
 class ConfigureTFConfig0Db:
 
@@ -356,12 +115,6 @@ class ConfigureTFConfig0Db:
             self.db_values["destroy_params"]["shelloutconfig"] = self.shelloutconfig
             self.db_values["validate_params"]["shelloutconfig"] = self.shelloutconfig
 
-    # testtest456
-    ##################################################
-    # at creation
-    ##################################################
-    # duplicate wertqttetqwetwqtqwt
-
     def _insert_standard_resource_labels(self):
 
         for key in self.std_labels_keys:
@@ -393,7 +146,6 @@ class ConfigureTFConfig0Db:
         This method inserts the resource self.db_values into the output self.db_values.
         """
 
-
         if not self.tf_configs.get("maps"):
             return
 
@@ -416,7 +168,7 @@ class ConfigureTFConfig0Db:
             self.logger.debug(f"resource values: key \"{_k}\" -> value \"{_v}\"")
             self.db_values[_k] = _v
 
-    def get_query_settings_for_tfstate(self):
+    def _get_query_settings_for_tfstate(self):
 
         # new version of resource setttings
         tf_configs_for_resource = self.tf_configs.get("resource_configs")
@@ -505,7 +257,7 @@ class ConfigureTFConfig0Db:
             "values":self.resource_values
         }
 
-        tf_filter_params = self.get_query_settings_for_tfstate()
+        tf_filter_params = self._get_query_settings_for_tfstate()
 
         s3_base_key = f'{self.stateful_id}/main'
 
