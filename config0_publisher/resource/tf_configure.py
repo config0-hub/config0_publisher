@@ -408,9 +408,7 @@ class Testtest456(ConfigureTFConfig0Db):
             "aws_region": self.aws_region
         }
 
-        ########################################
         # usually associated with create
-        ########################################
         if method in ["apply","create","pre-create"]:
             if self.build_env_vars:
                 cinputargs["build_env_vars"] = self.build_env_vars
@@ -418,10 +416,7 @@ class Testtest456(ConfigureTFConfig0Db):
             if self.ssm_name:
                 cinputargs["ssm_name"] = self.ssm_name
 
-        ########################################
         # usually associated with destroy/validate/check
-        ########################################
-        # testtest456
         elif os.environ.get("CONFIG0_BUILD_ENV_VARS"):
             cinputargs["build_env_vars"] = b64_decode(os.environ["CONFIG0_BUILD_ENV_VARS"])
 
@@ -436,7 +431,7 @@ class Testtest456(ConfigureTFConfig0Db):
     def _set_build_method(self):
 
         # for testing
-        #os.environ["USE_CODEBUILD"] = "True"
+        os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
