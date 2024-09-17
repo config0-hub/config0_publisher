@@ -432,8 +432,8 @@ class Testtest456(ConfigureTFConfig0Db):
 
         # for testing
         # testtest456
-        os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
+        os.environ["USE_CODEBUILD"] = "True"
 
         if os.environ.get("USE_CODEBUILD"):  # longer than 900 seconds
             self.build_method = "codebuild"
