@@ -431,6 +431,7 @@ class Testtest456(ConfigureTFConfig0Db):
     def _set_build_method(self):
 
         # for testing
+        # testtest456
         os.environ["USE_CODEBUILD"] = "True"
         #os.environ["USE_LAMBDA"] = "True"
 
