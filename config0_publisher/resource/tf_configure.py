@@ -17,6 +17,9 @@ class ConfigureTFConfig0Db:
             "resource_type",
         ]
 
+        # testtest456
+        os.environ["USE_LAMBDA"] = "True"
+
     def _set_init_db_values(self):
 
         self.db_values = {
