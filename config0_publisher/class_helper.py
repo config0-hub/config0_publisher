@@ -115,5 +115,5 @@ class SetClassVarsHelper:
 
             if self.set_default_null:
                 self._vars_set[env_var_key] = None
-                print("set None for variable {}".format(env_var_key))
+                print('set_class_vars_srcs - default null - self.{}=None'.format(env_var_key))
                 exec('self.{}=None'.format(env_var_key))

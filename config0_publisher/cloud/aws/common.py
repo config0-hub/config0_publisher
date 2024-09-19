@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import traceback
 import logging
 import botocore.session
 import os
@@ -181,6 +182,32 @@ class AWSCommonConn(SetClassVarsHelper):
         os.chdir(self.cwd)
         rm_rf(self.zipfile)
 
+    def _download_s3_stateful(self):
+
+        # ref 542352
+        bucket_keys = [
+            f"state/src.{self.stateful_id}.zip",
+            self.stateful_id
+        ]
+
+        for bucket_key in bucket_keys:
+
+            self.logger.debug(f"try to get stateful s3 from {self.upload_bucket}/{bucket_key}")
+
+            # ref 4353253452354
+            try:
+                self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/{bucket_key}",
+                                                                 self.zipfile)
+                status = True
+                break
+            except:
+                failed_message = traceback.format_exc()
+                self.logger.debug(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
+                self.logger.debug(failed_message)
+                status = False
+
+        return status
+
     def s3_stateful_to_share_dir(self):
 
         if not self.stateful_id:
@@ -188,11 +215,8 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self._rm_zipfile()
 
-        self.logger.debug(f"upload_bucket {self.upload_bucket} and download file state/src.{self.stateful_id}.zip")
-
-        # ref 4353253452354
-        self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/state/src.{self.stateful_id}.zip",
-                                                         self.zipfile)
+        if not self._download_s3_stateful():
+            raise Exception("could not fetch s3 stateful")
 
         self._reset_share_dir()
 
@@ -218,6 +242,7 @@ class AWSCommonConn(SetClassVarsHelper):
                      output_to_json=False,
                      exit_error=True)
 
+        # ref 542352
         s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}.zip'
 
         if not s3_dst.endswith(".zip"):
