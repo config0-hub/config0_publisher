@@ -186,8 +186,8 @@ class AWSCommonConn(SetClassVarsHelper):
 
         # ref 542352
         bucket_keys = [
-            f"{self.stateful_id}/state/src.{self.stateful_id}.zip",
-            self.stateful_id
+            self.stateful_id,
+            f"{self.stateful_id}/state/src.{self.stateful_id}.zip"
         ]
 
         failed_message = None
