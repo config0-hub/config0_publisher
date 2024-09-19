@@ -196,6 +196,9 @@ class AWSCommonConn(SetClassVarsHelper):
 
             self.logger.debug(f"attempting to get stateful s3 from {self.upload_bucket}/{bucket_key}")
 
+            # testtest456
+            self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/{bucket_key}",
+                                                             self.zipfile)
             # ref 4353253452354
             try:
                 self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/{bucket_key}",
