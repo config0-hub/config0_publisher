@@ -18,7 +18,7 @@ class ConfigureTFConfig0Db:
         ]
 
         # testtest456
-        os.environ["USE_LAMBDA"] = "True"
+        #os.environ["USE_LAMBDA"] = "True"
 
     def _set_init_db_values(self):
 
