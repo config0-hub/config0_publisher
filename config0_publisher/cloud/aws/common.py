@@ -186,13 +186,15 @@ class AWSCommonConn(SetClassVarsHelper):
 
         # ref 542352
         bucket_keys = [
-            f"state/src.{self.stateful_id}.zip",
+            f"{self.stateful_id}/state/src.{self.stateful_id}.zip",
             self.stateful_id
         ]
 
+        failed_message = None
+
         for bucket_key in bucket_keys:
 
-            self.logger.debug(f"try to get stateful s3 from {self.upload_bucket}/{bucket_key}")
+            self.logger.debug(f"attempting to get stateful s3 from {self.upload_bucket}/{bucket_key}")
 
             # ref 4353253452354
             try:
@@ -202,9 +204,11 @@ class AWSCommonConn(SetClassVarsHelper):
                 break
             except:
                 failed_message = traceback.format_exc()
-                self.logger.debug(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
-                self.logger.debug(failed_message)
+                self.logger.debug_highlight(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
                 status = False
+
+        if not status and failed_message:
+            self.logger.warn(failed_message)
 
         return status
 
