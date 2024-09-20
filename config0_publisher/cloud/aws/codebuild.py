@@ -532,7 +532,10 @@ class CodebuildResourceHelper(AWSCommonConn):
         self._eval_build()
         self.phase_result["executed"].append("eval_build")
 
-        self.s3_stateful_to_share_dir()
+        if not self.s3_stateful_to_share_dir():
+            raise Exception("testtest456 123")
+            return
+
         self.phase_result["executed"].append("s3_share_dir")
 
         self.clean_output()

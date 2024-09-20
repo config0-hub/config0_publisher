@@ -220,7 +220,9 @@ class AWSCommonConn(SetClassVarsHelper):
         self._rm_zipfile()
 
         if not self._download_s3_stateful():
-            raise Exception("could not fetch s3 stateful")
+            self.logger.warn("could not fetch s3 stateful")
+            return False
+            #raise Exception("could not fetch s3 stateful")
 
         self._reset_share_dir()
 
