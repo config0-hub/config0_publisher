@@ -532,10 +532,8 @@ class CodebuildResourceHelper(AWSCommonConn):
         self._eval_build()
         self.phase_result["executed"].append("eval_build")
 
-        if not self.s3_stateful_to_share_dir():
-            return
-
-        self.phase_result["executed"].append("s3_share_dir")
+        if self.s3_stateful_to_share_dir():
+            self.phase_result["executed"].append("s3_share_dir")
 
         self.clean_output()
 

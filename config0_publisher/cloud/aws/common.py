@@ -207,8 +207,8 @@ class AWSCommonConn(SetClassVarsHelper):
                 self.logger.debug_highlight(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
                 status = False
 
-        if not status and failed_message:
-            self.logger.warn(failed_message)
+        #if not status and failed_message:
+        #    self.logger.warn(failed_message)
 
         return status
 
