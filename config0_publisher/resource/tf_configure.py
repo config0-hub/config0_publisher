@@ -17,9 +17,6 @@ class ConfigureTFConfig0Db:
             "resource_type",
         ]
 
-        # testtest456
-        #os.environ["USE_LAMBDA"] = "True"
-
     def _set_init_db_values(self):
 
         self.db_values = {
@@ -52,8 +49,8 @@ class ConfigureTFConfig0Db:
         '''
 
         # environmental variables to include during destruction
-        # testtest456
         #"CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH,
+
         env_vars = {
             "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
             "STATEFUL_ID": self.stateful_id,
@@ -220,7 +217,6 @@ class ConfigureTFConfig0Db:
         self._insert_resource_values()
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
-        # testtest456
         self._insert_maps()
 
         # default script to process the tfstate and
