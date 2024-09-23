@@ -89,7 +89,8 @@ class TFCmdOnAWS(TFAppHelper):
 
         cmds = [
             'echo "############"; echo "# SSM_NAME: $SSM_NAME"; echo "############"',
-            f'ssm_get -name $SSM_NAME -file $TMPDIR/.ssm_value > /dev/null 2>&1 || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
+            f'ssm_get -name $SSM_NAME -file $TMPDIR/.ssm_value > /dev/null 2>&1 || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"',
+            'env|grep GITHUB'  # testtest456
         ]
 
         # f'cat $TMPDIR/.ssm_value'
