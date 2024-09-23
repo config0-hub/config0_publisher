@@ -121,7 +121,7 @@ class TFCmdOnAWS(TFAppHelper):
             ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
 
         #self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
-        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}; env ; exit 9'
+        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}; env'  # debug with env vars
 
         return self.src_env_files_cmd
 
