@@ -89,9 +89,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         cmds = [
             'echo "############"; echo "# SSM_NAME: $SSM_NAME"; echo "############"',
-            f'ssm_get -name $SSM_NAME -file $TMPDIR/.ssm_value > /dev/null 2>&1 || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"',
-            'env',
-            'exit 9'# testtest456
+            f'ssm_get -name $SSM_NAME -file $TMPDIR/.ssm_value > /dev/null 2>&1 || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
         ]
 
         # f'cat $TMPDIR/.ssm_value'
@@ -122,7 +120,8 @@ class TFCmdOnAWS(TFAppHelper):
         else:
             ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
 
-        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
+        #self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
+        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}; env ; exit 9'
 
         return self.src_env_files_cmd
 
