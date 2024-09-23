@@ -183,8 +183,8 @@ class TFCmdOnAWS(TFAppHelper):
             ]
 
         cmds = [
-            f'({self._get_exported_cmd(self.base_cmd)} plan -out={self.tmp_base_output_file}.tfplan',
-            f'({self._get_exported_cmd(self.base_cmd)} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
+            f'{self._get_exported_cmd(self.base_cmd)} plan -out={self.tmp_base_output_file}.tfplan',
+            f'{self._get_exported_cmd(self.base_cmd)} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
         ]
 
         cmds.extend(self.local_output_to_s3(suffix="tfplan",last_apply=None))
@@ -219,7 +219,7 @@ class TFCmdOnAWS(TFAppHelper):
         if self.runtime_env == "codebuild":
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
         else:
-            cmds.append(f'({self._get_exported_cmd(self.base_cmd)} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self._get_exported_cmd(self.base_cmd)} apply {self.base_output_file}.tfplan) || ({self._get_exported_cmd(self.base_cmd)} destroy -auto-approve && exit 9)')
 
         #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
