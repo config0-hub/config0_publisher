@@ -118,13 +118,14 @@ class TFCmdOnAWS(TFAppHelper):
         if self.runtime_env == "codebuild":
             ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; . ./.ssm_value; fi'
         else:
-            #ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
-            #ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; fi'
-            ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; source ./.ssm_value; fi'
+            ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
 
         self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
 
         return self.src_env_files_cmd
+
+    def _get_exported_cmd(self,cmd):
+        return f'{self.src_env_files_cmd}; {cmd}'
 
     def s3_tfpkg_to_local(self):
 
@@ -151,7 +152,7 @@ class TFCmdOnAWS(TFAppHelper):
             ]
 
         cmds = [
-            f'({self.src_env_files_cmd}) && ({suffix_cmd})'
+            f'({self._get_exported_cmd(suffix_cmd)}'
         ]
 
         return cmds
@@ -166,7 +167,7 @@ class TFCmdOnAWS(TFAppHelper):
             ]
 
         return [
-            f'({self.src_env_files_cmd}) && ({suffix_cmd}) || (rm -rf .terraform && {suffix_cmd})'
+            f'({self._get_exported_cmd(suffix_cmd)}) || (rm -rf .terraform && {self._get_exported_cmd(suffix_cmd)})'
         ]
 
     def _get_tf_plan(self):
@@ -178,8 +179,8 @@ class TFCmdOnAWS(TFAppHelper):
             ]
 
         cmds = [
-            f'({self.src_env_files_cmd}) && {self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
-            f'({self.src_env_files_cmd}) && {self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
+            f'({self._get_exported_cmd(self.base_cmd)} plan -out={self.tmp_base_output_file}.tfplan',
+            f'({self._get_exported_cmd(self.base_cmd)} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
         ]
 
         cmds.extend(self.local_output_to_s3(suffix="tfplan",last_apply=None))
@@ -214,7 +215,7 @@ class TFCmdOnAWS(TFAppHelper):
         if self.runtime_env == "codebuild":
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self._get_exported_cmd(self.base_cmd)} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
@@ -227,7 +228,7 @@ class TFCmdOnAWS(TFAppHelper):
         if self.runtime_env == "codebuild":
             cmds.append(f'{self.base_cmd} destroy -auto-approve')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && {self.base_cmd} destroy -auto-approve')
+            cmds.append(f'({self._get_exported_cmd(self.base_cmd)} destroy -auto-approve')
 
         return cmds
 
@@ -239,7 +240,7 @@ class TFCmdOnAWS(TFAppHelper):
             cmd = f'{self.base_cmd} fmt -write=false -diff -recursive'
 
         if self.runtime_env != "codebuild":
-            cmds = [f'{self.src_env_files_cmd}) && {cmd}']
+            cmds = [self._get_exported_cmd(cmd)]
         else:
             cmds = [cmd]
 
@@ -258,8 +259,8 @@ class TFCmdOnAWS(TFAppHelper):
             ])
         else:
             cmds.extend([
-                f'({self.src_env_files_cmd}) && {self.base_cmd} refresh',
-                f'({self.src_env_files_cmd}) && {self.base_cmd} plan -detailed-exitcode'
+                f'({self._get_exported_cmd(self.base_cmd)} refresh',
+                f'({self._get_exported_cmd(self.base_cmd)} plan -detailed-exitcode'
             ])
 
         #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
