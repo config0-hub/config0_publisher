@@ -120,8 +120,7 @@ class TFCmdOnAWS(TFAppHelper):
         else:
             ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
 
-        #self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
-        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}; env'  # debug with env vars
+        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
 
         return self.src_env_files_cmd
 
@@ -213,7 +212,8 @@ class TFCmdOnAWS(TFAppHelper):
         if self.runtime_env == "codebuild":
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
         else:
-            cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            #cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.src_env_files_cmd}) && (env && {self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
