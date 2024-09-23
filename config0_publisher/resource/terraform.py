@@ -146,13 +146,17 @@ class TFCmdOnAWS(TFAppHelper):
 
         suffix_cmd = f'{self.base_cmd} validate'
 
-        if self.runtime_env == "codebuild":
-            cmds = [
-                f'{suffix_cmd}'
-            ]
+        #if self.runtime_env == "codebuild":
+        #    cmds = [
+        #        f'{suffix_cmd}'
+        #    ]
+        #else:
+        #    cmds = [
+        #        f'({self._get_exported_cmd(suffix_cmd)}'
+        #    ]
 
-        cmds = [
-            f'({self._get_exported_cmd(suffix_cmd)}'
+        cmds=[
+            f'{suffix_cmd}'
         ]
 
         return cmds
