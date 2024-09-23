@@ -213,7 +213,7 @@ class TFCmdOnAWS(TFAppHelper):
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
         else:
             #cmds.append(f'({self.src_env_files_cmd}) && ({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
-            cmds.append(f'({self.src_env_files_cmd}) && (echo "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; env; echo "bbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; {self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append(f'({self.src_env_files_cmd} && echo "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; env; echo "bbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; {self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
