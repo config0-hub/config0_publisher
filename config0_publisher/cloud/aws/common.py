@@ -204,11 +204,13 @@ class AWSCommonConn(SetClassVarsHelper):
                 break
             except:
                 failed_message = traceback.format_exc()
-                self.logger.debug_highlight(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
                 status = False
 
         if os.environ.get("JIFFY_ENHANCED_LOG") and not status and failed_message:
             self.logger.warn(failed_message)
+
+        if not status:
+            self.logger.debug_highlight(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
 
         return status
 
@@ -220,7 +222,6 @@ class AWSCommonConn(SetClassVarsHelper):
         self._rm_zipfile()
 
         if not self._download_s3_stateful():
-            self.logger.warn("s3_stateful_to_share_dir: could not fetch s3 stateful")
             return
             #raise Exception("could not fetch s3 stateful")
 
