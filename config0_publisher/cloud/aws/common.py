@@ -38,7 +38,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.results = kwargs.get("results")
         self.zipfile = None
-        self.s3_output_folder = id_generator2()
+        self.s3_output_key = f'{id_generator2()}/{str(time())}'
 
         if not self.results:
             self.results = {
@@ -181,6 +181,23 @@ class AWSCommonConn(SetClassVarsHelper):
 
         os.chdir(self.cwd)
         rm_rf(self.zipfile)
+
+    def download_log_from_s3(self,bucket_name=None):
+
+        if not bucket_name:
+            bucket_name = self.tmp_bucket
+
+        local_file = f'/tmp/{self.s3_output_key}'
+
+        self.s3.Bucket(bucket_name).download_file(self.s3_output_key,
+                                                  local_file)
+
+        with open(local_file, 'r', encoding='utf-8') as file:
+            file_content = file.read()
+
+        rm_rf(local_file)
+
+        return file_content
 
     def _download_s3_stateful(self):
 
