@@ -345,9 +345,17 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             env_vars.append(_env_var)
 
-        _env_var = {'name': "S3_OUTPUT_BASE",
-                    'value': f'{self.tmp_bucket}/{self.s3_output_folder}',
+        _env_var={'name': "OUTPUT_BUCKET",
+                  'value': self.tmp_bucket,
+                  'type': 'PLAINTEXT'}
+
+        env_vars.append(_env_var)
+
+        _env_var = {'name': "OUTPUT_BUCKET_KEY",
+                    'value': f'{self.s3_output_folder}/{str(time())}',
                     'type': 'PLAINTEXT'}
+
+        env_vars.append(_env_var)
 
         return env_vars
 

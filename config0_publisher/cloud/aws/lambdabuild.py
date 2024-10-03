@@ -60,7 +60,8 @@ class LambdaResourceHelper(AWSCommonConn):
         else:
             env_vars = {}
 
-        env_vars["S3_OUTPUT_BASE"] = f'{self.tmp_bucket}/{self.s3_output_folder}'
+        env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
+        env_vars["OUTPUT_BUCKET_KEY"] = f'{self.s3_output_folder}/{str(time())}'
 
         _added = []
 
@@ -180,6 +181,8 @@ class LambdaResourceHelper(AWSCommonConn):
             self.results["exitcode"] = "79"
             if not self.results.get("failed_message"):
                 self.results["failed_message"] = "execution of cmd in lambda function failed"
+
+
 
         if not self.results.get("output"):
             self.results["output"] = b64_decode(self.response["LogResult"])
