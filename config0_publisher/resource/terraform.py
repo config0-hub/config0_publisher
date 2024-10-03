@@ -159,7 +159,7 @@ class TFCmdOnAWS(TFAppHelper):
         suffix_cmd = f'{self.base_cmd} init'
 
         # testtest456
-        suffix_cmd = "find ."
+        suffix_cmd = "ls -al"
 
         if self.runtime_env == "codebuild":
             return [
