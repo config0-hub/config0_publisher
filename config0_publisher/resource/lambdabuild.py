@@ -127,11 +127,12 @@ class Lambdabuild(LambdaParams):
 
     def _get_prebuild_cmds(self):
 
-        cmds = self.tfcmds.s3_tfpkg_to_local()
-        cmds.extend(self.tfcmds.get_tf_install())
-        cmds.extend(self.tfcmds.load_env_files())
+        return self.tfcmds.get_tf_install()
 
-        return cmds
+        #cmds = self.tfcmds.s3_tfpkg_to_local()
+        #cmds.extend(self.tfcmds.get_tf_install())
+        #cmds.extend(self.tfcmds.load_env_files())
+        #return cmds
 
     def _get_build_cmds(self):
 

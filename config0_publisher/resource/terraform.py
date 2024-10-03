@@ -125,6 +125,8 @@ class TFCmdOnAWS(TFAppHelper):
         return self.src_env_files_cmd
 
     def _get_lambda_env_cmd(self,cmd):
+        # testtest456
+        return cmd
         return f'{self.src_env_files_cmd}; {cmd}'
 
     def s3_tfpkg_to_local(self):
@@ -214,7 +216,8 @@ class TFCmdOnAWS(TFAppHelper):
 
         cmds = self._get_tf_init()
         cmds.extend(self._get_tf_validate())
-        cmds.extend(self.s3_file_to_local(suffix="tfplan",last_apply=None))
+        cmds.extend(self.s3_file_to_local(suffix="tfplan",
+                                          last_apply=None))
 
         if self.runtime_env == "codebuild":
             cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
