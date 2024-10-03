@@ -137,7 +137,10 @@ class Lambdabuild(LambdaParams):
     def _get_build_cmds(self):
 
         cmds = self.tfsec_cmds.get_all_cmds()
-        cmds.extend(self.infracost_cmds.get_all_cmds(self.tfcmds.src_env_files_cmd))
+        cmds.extend(self.infracost_cmds.get_all_cmds())
+
+        # testtest456
+        #cmds.extend(self.infracost_cmds.get_all_cmds(self.tfcmds.src_env_files_cmd))
 
         if self.method in ["create","apply"]:
             cmds = self.tfcmds.get_tf_apply()
