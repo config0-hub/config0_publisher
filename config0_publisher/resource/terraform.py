@@ -148,15 +148,6 @@ class TFCmdOnAWS(TFAppHelper):
 
         suffix_cmd = f'{self.base_cmd} validate'
 
-        #if self.runtime_env == "codebuild":
-        #    cmds = [
-        #        f'{suffix_cmd}'
-        #    ]
-        #else:
-        #    cmds = [
-        #        f'({self._get_lambda_env_cmd(suffix_cmd)}'
-        #    ]
-
         cmds=[
             f'{suffix_cmd}'
         ]
@@ -168,6 +159,8 @@ class TFCmdOnAWS(TFAppHelper):
         suffix_cmd = f'{self.base_cmd} init'
 
         if self.runtime_env == "codebuild":
+            # testtest456
+            return [ "find ."]
             return [
                 f'{suffix_cmd} || (rm -rf .terraform && {suffix_cmd})'
             ]
