@@ -129,7 +129,6 @@ class ResourceCmdHelper:
         self._set_aws_region()
 
         # ref 34532453245
-        self.wrote_local_log = None
         self.final_output = None
 
     def _set_build_timeout(self):
@@ -1400,7 +1399,7 @@ class ResourceCmdHelper:
 
         return True
 
-    def _write_cli_log(self):
+    def _write_local_log(self):
 
         cli_log_file = f'/tmp/{self.stateful_id}.cli.log'
 
@@ -1411,13 +1410,7 @@ class ResourceCmdHelper:
 
         return True
 
-    def eval_log(self,results,prt=None):
-
-        # testtest456
-        #try:
-        #    print(results["lambda_logs"]["full"])
-        #except:
-        #    print("could not print full logs")
+    def eval_log(self,results,local_log=None):
 
         if not results.get("output"):
             return
@@ -1428,14 +1421,13 @@ class ResourceCmdHelper:
         del results["output"]
 
         # ref 34532453245
-        if not self.wrote_local_log and prt:
+        if local_log:
             try:
-                self._write_cli_log()
-                self.wrote_local_log = True
+                self._write_local_log()
             except:
-                self.wrote_local_log = None
+                self.logger.debug("could not write local log")
 
-        print(self.final_output)
+        #print(self.final_output)
 
     def eval_failure(self,results,method):
 
