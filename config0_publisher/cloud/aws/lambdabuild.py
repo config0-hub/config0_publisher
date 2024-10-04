@@ -183,12 +183,12 @@ class LambdaResourceHelper(AWSCommonConn):
                 self.results["failed_message"] = "execution of cmd in lambda function failed"
 
         try:
-            output = self.download_log_from_s3()
+            self.result["abbreviated_output"] = b64_decode(self.response["LogResult"])
         except:
-            output = b64_decode(self.response["LogResult"])
+            self.logger.debug("could not retrieved abbreviated output")
 
-        if not self.results.get("output"):
-            self.results["output"] = output
+        # testtest456
+        #output = self.download_log_from_s3()
 
         return self.results
 
