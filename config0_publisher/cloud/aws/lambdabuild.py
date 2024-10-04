@@ -182,15 +182,16 @@ class LambdaResourceHelper(AWSCommonConn):
             if not self.results.get("failed_message"):
                 self.results["failed_message"] = "execution of cmd in lambda function failed"
 
-        self.result["lambda_logs"] = {}
+        self.results["lambda_logs"] = {}
+
         try:
-            self.result["lambda_logs"]["brief"] = b64_decode(self.response["LogResult"])
+            self.results["lambda_logs"]["brief"] = b64_decode(self.response["LogResult"])
         except:
             self.logger.debug("could not retrieved abbreviated output")
 
         # testtest456
         try:
-            self.result["lambda_logs"]["full"] = self.download_log_from_s3()
+            self.results["lambda_logs"]["full"] = self.download_log_from_s3()
         except:
             self.logger.debug("could not retrieved full output")
 
