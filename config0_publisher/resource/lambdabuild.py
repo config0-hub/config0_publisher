@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
+from time import time
+
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.terraform import TFCmdOnAWS
 from config0_publisher.resource.infracost import TFInfracostHelper
 from config0_publisher.resource.tfsec import TFSecHelper
 from config0_publisher.resource.opa import TFOpaHelper
+from config0_publisher.utilities import id_generator2
 
 class LambdaParams(TFAwsBaseBuildParams):
 
@@ -20,6 +23,9 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         self.lambda_role = kwargs.get("lambda_role",
                                       "config0-assume-poweruser")
+
+        # to centralized the logs
+        self.s3_output_key = f'{id_generator2()}/{str(int(time()))}'
 
     def _set_inputargs(self):
 
@@ -53,7 +59,8 @@ class LambdaParams(TFAwsBaseBuildParams):
     def _init_lambda_helper(self):
 
         self._set_inputargs()
-        self.lambda_helper = LambdaResourceHelper(**self.buildparams)
+        self.lambda_helper = LambdaResourceHelper(s3_output_key=self.s3_output_key,
+                                                  **self.buildparams)
 
     def submit(self,**inputargs):
 
@@ -65,7 +72,8 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         # get results from phase json file
         # which should be set
-        self.lambda_helper = LambdaResourceHelper(**self.phases_info)
+        self.lambda_helper = LambdaResourceHelper(s3_output_key=self.s3_output_key,
+                                                  **self.phases_info)
         self.lambda_helper.retrieve(**inputargs)
         return self.lambda_helper.results
 

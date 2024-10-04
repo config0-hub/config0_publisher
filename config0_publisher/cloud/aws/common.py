@@ -38,7 +38,8 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.results = kwargs.get("results")
         self.zipfile = None
-        self.s3_output_key = f'{id_generator2()}/{str(time())}'
+        self.s3_output_key = kwargs.get("s3_output_key",
+                                        f'{id_generator2()}/{str(int(time()))}')
 
         if not self.results:
             self.results = {
