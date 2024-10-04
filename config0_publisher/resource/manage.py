@@ -1413,10 +1413,11 @@ class ResourceCmdHelper:
 
     def eval_log(self,results,prt=None):
 
-        try:
-            print(results["lambda_logs"]["full"])
-        except:
-            print("could not print full logs")
+        # testtest456
+        #try:
+        #    print(results["lambda_logs"]["full"])
+        #except:
+        #    print("could not print full logs")
 
         if not results.get("output"):
             return
