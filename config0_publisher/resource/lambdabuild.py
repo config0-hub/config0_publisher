@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 from time import time
 
 from config0_publisher.cloud.aws.lambdabuild import LambdaResourceHelper
@@ -25,7 +26,8 @@ class LambdaParams(TFAwsBaseBuildParams):
                                       "config0-assume-poweruser")
 
         # to centralized the logs
-        self.s3_output_key = f'{id_generator2()}/{str(int(time()))}'
+        self.s3_output_key = os.environ.get("EXEC_INST_ID",
+                                            f'{id_generator2()}/{str(int(time()))}')
 
     def _set_inputargs(self):
 
