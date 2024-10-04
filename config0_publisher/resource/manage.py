@@ -1427,7 +1427,7 @@ class ResourceCmdHelper:
             except:
                 self.logger.debug("could not write local log")
 
-        #print(self.final_output)
+        print(self.final_output)
 
     def eval_failure(self,results,method):
 
