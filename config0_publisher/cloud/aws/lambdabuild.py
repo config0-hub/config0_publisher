@@ -183,6 +183,10 @@ class LambdaResourceHelper(AWSCommonConn):
                 self.results["failed_message"] = "execution of cmd in lambda function failed"
 
         # testtest456
+        output = self.download_log_from_s3()
+        print(output)
+        raise Exception('yo')
+
         try:
             output = self.download_log_from_s3()
         except:
