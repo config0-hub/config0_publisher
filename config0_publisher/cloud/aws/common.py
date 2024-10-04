@@ -45,9 +45,6 @@ class AWSCommonConn(SetClassVarsHelper):
         # testtest456
         if kwargs.get("s3_output_key"):
             self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
-            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
-            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
-            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
 
         if not self.results:
             self.results = {
