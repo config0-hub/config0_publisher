@@ -66,8 +66,6 @@ class LambdaParams(TFAwsBaseBuildParams):
 
     def submit(self,**inputargs):
 
-        # testtest456
-        print(f'submit: s3_output_key provided "{self.s3_output_key}"')
         self._init_lambda_helper()
         self.lambda_helper.submit(**inputargs)
         return self.lambda_helper.results
@@ -93,8 +91,6 @@ class LambdaParams(TFAwsBaseBuildParams):
 
     def run(self,**inputargs):
 
-        # testtest456
-        print(f'run: s3_output_key provided "{self.s3_output_key}"')
         self._init_lambda_helper()
         self.lambda_helper.run(**inputargs)
 

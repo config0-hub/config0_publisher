@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+import os
+from time import time
+
+from config0_publisher.utilities import id_generator2
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
 from config0_publisher.resource.terraform import TFCmdOnAWS
@@ -11,9 +15,15 @@ class CodebuildParams(TFAwsBaseBuildParams):
         TFAwsBaseBuildParams.__init__(self,**kwargs)
 
         self.classname = "CodebuildParams"
+
         self.codebuild_basename = kwargs.get("codebuild_basename","config0-iac")
+
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
+
+        # to centralized the logs
+        self.s3_output_key = os.environ.get("EXEC_INST_ID",
+                                            f'{id_generator2()}/{str(int(time()))}')
 
     def _set_inputargs(self):
 
@@ -57,7 +67,8 @@ phases:
     def _init_codebuild_helper(self):
 
         self._set_inputargs()
-        self.codebuild_helper = CodebuildResourceHelper(**self.buildparams)
+        self.codebuild_helper = CodebuildResourceHelper(s3_output_key=self.s3_output_key,
+                                                        **self.buildparams)
 
     def submit(self,**inputargs):
 
@@ -70,7 +81,8 @@ phases:
 
         # get results from phase json file
         # which should be set
-        self.codebuild_helper = CodebuildResourceHelper(**self.phases_info)
+        self.codebuild_helper = CodebuildResourceHelper(s3_output_key=self.s3_output_key,
+                                                        **self.phases_info)
         self.codebuild_helper.retrieve(**inputargs)
 
         return self.codebuild_helper.results
