@@ -224,7 +224,7 @@ class CodebuildResourceHelper(AWSCommonConn):
                 self.logger.debug("time expired to retrieved log {} seconds".format(str(_time_elapsed)))
                 return False
 
-            results = self._get_log(build_id_suffix)
+            results = self._set_log(build_id_suffix)
 
             if results.get("status") == True:
                 return True
@@ -235,7 +235,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             sleep(2)
 
-    def _get_log(self,build_id_suffix):
+    def _set_log(self,build_id_suffix):
 
         if self.output:
             return {"status":True}
@@ -535,6 +535,17 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return self._retrieve()
 
+    def _concat_log(self):
+        try:
+            _output = self.download_log_from_s3()
+        except:
+            _output = None
+
+        if not _output:
+            return self.output
+
+        return _output + '\n' + self.output
+
     def _retrieve(self):
 
         self._eval_build()
@@ -546,7 +557,7 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.clean_output()
 
         if self.output:
-            self.results["output"] = self.output
+            self.results["output"] = self._concat_log()
 
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
