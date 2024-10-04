@@ -18,7 +18,6 @@ class TFCmdOnAWS(TFAppHelper):
         self.tf_bucket_path = kwargs["tf_bucket_path"]
         self.run_share_dir = kwargs["run_share_dir"]
         self.ssm_tmp_dir = "/tmp"
-        self.src_env_files_cmd = None
 
         TFAppHelper.__init__(self,
                              binary=kwargs["binary"],
@@ -42,6 +41,25 @@ class TFCmdOnAWS(TFAppHelper):
                 bin_dir=self.bin_dir)
 
     # ref 4354523
+    # used only for codebuild
+    def _get_ssm_concat_cmds(self):
+
+        if os.environ.get("DEBUG_STATEFUL"):
+            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value && cat $TMPDIR/.ssm_value' ]
+        else:
+            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value' ]
+
+        return cmds
+
+    # used only for codebuild
+    def _set_src_envfiles_cmd(self):
+
+        base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
+        ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; . ./.ssm_value; fi'
+
+        return f'{base_cmd}; {ssm_cmd}'
+
+    # used only for codebuild
     def load_env_files(self):
 
         '''
@@ -52,80 +70,19 @@ class TFCmdOnAWS(TFAppHelper):
 
         # this is envfile path in the app dir
         # e.g. var/tmp/terraform/build_env_vars.env
-
         envfile = os.path.join(self.app_dir,
                                self.envfile)
 
-        # load_env_files
-        if self.runtime_env == "codebuild":
-            cmds = [
-                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-                f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
-            ]
-        else:
-            cmds = [
-                f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-                f'/tmp/decode_file -d {self.stateful_dir}/{self.envfile} -e {self.stateful_dir}/run/{envfile}.enc'
-            ]
-
-        # add ssm if needed
-        cmds.extend(self._get_ssm_concat())
-
-        # add sourcing of env files
-        self._set_src_envfiles_cmd()
-
-        cmds.append(self.src_env_files_cmd)
-
-        return cmds
-
-    def _get_ssm_concat(self):
-
-        if self.runtime_env == "codebuild":
-            return self._get_codebuild_ssm_concat()
-
-        return self._get_lambda_ssm_concat()
-
-    def _get_lambda_ssm_concat(self):
-
         cmds = [
-            'echo "############"; echo "# SSM_NAME: $SSM_NAME"; echo "############"',
-            f'ssm_get -name $SSM_NAME -file $TMPDIR/.ssm_value > /dev/null 2>&1 || echo "WARNING: could not fetch SSM_NAME: $SSM_NAME"'
+            f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
+            f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
         ]
 
-        # f'cat $TMPDIR/.ssm_value'
+        # testtest456 need to modify this for SSM_NAMES plural
+        cmds.extend(self._get_ssm_concat_cmds())
+        cmds.append(self._set_src_envfiles_cmd())
 
         return cmds
-
-    def _get_codebuild_ssm_concat(self):
-
-        if os.environ.get("DEBUG_STATEFUL"):
-            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value && cat $TMPDIR/.ssm_value' ]
-        else:
-            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value' ]
-
-        return cmds
-
-    def _set_src_envfiles_cmd(self):
-
-        # with lambda, the shell is needs env_var with set +a style
-
-        if self.runtime_env == "codebuild":
-            #base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; while IFS= read -r line; do echo "# $line"; eval "$line"; done < ./{self.envfile}; fi'
-            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
-        else:
-            base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; set -a; . ./{self.envfile}; set +a; fi'
-
-        if self.runtime_env == "codebuild":
-            ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; . ./.ssm_value; fi'
-        else:
-            ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; set -a; . ./.ssm_value; set +a; fi'
-
-        self.src_env_files_cmd = f'{base_cmd}; {ssm_cmd}'
-
-        return self.src_env_files_cmd
-
-    #def _get_lambda_env_cmd(self,cmd):
-    #    return f'{self.src_env_files_cmd}; {cmd}'
 
     def s3_tfpkg_to_local(self):
 
@@ -156,22 +113,11 @@ class TFCmdOnAWS(TFAppHelper):
 
         suffix_cmd = f'{self.base_cmd} init'
 
-        if self.runtime_env == "codebuild":
-            return [
-                f'{suffix_cmd} || (rm -rf .terraform && {suffix_cmd})'
-            ]
-
         return [
-            f'({suffix_cmd}) || (rm -rf .terraform && {suffix_cmd})'
+            f'{suffix_cmd} || (rm -rf .terraform && {suffix_cmd})'
         ]
 
     def _get_tf_plan(self):
-
-        if self.runtime_env == "codebuild":
-            cmds = [
-                f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
-                f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
-            ]
 
         cmds = [
             f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
@@ -208,23 +154,14 @@ class TFCmdOnAWS(TFAppHelper):
         cmds.extend(self.s3_file_to_local(suffix="tfplan",
                                           last_apply=None))
 
-        if self.runtime_env == "codebuild":
-            cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
-        else:
-            cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
-
-        #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
+        cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
 
         return cmds
 
     def get_tf_destroy(self):
 
         cmds = self._get_tf_init()
-
-        if self.runtime_env == "codebuild":
-            cmds.append(f'{self.base_cmd} destroy -auto-approve')
-        else:
-            cmds.append(f'{self.base_cmd} destroy -auto-approve')
+        cmds.append(f'{self.base_cmd} destroy -auto-approve')
 
         return cmds
 
@@ -244,18 +181,9 @@ class TFCmdOnAWS(TFAppHelper):
     def get_tf_chk_drift(self):
 
         cmds = self._get_tf_init()
-
-        if self.runtime_env == "codebuild":
-            cmds.extend([
-                f'{self.base_cmd} refresh',
-                f'{self.base_cmd} plan -detailed-exitcode'
-            ])
-        else:
-            cmds.extend([
-                f'({self.base_cmd} refresh',
-                f'({self.base_cmd} plan -detailed-exitcode'
-            ])
-
-        #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
+        cmds.extend([
+            f'({self.base_cmd} refresh',
+            f'({self.base_cmd} plan -detailed-exitcode'
+        ])
 
         return cmds
