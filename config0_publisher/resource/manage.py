@@ -1429,7 +1429,8 @@ class ResourceCmdHelper:
             except:
                 self.wrote_local_log = None
 
-        print(self.final_output)
+        if os.environ.get("JIFFY_ENHANCED_LOG"):
+            print(self.final_output)
 
     def eval_failure(self,results,method):
 
