@@ -38,8 +38,16 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.results = kwargs.get("results")
         self.zipfile = None
+
         self.s3_output_key = kwargs.get("s3_output_key",
                                         f'{id_generator2()}/{str(int(time()))}')
+
+        # testtest456
+        if kwargs.get("s3_output_key"):
+            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
+            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
+            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
+            self.logger.debug(f's3_output_key provided "{self.s3_output_key}"')
 
         if not self.results:
             self.results = {
