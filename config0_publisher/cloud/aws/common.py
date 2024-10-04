@@ -192,7 +192,7 @@ class AWSCommonConn(SetClassVarsHelper):
         if not bucket_name:
             bucket_name = self.tmp_bucket
 
-        local_file = f'/tmp/{self.s3_output_key}'
+        local_file = f'/tmp/{id_generator2()}'
 
         self.s3.Bucket(bucket_name).download_file(self.s3_output_key,
                                                   local_file)
