@@ -44,8 +44,6 @@ class AWSCommonConn(SetClassVarsHelper):
         if not self.s3_output_key:
             self.s3_output_key = kwargs.get("s3_output_key",
                                             f'{id_generator2()}/{str(int(time()))}')
-        else:
-            self.logger.debug(f's3_output_key provided as env_var "{self.s3_output_key}"')
 
         if not self.results:
             self.results = {
