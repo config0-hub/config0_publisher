@@ -542,9 +542,9 @@ class CodebuildResourceHelper(AWSCommonConn):
             _output = None
 
         if not _output:
-            return self.output
+            return "\n".join(self.output)
 
-        return _output + '\n' + self.output
+        return _output + '\n' + "\n".join(self.output)
 
     def _retrieve(self):
 
