@@ -35,7 +35,6 @@ class TFCmdOnAWS(TFAppHelper):
                 runtime_env=self.runtime_env,
                 binary=self.binary,
                 version=self.version,
-                dl_subdir=self.dl_subdir,
                 tf_bucket_path=self.tf_bucket_path,
                 arch=self.arch,
                 bin_dir=self.bin_dir)

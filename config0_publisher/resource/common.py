@@ -36,14 +36,11 @@ class TFAppHelper:
         self.app_dir = kwargs.get("app_dir","var/tmp/terraform")
         self.arch = kwargs.get("arch",'linux_amd64')
 
-        self.dl_subdir = kwargs.get("dl_subdir",'downloads')
-
         if self.runtime_env == "lambda":
             self.bin_dir = f"/tmp/config0/bin"
         else:
             self.bin_dir = f"/usr/local/bin"
 
-        os.makedirs(self.dl_subdir, exist_ok=True)
         os.makedirs(self.bin_dir, exist_ok=True)
 
         self.exec_dir = f'{self.stateful_dir}/run/{self.app_dir}'  # notice the execution directory is in "run" subdir
@@ -52,7 +49,7 @@ class TFAppHelper:
 
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
         self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/{self.base_file_path}"
-        self.dl_file_path = f'$TMPDIR/{self.dl_subdir}/{self.base_file_path}'
+        self.dl_file_path = f'$TMPDIR/{self.base_file_path}'
 
         self.tmp_base_output_file = f'/tmp/{self.app_name}.$STATEFUL_ID'
         self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}.$STATEFUL_ID'
@@ -76,7 +73,6 @@ class TFAppHelper:
             f'mkdir -p {self.stateful_dir}/run',
             f'mkdir -p {self.stateful_dir}/output/{self.app_name}',
             f'mkdir -p {self.stateful_dir}/generated/{self.app_name}',
-            f'mkdir -p $TMPDIR/{self.dl_subdir}',
             f'echo "##############"; df -h; echo "##############"'
         ]
 
@@ -123,9 +119,9 @@ class TFAppHelper:
         ]
 
         if self.installer_format == "zip":
-            cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && unzip {base_file_path} > /dev/null) || exit 0')
+            cmds.append(f'(cd $TMPDIR && unzip {base_file_path} > /dev/null) || exit 0')
         elif self.installer_format == "targz":
-            cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && tar xfz {base_file_path} > /dev/null) || exit 0')
+            cmds.append(f'(cd $TMPDIR && tar xfz {base_file_path} > /dev/null) || exit 0')
 
         return cmds
 

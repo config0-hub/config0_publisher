@@ -30,7 +30,7 @@ class TFInfracostHelper(TFAppHelper):
         dl_file = f'{self.binary}-{self.arch}'.replace("_","-")
 
         cmds = self.download_cmds()
-        cmds.append(f'(cd $TMPDIR/{self.dl_subdir} && mv {dl_file} {self.bin_dir}/{self.binary} > /dev/null) || exit 0')
+        cmds.append(f'(cd $TMPDIR && mv {dl_file} {self.bin_dir}/{self.binary} > /dev/null) || exit 0')
         cmds.append(f'chmod 777 {self.bin_dir}/{self.binary}')
 
         return cmds
