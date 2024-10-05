@@ -36,8 +36,7 @@ class TFAppHelper:
         self.app_dir = kwargs.get("app_dir","var/tmp/terraform")
         self.arch = kwargs.get("arch",'linux_amd64')
 
-        self.dl_subdir = kwargs.get("dl_subdir",
-                                    'config0/downloads')
+        self.dl_subdir = kwargs.get("dl_subdir",'downloads')
 
         if self.runtime_env == "lambda":
             self.bin_dir = f"/tmp/config0/bin"
