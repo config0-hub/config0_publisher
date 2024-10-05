@@ -49,7 +49,7 @@ class Config0SettingsEnvVarHelper:
             failed_message = "The settings is empty for CONFIG0_RESOURCE_EXEC_SETTINGS_HASH"
             if raise_on_error:
                 raise Exception(failed_message)
-            self.logger.error(failed_message)
+            self.logger.warn(failed_message)
             return
 
         resource_runtime_settings_hash = _settings.get("resource_runtime_settings_hash")
@@ -121,7 +121,7 @@ class Config0SettingsEnvVarHelper:
                 raise Exception("terraform_type needs to be set")
 
         if not self._vars.get("provider"):
-            self.logger.error("provider should be set")
+            self.logger.warn("provider should be set")
 
         for k,v in self._vars.items():
             if os.environ.get("JIFFY_ENHANCED_LOG"):
