@@ -35,12 +35,17 @@ class TFAppHelper:
 
         self.app_dir = kwargs.get("app_dir","var/tmp/terraform")
         self.arch = kwargs.get("arch",'linux_amd64')
-        self.dl_subdir = kwargs.get("dl_subdir",'config0/downloads')
+
+        self.dl_subdir = kwargs.get("dl_subdir",
+                                    'config0/downloads')
 
         if self.runtime_env == "lambda":
             self.bin_dir = f"/tmp/config0/bin"
         else:
             self.bin_dir = f"/usr/local/bin"
+
+        os.makedirs(self.dl_subdir, exist_ok=True)
+        os.makedirs(self.bin_dir, exist_ok=True)
 
         self.exec_dir = f'{self.stateful_dir}/run/{self.app_dir}'  # notice the execution directory is in "run" subdir
 
