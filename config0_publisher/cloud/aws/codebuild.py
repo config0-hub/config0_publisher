@@ -357,6 +357,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         env_vars.append(_env_var)
 
+        _env_var = {'name': "BUILD_EXPIRE_AT",
+        'value': str(self.build_expire_at),
+        'type': 'PLAINTEXT'}
+
         return env_vars
 
     def _get_avail_codebuild_projects(self,max_queue_size=5):

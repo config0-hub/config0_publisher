@@ -43,7 +43,7 @@ class LambdaResourceHelper(AWSCommonConn):
             "share_dir":None
         }
 
-    def _env_vars_to_lambda_format(self):
+    def _env_vars_to_lambda_format(self,timeout=None):
 
         skip_keys = [ "AWS_ACCESS_KEY_ID",
                       "AWS_SECRET_ACCESS_KEY",
@@ -62,6 +62,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
         env_vars["OUTPUT_BUCKET_KEY"] = self.s3_output_key
+        env_vars["BUILD_EXPIRE_AT"] = self.build_expire_at
 
         _added = []
 
@@ -106,7 +107,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return env_vars
 
-    def _trigger_build(self):
+    def _get_timeout(self):
 
         # we limit the build to 500 seconds, which is one min
         # less than 10 minutes
@@ -118,7 +119,11 @@ class LambdaResourceHelper(AWSCommonConn):
         if timeout > 500:
             timeout = 500
 
-        self.build_expire_at = time() + timeout
+        return timeout
+
+    def _trigger_build(self):
+
+        self.build_expire_at = time() + self._get_timeout()
 
         # Define the configuration for invoking the Lambda function
         env_vars = self._env_vars_to_lambda_format()
