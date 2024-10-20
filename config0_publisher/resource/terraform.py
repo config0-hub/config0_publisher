@@ -15,6 +15,10 @@ class TFCmdOnAWS(TFAppHelper):
         self.app_dir = kwargs["app_dir"]  # e.g. var/tmp/terraform
 
         self.envfile = kwargs["envfile"]  # e.g. build_env_vars.env
+
+        # if initial apply, then if apply fails, it will automatically destroy
+        self.initial_apply = os.environ.get("CONFIG0_INITIAL_APPLY")
+
         self.tf_bucket_path = kwargs["tf_bucket_path"]
         self.run_share_dir = kwargs["run_share_dir"]
         self.ssm_tmp_dir = "/tmp"
@@ -134,7 +138,6 @@ class TFCmdOnAWS(TFAppHelper):
         cmds.extend(self._get_tf_validate())
         cmds.extend(self.get_tf_chk_fmt(exit_on_error=True))
         cmds.extend(self._get_tf_plan())
-        #cmds.extend(self.local_output_to_s3(srcfile="/tmp/$STATEFUL_ID.log",last_apply=None))
 
         return cmds
 
@@ -147,6 +150,9 @@ class TFCmdOnAWS(TFAppHelper):
         return cmds
 
     def get_tf_apply(self,destroy_on_failure=None):
+
+        if self.initial_apply:
+            destroy_on_failure = True
 
         cmds = self._get_tf_init()
         cmds.extend(self._get_tf_validate())
