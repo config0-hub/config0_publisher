@@ -31,11 +31,11 @@ def get_tf_install(**kwargs):
     else:  # opentofu
         _install_cmd = f'({bucket_install}) || (echo "terraform/tofu not found in local s3 bucket" && {tofu_direct})'
 
-    cmds = [ _install_cmd ]
+    cmds = [ {"install terraform cmd":_install_cmd }]
 
     cmds.extend([
-        f'mkdir -p {bin_dir} || echo "trouble making bin_dir {bin_dir}"',
-        f'(cd $TMPDIR && unzip {binary}_{version} && mv {binary} {bin_dir}/{binary} > /dev/null) || exit 0',
-        f'chmod 777 {bin_dir}/{binary}'])
+        {"mkdir bin dir": f'mkdir -p {bin_dir} || echo "trouble making bin_dir {bin_dir}"',
+        {f"move {binary}_{version} to bin": f'(cd $TMPDIR && unzip {binary}_{version} && mv {binary} {bin_dir}/{binary} > /dev/null) || exit 0',
+        {f"chmod{binary}": f'chmod 777 {bin_dir}/{binary}'])
 
     return cmds
