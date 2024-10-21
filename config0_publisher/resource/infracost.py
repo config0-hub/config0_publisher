@@ -39,7 +39,6 @@ class TFInfracostHelper(TFAppHelper):
     def exec_cmds(self):
 
         cmds = [
-            f'echo "executing INFRACOST"',
             f'({self.base_cmd} --no-color breakdown --path . --format json --out-file {self.tmp_base_output_file}.json) || (echo "WARNING: looks like INFRACOST failed")',
             f'({self.base_cmd} --no-color breakdown --path . --out-file {self.tmp_base_output_file}.out && cat {self.tmp_base_output_file}.out | tee -a /tmp/$STATEFUL_ID.log ) || (echo "WARNING: looks like INFRACOST failed")'
         ]
