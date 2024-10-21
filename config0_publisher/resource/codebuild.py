@@ -128,12 +128,14 @@ class Codebuild(CodebuildParams):
         cmds.extend(self.tfcmds.get_tf_install())
         cmds.extend(self.tfcmds.load_env_files())
 
+        cmds_values = [list(c.values())[0] for c in cmds]
+
         contents = '''
   pre_build:
     on-failure: ABORT
     commands:
 '''
-        return self._add_cmds(contents,cmds)
+        return self._add_cmds(contents,cmds_values)
 
     def _get_codebuildspec_build(self):
 
@@ -152,7 +154,9 @@ class Codebuild(CodebuildParams):
         else:
             raise Exception("method needs to be create/apply/destroy")
 
-        return self._add_cmds(contents,cmds)
+        cmds_values = [list(c.values())[0] for c in cmds]
+
+        return self._add_cmds(contents,cmds_values)
 
     def get_buildspec(self):
 
