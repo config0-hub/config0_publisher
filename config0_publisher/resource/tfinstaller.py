@@ -31,7 +31,7 @@ def get_tf_install(**kwargs):
     else:  # opentofu
         _install_cmd = f'({bucket_install}) || (echo "terraform/tofu not found in local s3 bucket" && {tofu_direct})'
 
-    cmds = [ {"install terraform cmd":_install_cmd }]
+    cmds = [ {f"install {binary}" :_install_cmd }]
 
     cmds.extend([
         {"mkdir bin dir": f'mkdir -p {bin_dir} || echo "trouble making bin_dir {bin_dir}"'},
