@@ -1392,23 +1392,22 @@ class ResourceCmdHelper:
             ssm_env_vars["ssm_name"] = str(build_env_vars["ssm_name"])
             del build_env_vars["ssm_name"]
 
+        if "SSM_NAME" in build_env_vars:
+            ssm_env_vars["SSM_NAME"] = str(build_env_vars["SSM_NAME"])
+            del build_env_vars["SSM_NAME"]
+
         base_file_path = os.path.join(self.run_share_dir,
                                       self.app_dir)
 
         if build_env_vars:
-            print('y0'*32)
             create_envfile(build_env_vars,
                            b64=True,
                            file_path=f"{base_file_path}/build_env_vars.env.enc")
 
         if ssm_env_vars:
-            print('y1'*32)
             create_envfile(build_env_vars,
                            b64=True,
                            file_path=f"{base_file_path}/ssm.env.enc")
-
-        self.logger.json(build_env_vars)
-        raise Exception('y1'*32)
 
         return True
 
