@@ -58,22 +58,22 @@ class TFAppHelper:
 
         if self.runtime_env == "codebuild":
             cmds = [
-                'which zip || apt-get update',
-                'which zip || apt-get install -y unzip zip',
+                {"apt-get update": 'which zip || apt-get update'},
+                {"install zip": 'which zip || apt-get install -y unzip zip'}
             ]
         else:
-            cmds = [f'echo "downloading {self.base_file_path}"']
+            cmds = [ { f'download "{self.binary}:{self.version}"': f'echo "downloading {self.base_file_path}"' }]
 
         return cmds
 
     def reset_dirs(self):
 
         cmds = [
-            f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"',
-            f'mkdir -p {self.stateful_dir}/run',
-            f'mkdir -p {self.stateful_dir}/output/{self.app_name}',
-            f'mkdir -p {self.stateful_dir}/generated/{self.app_name}',
-            f'echo "##############"; df -h; echo "##############"'
+            {"reset_dirs - clean local config0 dir": f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"'},
+            {"reset_dirs - mkdir local run": f'mkdir -p {self.stateful_dir}/run'},
+            {"reset_dirs - mkdir local output": f'mkdir -p {self.stateful_dir}/output/{self.app_name}'},
+            {"reset_dirs - mkdir local generated": f'mkdir -p {self.stateful_dir}/generated/{self.app_name}'},
+            {"reset_dirs - output diskspace": f'echo "##############"; df -h; echo "##############"'}
         ]
 
         cmds.extend(self._get_initial_preinstall_cmds())
@@ -114,14 +114,14 @@ class TFAppHelper:
         install_cmd = f'({_bucket_install}) || ({_src_install})'
 
         cmds = [
-            install_cmd,
-            f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"'
+            {f'install cmd for {self.binary}': install_cmd },
+            {'mkdir bin dir': f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"'}
         ]
 
         if self.installer_format == "zip":
-            cmds.append(f'(cd $TMPDIR && unzip {base_file_path} > /dev/null) || exit 0')
+            cmds.append({ f'unzip downloaded "{self.binary}:{self.version}"': f'(cd $TMPDIR && unzip {base_file_path} > /dev/null) || exit 0'})
         elif self.installer_format == "targz":
-            cmds.append(f'(cd $TMPDIR && tar xfz {base_file_path} > /dev/null) || exit 0')
+            cmds.append({ f'untar downloaded "{self.binary}:{self.version}"': f'(cd $TMPDIR && tar xfz {base_file_path} > /dev/null) || exit 0'})
 
         return cmds
 
@@ -142,7 +142,7 @@ class TFAppHelper:
         else:
             cmd = f'{base_cmd}/cur/{_filename} || echo "trouble uploading output file"'
 
-        return [cmd]
+        return [{f'last_output_to_s3 "{_filename}"':cmd}]
 
     def s3_file_to_local(self,dstfile=None,suffix=None,last_apply=None):
 
@@ -159,4 +159,4 @@ class TFAppHelper:
         else:
             cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/cur/{_filename} {dstfile}'
 
-        return [cmd]
+        return [ {f's3_file_to_local "{_filename}"':cmd }]
