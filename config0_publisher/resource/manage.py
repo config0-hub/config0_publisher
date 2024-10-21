@@ -1406,7 +1406,9 @@ class ResourceCmdHelper:
             create_envfile(build_env_vars,
                            b64=True,
                            file_path=f"{base_file_path}/ssm.env.enc")
-            raise Exception('y1'*32)
+
+        self.logger.json(build_env_vars)
+        raise Exception('y1'*32)
 
         return True
 
