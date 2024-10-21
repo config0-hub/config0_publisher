@@ -13,7 +13,8 @@ def get_tf_install(**kwargs):
     arch = kwargs["arch"]
     bin_dir = kwargs["bin_dir"]
 
-    _hash_delimiter = 'echo "{}"'.format("#" * 32)
+    #_hash_delimiter = 'echo "{}"'.format("#" * 32)
+    _hash_delimiter = 'echo ""'
 
     _bucket_install_1 = f'aws s3 cp {bucket_path} $TMPDIR/{binary}_{version} --quiet'
     _bucket_install_2 = f'echo "# GOT {binary} from s3/cache"'

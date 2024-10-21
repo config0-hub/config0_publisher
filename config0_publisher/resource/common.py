@@ -100,7 +100,8 @@ class TFAppHelper:
             bucket_path = f'{self.bucket_path}.{_suffix}'
             src_remote_path = f'{self.src_remote_path}.{_suffix}'
 
-        _hash_delimiter = 'echo "{}"'.format("#"*32)
+        #_hash_delimiter = 'echo "{}"'.format("#"*32)
+        _hash_delimiter = 'echo ""'
 
         _bucket_install_1 = f'aws s3 cp {bucket_path} {dl_file_path} --quiet'
         _bucket_install_2 = f'echo "# GOT {base_file_path} from s3/cache"'
