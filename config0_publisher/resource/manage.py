@@ -1405,7 +1405,7 @@ class ResourceCmdHelper:
                            file_path=f"{base_file_path}/build_env_vars.env.enc")
 
         if ssm_env_vars:
-            create_envfile(build_env_vars,
+            create_envfile(ssm_env_vars,
                            b64=True,
                            file_path=f"{base_file_path}/ssm.env.enc")
 
