@@ -25,16 +25,16 @@ class TFSecHelper(TFAppHelper):
     def install_cmds(self):
 
         cmds = self.download_cmds()
-        cmds.append(f'(mv {self.dl_file_path} {self.bin_dir}/{self.binary} > /dev/null) || exit 0')
-        cmds.append(f'chmod 777 {self.bin_dir}/{self.binary}')
+        cmds.append( { f"move binary {self.binary}": f'(mv {self.dl_file_path} {self.bin_dir}/{self.binary} > /dev/null) || exit 0' } )
+        cmds.append( { f"change permission binary {self.binary}": f'chmod 777 {self.bin_dir}/{self.binary}' } )
 
         return cmds
 
     def exec_cmds(self):
 
         cmds = [
-            f'({self.base_cmd} --no-color --out {self.tmp_base_output_file}.out | tee -a /tmp/$STATEFUL_ID.log) || echo "tfsec check failed"',
-            f'({self.base_cmd} --no-color --format json --out {self.tmp_base_output_file}.json) || echo "tfsec check with json output failed"'
+            { "tfsec exec output": f'({self.base_cmd} --no-color --out {self.tmp_base_output_file}.out | tee -a /tmp/$STATEFUL_ID.log) || echo "tfsec check failed"' },
+            { "tfsec exec output as json": f'({self.base_cmd} --no-color --format json --out {self.tmp_base_output_file}.json) || echo "tfsec check with json output failed"' }
         ]
 
         cmds.extend(self.local_output_to_s3(suffix="json",last_apply=None))
