@@ -47,10 +47,12 @@ class TFCmdOnAWS(TFAppHelper):
     # used only for codebuild
     def _get_ssm_concat_cmds(self):
 
+        base_cmd = f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value'
+
         if os.environ.get("DEBUG_STATEFUL"):
-            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value && cat $TMPDIR/.ssm_value' ]
+            cmds = [ f'({base_cmd} && cat $TMPDIR/.ssm_value) || echo "could not evaluate SSM_VALUE"' ]
         else:
-            cmds = [ f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value' ]
+            cmds = [ f'{base_cmd} || echo "could not evaluate $SSM_VALUE"' ]
 
         return cmds
 
@@ -64,12 +66,6 @@ class TFCmdOnAWS(TFAppHelper):
 
     # used only for codebuild
     def load_env_files(self):
-
-        '''
-        # for lambda function, we use the ssm_get python cli
-        #'ssm_get -name $SSM_NAME -file {self.stateful_dir}/{self.envfile}'
-        #'[ -n "$SSM_NAME" ] && echo "SSM_NAME: $SSM_NAME" || echo "SSM_NAME not set"'
-        '''
 
         # this is envfile path in the app dir
         # e.g. var/tmp/terraform/build_env_vars.env

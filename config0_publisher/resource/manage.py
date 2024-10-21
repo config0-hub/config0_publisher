@@ -6,6 +6,7 @@ import jinja2
 import glob
 import json
 from time import sleep
+from copy import deepcopy
 
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
@@ -1373,7 +1374,7 @@ class ResourceCmdHelper:
         self.cmd_failed(failed_message=failed_message)
 
     # ref 4354523
-    def create_build_envfile(self,encrypt=None,openssl=True):
+    def create_build_envfile(self):
         '''
         we use stateful_id for the encrypt key
         '''
@@ -1381,21 +1382,26 @@ class ResourceCmdHelper:
         if not self.build_env_vars:
             return
 
-        file_path = os.path.join(self.run_share_dir,
-                                 self.app_dir,
-                                 "build_env_vars.env")
+        ssm_env_vars = {}
 
-        if self.build_env_vars.get("STATEFUL_ID") and encrypt:
-            # these are converted to b64 twice over
-            create_encrypted_envfile(self.build_env_vars,
-                                     secret=self.build_env_vars["STATEFUL_ID"],
-                                     file_path=f"{file_path}.enc",
-                                     openssl=openssl)
-        else:
-            create_envfile(self.build_env_vars,
+        build_env_vars = deepcopy(self.build_env_vars)
+
+        if "ssm_name" in build_env_vars:
+            ssm_env_vars["ssm_name"] = str(build_env_vars["ssm_name"])
+            del build_env_vars["ssm_name"]
+
+        base_file_path = os.path.join(self.run_share_dir,
+                                      self.app_dir)
+
+        if build_env_vars:
+            create_envfile(build_env_vars,
                            b64=True,
-                           include_export=None,
-                           file_path=f"{file_path}.enc")
+                           file_path=f"{base_file_path}/build_env_vars.env.enc")
+
+        if ssm_env_vars:
+            create_envfile(build_env_vars,
+                           b64=True,
+                           file_path=f"{base_file_path}/ssm.env.enc")
 
         return True
 

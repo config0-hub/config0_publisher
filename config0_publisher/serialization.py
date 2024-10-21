@@ -176,16 +176,13 @@ def uncompress(zdata):
 
     return zlib.decompress(zdata)  
 
-def create_envfile(dict_obj,b64=None,include_export=None,file_path=None):
+def create_envfile(dict_obj,b64=None,file_path=None):
 
     # Create a StringIO object
     file_buffer = io.StringIO()
 
     for _k,_v in list(dict_obj.items()):
-        if include_export:
-            file_buffer.write("export {}={}\n".format(_k,_v))
-        else:
-            file_buffer.write("{}={}\n".format(_k,_v))
+        file_buffer.write("{}={}\n".format(_k,_v))
 
     contents = file_buffer.getvalue()
 
