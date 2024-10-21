@@ -50,9 +50,9 @@ class TFCmdOnAWS(TFAppHelper):
         base_cmd = f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value'
 
         if os.environ.get("DEBUG_STATEFUL"):
-            cmds = [ f'({base_cmd} && cat $TMPDIR/.ssm_value) || echo "could not evaluate SSM_VALUE"' ]
+            cmds = [ {"_get_ssm_concat_cmds": f'({base_cmd} && cat $TMPDIR/.ssm_value) || echo "could not evaluate SSM_VALUE"'} ]
         else:
-            cmds = [ f'{base_cmd} || echo "could not evaluate $SSM_VALUE"' ]
+            cmds = [ {"_get_ssm_concat_cmds": f'{base_cmd} || echo "could not evaluate $SSM_VALUE"'} ]
 
         return cmds
 
@@ -62,7 +62,7 @@ class TFCmdOnAWS(TFAppHelper):
         base_cmd = f'if [ -f {self.stateful_dir}/{self.envfile} ]; then cd {self.stateful_dir}/; . ./{self.envfile} ; fi'
         ssm_cmd = f'if [ -f $TMPDIR/.ssm_value ]; then cd $TMPDIR/; . ./.ssm_value; fi'
 
-        return f'{base_cmd}; {ssm_cmd}'
+        return { "_set_src_envfiles_cmd": f'{base_cmd}; {ssm_cmd}' }
 
     # used only for codebuild
     def load_env_files(self):
@@ -73,8 +73,8 @@ class TFCmdOnAWS(TFAppHelper):
                                self.envfile)
 
         cmds = [
-            f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"',
-            f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi'
+            { "load_env_file - remove existing env" : f'rm -rf {self.stateful_dir}/{envfile} > /dev/null 2>&1 || echo "env file already removed"' },
+            { "load_env_file - load env " : f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi' }
         ]
 
         # testtest456 need to modify this for SSM_NAMES plural
@@ -89,11 +89,11 @@ class TFCmdOnAWS(TFAppHelper):
 
         # ref 4353253452354
         cmds.extend([
-            'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip"',
-            f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip {self.stateful_dir}/src.$STATEFUL_ID.zip --quiet',
-            f'rm -rf {self.stateful_dir}/run > /dev/null 2>&1 || echo "stateful already removed"',
-            f'unzip -o {self.stateful_dir}/src.$STATEFUL_ID.zip -d {self.stateful_dir}/run',
-            f'rm -rf {self.stateful_dir}/src.$STATEFUL_ID.zip'
+            { "s3_tfpkg_to_local - echo bucket": 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip"' },
+            { "s3_tfpkg_to_local - aws copy source": f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip {self.stateful_dir}/src.$STATEFUL_ID.zip --quiet' },
+            { "s3_tfpkg_to_local - clean src dir": f'rm -rf {self.stateful_dir}/run > /dev/null 2>&1 || echo "stateful already removed"' },
+            { "s3_tfpkg_to_local - unzip src files": f'unzip -o {self.stateful_dir}/src.$STATEFUL_ID.zip -d {self.stateful_dir}/run' },
+            { "s3_tfpkg_to_local - remove download file": f'rm -rf {self.stateful_dir}/src.$STATEFUL_ID.zip' }
         ])
 
         return cmds
@@ -102,8 +102,8 @@ class TFCmdOnAWS(TFAppHelper):
 
         suffix_cmd = f'{self.base_cmd} validate'
 
-        cmds=[
-            f'{suffix_cmd}'
+        cmds = [
+            { "_get_tf_validate": suffix_cmd }
         ]
 
         return cmds
@@ -113,14 +113,14 @@ class TFCmdOnAWS(TFAppHelper):
         suffix_cmd = f'{self.base_cmd} init'
 
         return [
-            f'{suffix_cmd} || (rm -rf .terraform && {suffix_cmd})'
+            { "_get_tf_init" : f'{suffix_cmd} || (rm -rf .terraform && {suffix_cmd})' }
         ]
 
     def _get_tf_plan(self):
 
         cmds = [
-            f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan',
-            f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json'
+            { "_get_tf_plan - create plan": f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan' },
+            { "_get_tf_plan - plan to json": f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json' }
         ]
 
         cmds.extend(self.local_output_to_s3(suffix="tfplan",last_apply=None))
@@ -155,26 +155,28 @@ class TFCmdOnAWS(TFAppHelper):
         cmds.extend(self.s3_file_to_local(suffix="tfplan",
                                           last_apply=None))
 
+        base_tf_apply = f'{self.base_cmd} apply {self.base_output_file}.tfplan'
+
         if destroy_on_failure:
-            cmds.append(f'({self.base_cmd} apply {self.base_output_file}.tfplan) || ({self.base_cmd} destroy -auto-approve && exit 9)')
+            cmds.append( { "get_tf_apply" : f'({base_tf_apply}) || ({self.base_cmd} destroy -auto-approve && exit 9)' } )
         else:
-            cmds.append(f'{self.base_cmd} apply {self.base_output_file}.tfplan')
+            cmds.append( { "get_tf_apply" : base_tf_apply } )
 
         return cmds
 
     def get_tf_destroy(self):
 
         cmds = self._get_tf_init()
-        cmds.append(f'{self.base_cmd} destroy -auto-approve')
+        cmds.append( { "get_tf_destroy": f'{self.base_cmd} destroy -auto-approve' } )
 
         return cmds
 
     def get_tf_chk_fmt(self,exit_on_error=True):
 
         if exit_on_error:
-            cmd = f'{self.base_cmd} fmt -check -diff -recursive'
+            cmd = { "get_tf_chk_fmt": f'{self.base_cmd} fmt -check -diff -recursive' }
         else:
-            cmd = f'{self.base_cmd} fmt -write=false -diff -recursive'
+            cmd = { "get_tf_chk_fmt": f'{self.base_cmd} fmt -write=false -diff -recursive' }
 
         cmds= [cmd]
 
@@ -186,8 +188,8 @@ class TFCmdOnAWS(TFAppHelper):
 
         cmds = self._get_tf_init()
         cmds.extend([
-            f'({self.base_cmd} refresh',
-            f'({self.base_cmd} plan -detailed-exitcode'
+            { "get_tf_chk_drift - refresh": f'({self.base_cmd} refresh' },
+            { "get_tf_chk_drift - check changes": f'({self.base_cmd} plan -detailed-exitcode' }
         ])
 
         return cmds
