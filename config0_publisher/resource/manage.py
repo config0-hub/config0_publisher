@@ -1396,14 +1396,17 @@ class ResourceCmdHelper:
                                       self.app_dir)
 
         if build_env_vars:
+            print('y0'*32)
             create_envfile(build_env_vars,
                            b64=True,
                            file_path=f"{base_file_path}/build_env_vars.env.enc")
 
         if ssm_env_vars:
+            print('y1'*32)
             create_envfile(build_env_vars,
                            b64=True,
                            file_path=f"{base_file_path}/ssm.env.enc")
+            raise Exception('y1'*32)
 
         return True
 
