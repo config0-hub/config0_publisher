@@ -145,7 +145,7 @@ class TFCmdOnAWS(TFAppHelper):
 
         return cmds
 
-    def get_tf_apply(self,destroy_on_failure=None):
+    def get_tfplan_and_apply(self,destroy_on_failure=None):
 
         if self.initial_apply:
             destroy_on_failure = True
@@ -158,9 +158,9 @@ class TFCmdOnAWS(TFAppHelper):
         base_tf_apply = f'{self.base_cmd} apply {self.base_output_file}.tfplan'
 
         if destroy_on_failure:
-            cmds.append( { "get_tf_apply" : f'({base_tf_apply}) || ({self.base_cmd} destroy -auto-approve && exit 9)' } )
+            cmds.append( { "get_tfplan_and_apply" : f'({base_tf_apply}) || ({self.base_cmd} destroy -auto-approve && exit 9)' } )
         else:
-            cmds.append( { "get_tf_apply" : base_tf_apply } )
+            cmds.append( { "get_tfplan_and_apply" : base_tf_apply } )
 
         return cmds
 

@@ -144,7 +144,7 @@ class Lambdabuild(LambdaParams):
         cmds.extend(self.infracost_cmds.get_all_cmds())
 
         if self.method in ["create","apply"]:
-            cmds = self.tfcmds.get_tf_apply()
+            cmds = self.tfcmds.get_tfplan_and_apply()
         elif self.method == "pre-create":
             cmds.extend(self.tfcmds.get_tf_pre_create())
         elif self.method == "validate":

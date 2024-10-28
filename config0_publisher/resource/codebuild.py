@@ -148,7 +148,7 @@ class Codebuild(CodebuildParams):
         # codebuild is limited to create,apply, and destroy
         # lambda will handle validation, pre-create,check
         if self.method in ["create", "apply"]:
-            cmds = self.tfcmds.get_tf_apply()
+            cmds = self.tfcmds.get_tfplan_and_apply()
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         else:
