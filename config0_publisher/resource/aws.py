@@ -41,7 +41,7 @@ class TFAwsBaseBuildParams(object):
 
         try:
             self.tmp_bucket = self.build_env_vars["TMP_BUCKET"]
-        except:
+        except Exception:
             self.tmp_bucket = os.environ.get("TMP_BUCKET")
 
         if not self.tmp_bucket:

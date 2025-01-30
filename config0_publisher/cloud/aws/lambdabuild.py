@@ -113,7 +113,7 @@ class LambdaResourceHelper(AWSCommonConn):
         # less than 10 minutes
         try:
             timeout = int(self.build_timeout)
-        except:
+        except Exception:
             timeout = 500
 
         if timeout > 500:
@@ -165,7 +165,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         try:
             lambda_results = json.loads(payload["body"])
-        except:
+        except Exception:
             lambda_results = payload
             lambda_results["status"] = False
             self.results["failed_message"] = " ".join(lambda_results["stackTrace"])
@@ -189,7 +189,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         try:
             output = self.download_log_from_s3()
-        except:
+        except Exception:
             output = b64_decode(self.response["LogResult"])
 
         if not self.results.get("output"):

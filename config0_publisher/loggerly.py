@@ -34,7 +34,7 @@ def nice_json(results):
 
     try:
         _results = json.dumps(results,sort_keys=True,cls=DateTimeJsonEncoder,indent=4)
-    except:
+    except Exception:
         _results = results
 
     return _results
@@ -58,12 +58,12 @@ class Config0Logger(object):
         if msg:
             try:
                 _msg = "{} \n{}".format(msg, nice_json(data))
-            except:
+            except Exception:
                 _msg = "{} \n{}".format(msg, data)
         else:
             try:
                 _msg = "\n{}".format(nice_json(data))
-            except:
+            except Exception:
                 _msg = "{}".format(data)
 
         if loglevel == "warn":
@@ -105,27 +105,27 @@ class Config0Logger(object):
         self.direct.debug("+"*32)
         try:
             self.direct.debug(message)
-        except:
+        except Exception:
             print(message)
         self.direct.debug("+"*32)
 
     def info(self,message):
         try:
             self.direct.info(message)
-        except:
+        except Exception:
             print(message)
 
     def debug(self,message):
         try:
             self.direct.debug(message)
-        except:
+        except Exception:
             print(message)
 
     def critical(self,message):
         self.direct.critical("!"*32)
         try:
             self.direct.critical(message)
-        except:
+        except Exception:
             print(message)
         self.direct.critical("!"*32)
 
@@ -133,7 +133,7 @@ class Config0Logger(object):
         self.direct.error("*"*32)
         try:
             self.direct.error(message)
-        except:
+        except Exception:
             print(message)
         self.direct.error("*"*32)
 
@@ -144,7 +144,7 @@ class Config0Logger(object):
         self.direct.warn("-"*32)
         try:
             self.direct.warn(message)
-        except:
+        except Exception:
             print(message)
         self.direct.warn("-"*32)
 

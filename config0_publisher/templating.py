@@ -25,7 +25,7 @@ def list_template_files(rootdir,split_dir=None):
     if not split_dir: 
         try:
             split_dir = os.path.basename(rootdir)
-        except:
+        except Exception:
             split_dir = "_ed_templates"
 
     if not os.path.exists(rootdir): return
@@ -56,7 +56,7 @@ def list_template_files(rootdir,split_dir=None):
 
         try:
             directory = os.path.dirname(_rel_file)
-        except:
+        except Exception:
             directory = None
 
         _finput = { "file":_file,

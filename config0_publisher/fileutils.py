@@ -84,7 +84,7 @@ def zipcli(src,dst,filename,exit_error=True):
             exit_status = os.system("cd %s && zip -r %s/%s.zip ." % (src,dst,filename))
             if int(exit_status) != 0:
                 raise Exception("zip-ing")
-        except:
+        except Exception:
             if exit_error:
                 raise Exception("zip-ing")
             return False
@@ -210,7 +210,7 @@ def get_file_age(file_path):
 
     try:
         mtime_file = int((os.stat(file_path)[-2]))
-    except:
+    except Exception:
         mtime_file = None
 
     if not mtime_file: 
@@ -218,7 +218,7 @@ def get_file_age(file_path):
 
     try:
         time_elapse = int(time()) - mtime_file
-    except:
+    except Exception:
         time_elapse = None
 
     return time_elapse

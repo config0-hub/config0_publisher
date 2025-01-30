@@ -35,12 +35,12 @@ class Config0SettingsEnvVarHelper:
         if self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH:
             try:
                 _settings = decode_and_decompress_string(self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH)
-            except:
+            except Exception:
                 _settings = {}  # probably destroy
         elif self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH:
             try:
                 _settings = b64_decode(self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH)
-            except:
+            except Exception:
                 _settings = {}  # probably destroy
         else:
             _settings = {}
@@ -74,7 +74,7 @@ class Config0SettingsEnvVarHelper:
 
         try:
             tf_runtime = self._vars["tf_configs"].get("tf_runtime")
-        except:
+        except Exception:
             tf_runtime = None
 
         if tf_runtime:
@@ -98,7 +98,7 @@ class Config0SettingsEnvVarHelper:
 
         try:
             self._vars["binary"],self._vars["version"] = self._vars["tf_runtime"].split(":")
-        except:
+        except Exception:
             self.logger.debug(f'could not evaluate tf_runtime - using default {self._vars["tf_runtime"]}"')
             self._vars["binary"] = "tofu"
             self._vars["version"] = "1.6.2"

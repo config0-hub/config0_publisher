@@ -109,7 +109,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         try:
             self.build_timeout = int(kwargs.get("build_timeout",500))
-        except:
+        except Exception:
             self.build_timeout = 500
 
         self.build_expire_at = int(time()) + int(self.build_timeout)
@@ -224,7 +224,7 @@ class AWSCommonConn(SetClassVarsHelper):
                                                                  self.zipfile)
                 status = True
                 break
-            except:
+            except Exception:
                 failed_message = traceback.format_exc()
                 status = False
 
@@ -281,7 +281,7 @@ class AWSCommonConn(SetClassVarsHelper):
             self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}",
                                                            s3_dst)
             status = True
-        except:
+        except Exception:
             status = False
 
         if os.environ.get("DEBUG_STATEFUL"):
@@ -308,12 +308,12 @@ class AWSCommonConn(SetClassVarsHelper):
             for line in self.output:
                 try:
                     clean_lines.append(line.decode("utf-8"))
-                except:
+                except Exception:
                     clean_lines.append(line)
         else:
             try:
                 clean_lines.append((self.output.decode("utf-8")))
-            except:
+            except Exception:
                 clean_lines.append(self.output)
 
         self.output = clean_lines

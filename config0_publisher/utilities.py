@@ -64,7 +64,7 @@ def convert_str2json(_object,exit_error=None):
         _object = json.loads(_object)
         status = True
         #logger.debug("Success: Converting str to a json")
-    except:
+    except Exception:
         #logger.debug("Cannot convert str to a json.  Will try to eval")
         status = False
 
@@ -72,7 +72,7 @@ def convert_str2json(_object,exit_error=None):
         try:
             _object = eval(_object)
             #logger.debug("Success: Evaluating str to a json")
-        except:
+        except Exception:
             status = False
             #logger.debug("Cannot eval str to a json.")
             if exit_error:
@@ -98,7 +98,7 @@ def shellout_hash(string):
     try:
         cmd = os.popen('echo "%s" | md5sum | cut -d " " -f 1' % string, "r")
         ret = cmd.read().rstrip()
-    except: 
+    except Exception:
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             print("Failed to calculate the md5sum of a string %s" % string)
         return False
@@ -113,7 +113,7 @@ def get_hash(data):
 
     try:
         calculated_hash = hashlib.md5(data).hexdigest()
-    except:
+    except Exception:
         logger.debug("Falling back to shellout md5sum for hash")
         calculated_hash = shellout_hash(data)
 
@@ -249,7 +249,7 @@ def get_values_frm_json(json_file=None):
         with open(json_file) as json_file:
             values = json.load(json_file)
         print("retrieved values from {}".format(json_file))
-    except:
+    except Exception:
         values = None
         print("ERROR: could not retrieved from json file {}".format(json_file))
 

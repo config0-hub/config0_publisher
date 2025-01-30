@@ -107,7 +107,7 @@ class DoCli(ResourceCmdHelper):
 
         try:
             self.do_default_region = self.inputargs.get("do_default_region")
-        except:
+        except Exception:
             self.do_default_region = None
 
         if not self.do_default_region or self.do_default_region == "None": 
