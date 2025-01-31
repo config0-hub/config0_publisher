@@ -121,7 +121,7 @@ def b64_decode(token):
 
     try:
         _results = json.loads(_bytes.decode('ascii'))
-    except Exception:
+    except:
         _results = None
 
     if _results:
@@ -129,7 +129,7 @@ def b64_decode(token):
 
     try:
         _results = _bytes.decode('ascii')
-    except Exception:
+    except:
         _results = None
 
     if _results:
@@ -137,7 +137,7 @@ def b64_decode(token):
 
     try:
         _results = _bytes.decode()
-    except Exception:
+    except:
         _results = None
 
     if _results:

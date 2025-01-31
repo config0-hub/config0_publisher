@@ -6,7 +6,7 @@ def write_config0_settings_file(stateful_id=None,value=None):
     if not value:
         try:
             value = os.environ.get("CONFIG0_RESOURCE_EXEC_SETTINGS_HASH")
-        except Exception:
+        except:
             value = None
 
     if not value:
@@ -53,7 +53,7 @@ def convert_config0_output_to_values(output):
 
     try:
         obj_return = to_json(obj_return)
-    except Exception:
+    except:
         print('ERROR: Cannot convert to json')
         exit(9)
 

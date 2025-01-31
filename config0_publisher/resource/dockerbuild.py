@@ -89,7 +89,7 @@ class DockerLocalBuild(object):
 
         try:
             _output = results.get("output")
-        except Exception:
+        except:
             _output = None
 
         if not _output:

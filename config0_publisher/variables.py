@@ -40,7 +40,7 @@ def get_init_var_type(value):
 
     try:
         str_value = str(value).strip()
-    except Exception:
+    except:
         return False
 
     if str_value == "1":
@@ -110,7 +110,7 @@ class EvaluateVar(object):
             if "." not in str(self.results["check"]["value"]):
                 raise Exception("is probably an integer")
             updated_value = float(self.results["check"]["value"])
-        except Exception:
+        except:
             return False
 
         self.results["updated"] = True
@@ -148,7 +148,7 @@ class EvaluateVar(object):
 
         try:
             first_character = self.results["check"]["value"][0]
-        except Exception:
+        except:
             first_character = None
 
         if first_character in [ "0", 0 ]:
@@ -156,7 +156,7 @@ class EvaluateVar(object):
 
         try:
             updated_value = int(self.results["check"]["value"])
-        except Exception:
+        except:
             return False
 
         self.results["current"]["value"] = updated_value
@@ -170,7 +170,7 @@ class EvaluateVar(object):
 
         try:
             _value = str(value)
-        except Exception:
+        except:
             return
 
         if _value in self.bool_none:
@@ -251,7 +251,7 @@ class EvaluateVar(object):
 
         try:
             new_obj = literal_eval(json.dumps(self.init_value))
-        except Exception:
+        except:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug(traceback.format_exc())
             self.logger.debug("current init_value {} type {}".format(self.init_value,
@@ -499,7 +499,7 @@ class EnvVarsToClassVars:
 
         try:
             self.main_vars = b64_decode(os.environ[self.main_env_var_key])
-        except Exception:
+        except:
             return
 
         self.env_vars = self.main_vars["env_vars"]

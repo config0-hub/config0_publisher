@@ -30,7 +30,7 @@ def ensure_str(obj,strip=True):
     if not isinstance(obj,str):
         try:
             new_obj = obj.decode("utf-8")
-        except Exception:
+        except:
             new_obj = obj
             #print("could not decode - may be some encoded data")
     else:
@@ -48,7 +48,7 @@ def mkdir(directory):
         if not os.path.exists(directory):
             os.system("mkdir -p %s" % (directory))
         return True
-    except Exception:
+    except:
         return False
 
 def chkdir(directory):
@@ -71,7 +71,7 @@ def rm_rf(location):
     try:
         os.remove(location)
         status = True
-    except Exception:
+    except:
         status = False
 
     if status:
@@ -81,7 +81,7 @@ def rm_rf(location):
         try:
             os.system("rm -rf %s > /dev/null 2>&1" % (location))
             status = True
-        except Exception:
+        except:
             print("problems with removing %s" % location)
             status = False
 
@@ -224,7 +224,7 @@ class ShellOutExecute(object):
 
         try:
             self.cwd = os.getcwd()
-        except Exception:
+        except:
             self.logger.warn("Cannot determine current directory - setting cwd to /tmp")
             self.cwd = "/tmp"
             os.chdir(self.cwd)
@@ -303,7 +303,7 @@ class ShellOutExecute(object):
 
         try:
             self.logger.debug(output)
-        except Exception:
+        except:
             print(output)
 
     def _convert_output_to_json(self):
@@ -316,7 +316,7 @@ class ShellOutExecute(object):
 
         try:
             output = json.loads(self.results["output"])
-        except Exception:
+        except:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug("Could not convert output to json")
             return
@@ -338,7 +338,7 @@ class ShellOutExecute(object):
         if self.output_queue:
             try:
                 self.output_queue.put(self.results)
-            except Exception:
+            except:
                 self.logger.error("Could not append the results to the output_queue")
 
     def set_popen_kwargs(self):
@@ -517,7 +517,7 @@ class ShellOutExecute(object):
 
         try:
             return int(exitcode)
-        except Exception:
+        except:
             return exitcode
 
     def execute3a(self):

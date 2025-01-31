@@ -177,13 +177,13 @@ class ConfigureTFConfig0Db:
 
                 try:
                     self.db_values["id"] = resource["instances"][0]["attributes"]["id"]
-                except Exception:
+                except:
                     self.db_values["id"] = None
 
                 if not self.db_values.get("id"):
                     try:
                         self.db_values["id"] = resource["instances"][0]["attributes"]["arn"]
-                    except Exception:
+                    except:
                         self.db_values["id"] = None
 
             if not self.db_values.get("id"):

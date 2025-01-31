@@ -45,7 +45,7 @@ def to_jsonfile(values,filename,exec_dir=None):
             f.write(json.dumps(values))
         status = True
         print(f"Successfully wrote contents to {file_path}")
-    except Exception:
+    except:
         print(f"Failed to write contents to {file_path}")
         status = False
 
@@ -63,7 +63,7 @@ def _to_json(output):
         if not isinstance(_output,dict):
             raise Exception("output is not a dict")
         output = _output
-    except Exception:
+    except:
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             print("Could not convert output to json")
 
@@ -139,7 +139,7 @@ class ResourceCmdHelper:
 
         try:
             self.build_timeout = int(os.environ.get("BUILD_TIMEOUT"))
-        except Exception:
+        except:
             self.build_timeout = None
 
         if self.build_timeout:
@@ -147,7 +147,7 @@ class ResourceCmdHelper:
 
         try:
             self.build_timeout = int(os.environ.get("TIMEOUT")) - 90
-        except Exception:
+        except:
             self.build_timeout = None
 
         if self.build_timeout:
@@ -192,7 +192,7 @@ class ResourceCmdHelper:
 
         try:
             timewait = int(self.current_phase["timewait"])
-        except Exception:
+        except:
             timewait = None
 
         if not timewait:
@@ -207,7 +207,7 @@ class ResourceCmdHelper:
 
         try:
             inputargs = self.current_phase["inputargs"]
-        except Exception:
+        except:
             inputargs = {}
 
         return inputargs
@@ -234,7 +234,7 @@ class ResourceCmdHelper:
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             try:
                 self._print_out_key_class_vars()
-            except Exception:
+            except:
                 self.logger.debug("could not print out debug class vars")
 
         #self._debug_print_out_key_class_vars()
@@ -251,7 +251,7 @@ class ResourceCmdHelper:
             try:
                 self.config0_resource_json_file = os.path.join({self.stateful_dir},
                                                                f"resource-{self.stateful_id}.json")
-            except Exception:
+            except:
                 self.config0_resource_json_file = None
 
         self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json_file}"')
@@ -260,7 +260,7 @@ class ResourceCmdHelper:
             try:
                 self.config0_phases_json_file = os.path.join({self.stateful_dir},
                                                              f"phases-{self.stateful_id}.json")
-            except Exception:
+            except:
                 self.config0_phases_json_file = None
 
         self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json_file}"')
@@ -270,7 +270,7 @@ class ResourceCmdHelper:
         for _k,_v in self.syncvars.class_vars.items():
             try:
                 self.logger.debug(f"{_k} -> {_v}")
-            except Exception:
+            except:
                 self.logger.warn(f"could not print class vars {_k}")
 
     def _set_special_keywords_classvars(self):
@@ -485,14 +485,14 @@ class ResourceCmdHelper:
 
         try:
             self.destroy_env_vars = eval(self.destroy_env_vars)
-        except Exception:
+        except:
             self.destroy_env_vars = None
 
         self.syncvars.class_vars["destroy_env_vars"] = self.destroy_env_vars
 
         try:
             self.validate_env_vars = eval(self.validate_env_vars)
-        except Exception:
+        except:
             self.validate_env_vars = None
 
         self.syncvars.class_vars["validate_env_vars"] = self.validate_env_vars
@@ -615,7 +615,7 @@ class ResourceCmdHelper:
             try:
                 _values = json.loads(open(_file,"r").read())
                 resources.append(_values)
-            except Exception:
+            except:
                 self.logger.warn("could not retrieve resource json contents from {}".format(_file))
 
         if not resources: 
@@ -660,7 +660,7 @@ class ResourceCmdHelper:
 
         try:
             _env_keys = [ _key for _key in os.environ.keys() if self.os_env_prefix in _key ]
-        except Exception:
+        except:
             _env_keys = None
 
         self.logger.debug_highlight('app_env_keys "{}" for os_env_prefix "{}"'.format(_env_keys,
@@ -718,7 +718,7 @@ class ResourceCmdHelper:
         if isinstance(log,list) or eval_str_to_join(log):
             try:
                 _str = "\n".join(log)
-            except Exception:
+            except:
                 _str = None
         else:
             _str = None
@@ -771,7 +771,7 @@ class ResourceCmdHelper:
         try:
             self.docker_env_file = os.path.join(self.run_share_dir,
                                                 _docker_env_file)
-        except Exception:
+        except:
             self.docker_env_file = None
 
         self.syncvars.class_vars["docker_env_file"] = self.docker_env_file
@@ -944,7 +944,7 @@ class ResourceCmdHelper:
 
         try:
             permission = str(int(kwargs.get("permission")))
-        except Exception:
+        except:
             permission = "400"
 
         if not self.inputargs.get(key): 
@@ -1079,7 +1079,7 @@ class ResourceCmdHelper:
 
         try:
             _outputs = to_json(results["output"])
-        except Exception:
+        except:
             _outputs = None
 
         if not _outputs: 
@@ -1102,13 +1102,13 @@ class ResourceCmdHelper:
         try:
             if isinstance(output,bytes):
                 output = output.decode()
-        except Exception:
+        except:
             print("could not convert output to string")
 
         try:
             if isinstance(output,str):
                 output = output.split("\n")
-        except Exception:
+        except:
             print("could not convert output to list")
 
         print('_config0_begin_output')
@@ -1189,12 +1189,12 @@ class ResourceCmdHelper:
             for line in results["output"]:
                 try:
                     clean_lines.append(line.decode("utf-8"))
-                except Exception:
+                except:
                     clean_lines.append(line)
         else:
             try:
                 clean_lines.append((results["output"].decode("utf-8")))
-            except Exception:
+            except:
                 clean_lines.append(results["output"])
 
         if replace:
@@ -1436,7 +1436,7 @@ class ResourceCmdHelper:
         if local_log:
             try:
                 self._write_local_log()
-            except Exception:
+            except:
                 self.logger.debug("could not write local log")
 
         print(self.final_output)

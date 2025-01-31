@@ -8,14 +8,14 @@ def tf_iter_to_str(obj):
     if isinstance(obj,list) or isinstance(obj,dict):
         try:
             new_obj = json.dumps(literal_eval(json.dumps(obj)))
-        except Exception:
+        except:
             new_obj = json.dumps(obj).replace("'",'"')
 
         return new_obj
 
     try:
         new_obj = json.dumps(literal_eval(obj))
-    except Exception:
+    except:
         new_obj = obj
 
     return new_obj
@@ -68,7 +68,7 @@ def tf_map_list_fix_value(_value):
 
     try:
         _first_char = _value[0]
-    except Exception:
+    except:
         _first_char = None
 
     if not _first_char:
@@ -98,7 +98,7 @@ def tf_number_value(value):
 
     try:
         value0 = value[0]
-    except Exception:
+    except:
         value0 = None
 
     if value0 and value0 in [ "0", 0 ]:
@@ -109,7 +109,7 @@ def tf_number_value(value):
         try:
             eval_value = float(value)
             value_type = "float"
-        except Exception:
+        except:
             eval_value = value
             value_type = None
     else:
@@ -117,7 +117,7 @@ def tf_number_value(value):
         try:
             eval_value = int(value)
             value_type = "int"
-        except Exception:
+        except:
             eval_value = value
             value_type = None
 

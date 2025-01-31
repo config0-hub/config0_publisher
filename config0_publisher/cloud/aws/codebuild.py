@@ -255,7 +255,7 @@ class CodebuildResourceHelper(AWSCommonConn):
                                  _logname)
 
             _read = obj.get()['Body'].read()
-        except Exception:
+        except:
             msg = traceback.format_exc()
             failed_message = "failed to get log: s3://{}/{}\n\nstacktrace:\n\n{}".format(_log_bucket,
                                                                                          _logname,
@@ -417,7 +417,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             try:
                 empty_queue_projects = self._get_avail_codebuild_projects()
-            except Exception:
+            except:
                 empty_queue_projects = False
 
             if empty_queue_projects:
@@ -438,7 +438,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         try:
             timeout = int(self.build_timeout/60)
-        except Exception:
+        except:
             timeout = 60
 
         for project_name in projects:
@@ -459,7 +459,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             try:
                 new_build = self.codebuild_client.start_build(**inputargs)
-            except Exception:
+            except:
                 msg = traceback.format_exc()
                 self.logger.warn(f"could not start build on codebuild {project_name}\n\n{msg}")
                 continue
@@ -542,7 +542,7 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _concat_log(self):
         try:
             _output = self.download_log_from_s3()
-        except Exception:
+        except:
             _output = None
 
         if not _output:

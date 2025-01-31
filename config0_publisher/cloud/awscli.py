@@ -65,7 +65,7 @@ class AwsCli(ResourceCmdHelper):
 
         try:
             add_tags = to_json(self.inputargs.get("tags"))
-        except Exception:
+        except:
             add_tags = None
 
         if not add_tags: return 
