@@ -134,11 +134,6 @@ class TFConstructor(object):
         elif self.ssm_obj and infracost_api_key:
             self.ssm_obj["INFRACOST_API_KEY"] = infracost_api_key
 
-        self.logger.debug("@"*32)
-        self.logger.debug(f"@ ssm name {self.ssm_name}")
-        self.logger.json(self.ssm_obj)
-        self.logger.debug("@"*32)
-
         if not self.stack.stateful_id and not self.ssm_name:
             return
 
@@ -152,6 +147,12 @@ class TFConstructor(object):
             ssm_key = self.ssm_name.split(f"{self.ssm_prefix}/")[1]
         else:
             ssm_key = self.ssm_name
+
+        # testtest456
+        self.logger.debug("@"*32)
+        self.logger.debug(f"@ ssm_key name {ssm_key}")
+        self.logger.json(self.ssm_obj)
+        self.logger.debug("@"*32)
 
         self.stack.add_secret(name=ssm_key,
                               value=value,
