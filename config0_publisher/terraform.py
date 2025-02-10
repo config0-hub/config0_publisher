@@ -141,7 +141,20 @@ class TFConstructor(object):
             return
 
         value = self._get_ssm_value(self.ssm_format)
+
+        # testtest456
+        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
+        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
+        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
+        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
+        raise Exception("abc")
         self._set_ssm_name(value)
+
+        # testtest456
+        self.logger.debug("0"*32)
+        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
+        self.logger.debug(f"0 ssm_key {ssm_key}")
+        self.logger.debug("0"*32)
 
         if self.ssm_prefix in self.ssm_name:
             ssm_key = self.ssm_name.split(f"{self.ssm_prefix}/")[1]
