@@ -91,17 +91,12 @@ class TFConstructor(object):
 
         return self.stack.b64_encode(self.ssm_obj)
 
-    def _set_ssm_name(self,ssm_name):
+    def _set_ssm_name(self):
 
         if self.ssm_name:
             return
 
-        if ssm_name:
-            self.ssm_name = ssm_name
-            return
-
         # automate the ssm_name
-
         # stateful_id should be set 100% of the time
         # but adding random just in case it is not set
         if self.stack.stateful_id:
@@ -141,20 +136,7 @@ class TFConstructor(object):
             return
 
         value = self._get_ssm_value(self.ssm_format)
-
-        # testtest456
-        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
-        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
-        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
-        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
-        raise Exception("abc")
-        self._set_ssm_name(value)
-
-        # testtest456
-        self.logger.debug("0"*32)
-        self.logger.debug(f"0 self.ssm_name {self.ssm_name}")
-        self.logger.debug(f"0 ssm_key {ssm_key}")
-        self.logger.debug("0"*32)
+        self._set_ssm_name()
 
         if self.ssm_prefix in self.ssm_name:
             ssm_key = self.ssm_name.split(f"{self.ssm_prefix}/")[1]
