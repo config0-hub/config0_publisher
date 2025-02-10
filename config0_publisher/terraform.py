@@ -143,13 +143,12 @@ class TFConstructor(object):
         else:
             ssm_key = self.ssm_name
 
-        # testtest456
-        self.logger.debug("@"*32)
-        self.logger.debug(f"@ self.ssm_name {self.ssm_name}")
-        self.logger.debug(f"@ ssm_key {ssm_key}")
-        self.logger.debug(f"@ value {value}")
-        self.logger.json(self.ssm_obj)
-        self.logger.debug("@"*32)
+        #self.logger.debug("@"*32)
+        #self.logger.debug(f"@ self.ssm_name {self.ssm_name}")
+        #self.logger.debug(f"@ ssm_key {ssm_key}")
+        #self.logger.debug(f"@ value {value}")
+        #self.logger.json(self.ssm_obj)
+        #self.logger.debug("@"*32)
 
         self.stack.add_secret(name=ssm_key,
                               value=value,
