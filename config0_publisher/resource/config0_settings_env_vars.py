@@ -10,7 +10,7 @@ from config0_publisher.loggerly import nice_json
 
 class Config0SettingsEnvVarHelper:
 
-    def __init__(self,**kwargs):
+    def __init__(self):
 
         self.classname = "Config0SettingsEnvVarHelper"
 
@@ -35,12 +35,12 @@ class Config0SettingsEnvVarHelper:
         if self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH:
             try:
                 _settings = decode_and_decompress_string(self.CONFIG0_RESOURCE_EXEC_SETTINGS_ZLIB_HASH)
-            except:
+            except Exception:
                 _settings = {}  # probably destroy
         elif self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH:
             try:
                 _settings = b64_decode(self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH)
-            except:
+            except Exception:
                 _settings = {}  # probably destroy
         else:
             _settings = {}
@@ -68,13 +68,14 @@ class Config0SettingsEnvVarHelper:
             tf_runtime_settings = b64_decode(tf_runtime_settings_hash)
             self._vars["tf_configs"] = tf_runtime_settings["tf_configs"]
             self._vars["tf_runtime_env_vars"] = tf_runtime_settings.get("env_vars")  # ref 4532643623642
-            self._vars["terraform_type"] = self._vars["tf_configs"].get("terraform_type")
+            if self._vars["tf_configs"].get("terraform_type"):
+                self._vars["terraform_type"] = self._vars["tf_configs"]["terraform_type"]
 
     def _set_tf_runtime(self):
 
         try:
             tf_runtime = self._vars["tf_configs"].get("tf_runtime")
-        except:
+        except Exception:
             tf_runtime = None
 
         if tf_runtime:
@@ -98,7 +99,7 @@ class Config0SettingsEnvVarHelper:
 
         try:
             self._vars["binary"],self._vars["version"] = self._vars["tf_runtime"].split(":")
-        except:
+        except Exception:
             self.logger.debug(f'could not evaluate tf_runtime - using default {self._vars["tf_runtime"]}"')
             self._vars["binary"] = "tofu"
             self._vars["version"] = "1.6.2"
@@ -112,13 +113,8 @@ class Config0SettingsEnvVarHelper:
         self._set_tf_binary_version()
 
         # if it is creating for the first time
-        if method == "create":
-
-            if not self._vars.get("resource_type"):
-                raise Exception("resource_type needs to be set")
-
-            if not self._vars.get("terraform_type"):
-                raise Exception("terraform_type needs to be set")
+        if method == "create" and not self._vars.get("resource_type"):
+            raise Exception("resource_type needs to be set")
 
         if not self._vars.get("provider"):
             self.logger.warn("provider should be set")

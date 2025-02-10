@@ -23,11 +23,15 @@ class ConfigureTFConfig0Db:
             "source_method": "terraform",
             "main": True,
             "provider": self.provider,
-            "terraform_type": self.terraform_type,
             "resource_type": self.resource_type,
             "stateful_id":self.stateful_id,
             "remote_stateful_bucket": self.remote_stateful_bucket
         }
+
+        try:
+            self.db_values["terraform_type"] = self.terraform_type
+        except Exception:
+            self.logger.warn("terraform_type is not available")
 
         # special case of ssm_name/secrets
         if self.ssm_name:
@@ -215,8 +219,8 @@ class ConfigureTFConfig0Db:
 
         # default script to process the tfstate and
         # merge it the db_values for a complete response
-        if not self.db_values.get("_eval_state_script"):
-            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
+        #if not self.db_values.get("_eval_state_script"):
+        #    self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
 
         # enter into resource db file location
         self.write_resource_to_json_file(self.db_values,
