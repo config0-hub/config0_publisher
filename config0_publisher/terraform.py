@@ -44,15 +44,17 @@ class TFConstructor(object):
 
         self.classname = 'TFConstructor'
         self.logger = Config0Logger(self.classname)
-        self.logger.debug("Instantiating %s" % self.classname)
+        self.logger.debug(f"Instantiating {self.classname}")
 
         self.stack = kwargs["stack"]
         self.provider = kwargs["provider"]
         self.execgroup_name = kwargs["execgroup_name"]
         self.resource_name = kwargs["resource_name"]
         self.resource_type = kwargs["resource_type"]
-        self.terraform_type = kwargs["terraform_type"]
+        self.resource_id = kwargs.get("resource_id")
+
         self.tf_runtime = kwargs.get("tf_runtime")
+        self.terraform_type = kwargs.get("terraform_type")
         self.docker_image = kwargs.get("docker_image")
 
         self.ssm_format = kwargs.get("ssm_format", ".env")
@@ -67,7 +69,7 @@ class TFConstructor(object):
         self.maps = {}
 
         self._init_opt_args()
-        
+
         # if this is not run in an api
         if not os.environ.get("CONFIG0_RESTAPI"):
             self._add_values_to_ssm()
@@ -89,11 +91,17 @@ class TFConstructor(object):
 
         return self.stack.b64_encode(self.ssm_obj)
 
-    def _set_ssm_name(self,value):
+    def _set_ssm_name(self,ssm_name):
 
         if self.ssm_name:
             return
- 
+
+        if ssm_name:
+            self.ssm_name = ssm_name
+            return
+
+        # automate the ssm_name
+
         # stateful_id should be set 100% of the time
         # but adding random just in case it is not set
         if self.stack.stateful_id:
@@ -105,10 +113,10 @@ class TFConstructor(object):
             base_prefix = os.path.join(self.ssm_prefix,
                                        self.stack.schedule_id)
         else:
-            base_prefix = "{}".format(self.ssm_prefix)
+            base_prefix = f"{self.ssm_prefix}"
 
         if self.ssm_format == ".env":
-            self.ssm_name = "{}.env".format(os.path.join(base_prefix,_name))
+            self.ssm_name = f"{os.path.join(base_prefix, _name)}.env"
         else:
             self.ssm_name = os.path.join(base_prefix,_name)
 
@@ -141,7 +149,7 @@ class TFConstructor(object):
         self._set_ssm_name(value)
 
         if self.ssm_prefix in self.ssm_name:
-            ssm_key = self.ssm_name.split("{}/".format(self.ssm_prefix))[1]
+            ssm_key = self.ssm_name.split(f"{self.ssm_prefix}/")[1]
         else:
             ssm_key = self.ssm_name
 
@@ -163,6 +171,10 @@ class TFConstructor(object):
                 self.stack.parse.add_required(key="docker_image",
                                               default="tofu:1.6.2",
                                               types="str")
+        else:
+            self.stack.set_variable("docker_image",
+                                    self.tf_runtime,
+                                    types="str")
 
         if not hasattr(self.stack,"stateful_id"):
             include.append("stateful_id")
@@ -237,7 +249,8 @@ class TFConstructor(object):
         self.stack.parse.tag_key(key="stateful_id",
                                  tags="resource,db,execgroup_inputargs,tf_exec_env")
 
-    def _add_to_list(self,existing_keys,keys=None):
+    @staticmethod
+    def _add_to_list(existing_keys, keys=None):
 
         if not keys:
             return
@@ -249,7 +262,8 @@ class TFConstructor(object):
 
             existing_keys.append(_key)
 
-    def _add_to_dict(self,existing_values,values=None):
+    @staticmethod
+    def _add_to_dict(existing_values, values=None):
 
         if not values:
             return
@@ -362,7 +376,12 @@ class TFConstructor(object):
         overide_values["execgroup_ref"] = execgroup_ref
         overide_values["resource_name"] = self.resource_name
         overide_values["resource_type"] = self.resource_type
-        overide_values["terraform_type"] = self.terraform_type
+
+        if self.resource_id:
+            overide_values["resource_id"] = self.resource_id
+
+        if self.terraform_type:
+            overide_values["terraform_type"] = self.terraform_type
 
         overide_values["tf_vars_hash"] = self._get_tf_vars_hash()
         overide_values["resource_configs_hash"] = self._get_resource_configs_hash()
@@ -378,13 +397,11 @@ class TFConstructor(object):
         if self.stack.stateful_id:
             overide_values["stateful_id"] = self.stack.stateful_id
 
-        inputargs = {
+        return {
             "automation_phase": "infrastructure",
             "human_description": "invoking tf executor",
-            "overide_values":overide_values
+            "overide_values": overide_values,
         }
-
-        return inputargs
 
     def get(self):
         return self.get_inputargs()

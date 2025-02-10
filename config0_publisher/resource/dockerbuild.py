@@ -4,6 +4,14 @@ import os
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.shellouts import execute3
 
+"""
+NOT currently used but provided if docker execution
+will be executed locally on something like a private
+worker where we don't delegate to codebuild but 
+this doesn't scale because it is limited to the size 
+of the worker
+"""
+
 class DockerLocalBuild(object):
 
     def __init__(self,**kwargs):

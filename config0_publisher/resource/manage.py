@@ -160,11 +160,6 @@ class ResourceCmdHelper:
         if hasattr(self,"aws_region") and self.aws_region:
             return
 
-        self.aws_region = os.environ.get("AWS_REGION")
-
-        if self.aws_region:
-            return
-
         self.aws_region = os.environ.get("AWS_DEFAULT_REGION")
 
         if self.aws_region:
