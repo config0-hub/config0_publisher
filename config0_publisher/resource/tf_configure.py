@@ -163,33 +163,27 @@ class ConfigureTFConfig0Db:
             "maps": tf_configs_for_resource.get("maps")
         }
 
-    def _config_db_values(self):
+    def _insert_outputs(self):
 
         tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
                                                  self.stateful_id)
 
-        if not self.db_values.get("id"):
-            for resource in tfstate_values["resources"]:
-                if resource["type"] != self.terraform_type:
-                    continue
-                try:
-                    self.db_values["id"] = resource["instances"][0]["attributes"]["id"]
-                except:
-                    self.db_values["id"] = None
-                if not self.db_values.get("id"):
-                    try:
-                        self.db_values["id"] = resource["instances"][0]["attributes"]["arn"]
-                    except:
-                        self.db_values["id"] = None
-            if not self.db_values.get("id"):
-                self.db_values["id"] = self.stateful_id
-        if not self.db_values.get("_id"):
-            self.db_values["_id"] = self.stateful_id
+        try:
+            outputs = tfstate_values["outputs"]
+        except Exception:
+            outputs = None
 
-        # default script to process the tfstate and
-        # merge it the db_values for a complete response
-        if not self.db_values.get("_eval_state_script"):
-            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
+        if not outputs:
+            return
+
+        # put outputs in
+        for k,v in outputs.items():
+
+            # already set and exists
+            if self.db_values.get(k):
+                continue
+
+            self.db_values[k] = v['value']
 
     def post_create(self):
 
@@ -217,10 +211,12 @@ class ConfigureTFConfig0Db:
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
         self._insert_maps()
+        self._insert_outputs()
 
-        # testtest456
-        # insert id and _id
-        #self._config_db_values()
+        # default script to process the tfstate and
+        # merge it the db_values for a complete response
+        if not self.db_values.get("_eval_state_script"):
+            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
 
         # enter into resource db file location
         self.write_resource_to_json_file(self.db_values,
