@@ -161,14 +161,10 @@ class ResourceCmdHelper:
             return
 
         self.aws_region = os.environ.get("AWS_DEFAULT_REGION")
+        self.backend_aws_region = os.environ.get("BACKEND_AWS_REGION")
+
         # testtest456
-        print(os.environ.get("AWS_REGION"))
-        print(os.environ.get("AWS_REGION"))
-        print(os.environ.get("AWS_REGION"))
-        print(self.aws_region)
-        print(self.aws_region)
-        print(self.aws_region)
-        raise Exception('yo')
+        self.aws_region = "us-east-1"
 
         if self.aws_region:
             return
