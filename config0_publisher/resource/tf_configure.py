@@ -169,28 +169,27 @@ class ConfigureTFConfig0Db:
                                                  self.stateful_id)
 
         if not self.db_values.get("id"):
-
             for resource in tfstate_values["resources"]:
-
                 if resource["type"] != self.terraform_type:
                     continue
-
                 try:
                     self.db_values["id"] = resource["instances"][0]["attributes"]["id"]
                 except:
                     self.db_values["id"] = None
-
                 if not self.db_values.get("id"):
                     try:
                         self.db_values["id"] = resource["instances"][0]["attributes"]["arn"]
                     except:
                         self.db_values["id"] = None
-
             if not self.db_values.get("id"):
                 self.db_values["id"] = self.stateful_id
-
         if not self.db_values.get("_id"):
             self.db_values["_id"] = self.stateful_id
+
+        # default script to process the tfstate and
+        # merge it the db_values for a complete response
+        if not self.db_values.get("_eval_state_script"):
+            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
 
     def post_create(self):
 
@@ -219,13 +218,9 @@ class ConfigureTFConfig0Db:
         self._insert_standard_resource_labels()
         self._insert_maps()
 
-        # default script to process the tfstate and
-        # merge it the db_values for a complete response
-        if not self.db_values.get("_eval_state_script"):
-            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
-
+        # testtest456
         # insert id and _id
-        self._config_db_values()
+        #self._config_db_values()
 
         # enter into resource db file location
         self.write_resource_to_json_file(self.db_values,
