@@ -215,12 +215,16 @@ class ConfigureTFConfig0Db:
         self._insert_resource_labels()
         self._insert_standard_resource_labels()
         self._insert_maps()
+
+        # this will put the initial outputs from last run
+        # these outputs can cause problems later if they change
+        # if the outputs are used for querying
         self._insert_outputs()
 
         # default script to process the tfstate and
         # merge it the db_values for a complete response
-        #if not self.db_values.get("_eval_state_script"):
-        #    self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
+        if not self.db_values.get("_eval_state_script"):
+            self.db_values["_eval_state_script"] = "config0-publish:::terraform::transfer_db_results"
 
         # enter into resource db file location
         self.write_resource_to_json_file(self.db_values,
