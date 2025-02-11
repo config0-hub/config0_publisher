@@ -157,11 +157,12 @@ class ResourceCmdHelper:
 
     def _set_aws_region(self):
 
+        self.aws_backend_region = os.environ.get("AWS_BACKEND_REGION") or "us-east-1"
+
         if hasattr(self,"aws_region") and self.aws_region:
             return
 
         self.aws_region = os.environ.get("AWS_DEFAULT_REGION")
-        self.aws_backend_region = os.environ.get("AWS_BACKEND_REGION") or "us-east-1"
 
         if self.aws_region:
             return
