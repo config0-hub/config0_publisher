@@ -65,10 +65,9 @@ class ConfigureTFConfig0Db:
         }
 
         # testtest456
-        self.logger.debug('j'*32)
+        self.logger.debug('j5'*32)
         self.logger.json(env_vars)
-        self.logger.debug('j'*32)
-        raise Exception('j'*32)
+        self.logger.debug('j5'*32)
 
         # Create mod params resource arguments and reference
         self.db_values["mod_params"] = {
