@@ -59,11 +59,16 @@ class ConfigureTFConfig0Db:
             "REMOTE_STATEFUL_BUCKET": self.remote_stateful_bucket,
             "STATEFUL_ID": self.stateful_id,
             "BUILD_TIMEOUT": self.build_timeout,
+            "TF_RUNTIME": self.tf_runtime,
             "APP_NAME": "terraform",
             "APP_DIR": self.app_dir
         }
 
-        env_vars["TF_RUNTIME"] = self.tf_runtime
+        # testtest456
+        self.logger.debug('j'*32)
+        self.logger.json(env_vars)
+        self.logger.debug('j'*32)
+        raise Exception('j'*32)
 
         # Create mod params resource arguments and reference
         self.db_values["mod_params"] = {
