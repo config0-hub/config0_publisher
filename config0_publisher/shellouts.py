@@ -1,38 +1,15 @@
 #!/usr/bin/env python
-#
-#Project: config0_publisher: Config0 is a SaaS for building and managing
-#software and DevOps automation. This particular packages is a python
-#helper for publishing stacks, hostgroups, shellouts/scripts and other
-#assets used for automation
-#
-#Examples include cloud infrastructure, CI/CD, and data analytics
-#
-#Copyright (C) Gary Leong - All Rights Reserved
-#Unauthorized copying of this file, via any medium is strictly prohibited
-#Proprietary and confidential
-#Written by Gary Leong  <gary@config0.com, May 11,2019
 
-#import contextlib
-#import sys
-import concurrent.futures
-import time
-import json
-import string
-import os
-import random
-import subprocess
-import sys
-
+import concurrent.futures, json, string, os, random, subprocess
 from config0_publisher.loggerly import Config0Logger as set_log
 
-def ensure_str(obj,strip=True):
+def ensure_str(obj, strip=True):
 
-    if not isinstance(obj,str):
+    if not isinstance(obj, str):
         try:
-            new_obj = obj.decode("utf-8")
+            new_obj = obj.decode("utf-8") if isinstance(obj, bytes) else obj
         except:
             new_obj = obj
-            #print("could not decode - may be some encoded data")
     else:
         new_obj = obj
 
@@ -42,11 +19,11 @@ def ensure_str(obj,strip=True):
     return new_obj
 
 def mkdir(directory):
-    '''uses the shell to make a directory.'''
+    """uses the shell to make a directory."""
 
     try:
         if not os.path.exists(directory):
-            os.system("mkdir -p %s" % (directory))
+            os.system(f"mkdir -p {directory}")
         return True
     except:
         return False
@@ -54,13 +31,13 @@ def mkdir(directory):
 def chkdir(directory):
 
     if not os.path.exists(directory):
-        print("Directory {} does not exists".format(directory))
+        print(f"Directory {directory} does not exists")
         return False
     return True
 
 def rm_rf(location):
 
-    '''uses the shell to forcefully and recursively remove a file/entire directory.'''
+    """uses the shell to forcefully and recursively remove a file/entire directory."""
 
     if not location:
         return
@@ -79,32 +56,33 @@ def rm_rf(location):
 
     if os.path.exists(location):
         try:
-            os.system("rm -rf %s > /dev/null 2>&1" % (location))
+            os.system(f"rm -rf {location} > /dev/null 2>&1")
             status = True
         except:
-            print("problems with removing %s" % location)
+            print(f"problems with removing {location}")
             status = False
 
         return status
 
 def execute3(cmd, **kwargs):
+    shellout_exe = ShellOutExecute(cmd, 
+                                  unbuffered=None, 
+                                  **kwargs)
 
-    shellout_exe = ShellOutExecute(cmd,
-                                   unbuffered=None,
-                                   **kwargs)
-
+    print(f"Executing command: {cmd}")
     shellout_exe.execute3()
 
-    if kwargs.get("print_out",True):
+    if kwargs.get("print_out", True):
         shellout_exe.print_out()
 
-    if kwargs.get("exit_error",True) and int(shellout_exe.results["exitcode"]) != 0:
+    if kwargs.get("exit_error", True) and int(shellout_exe.results["exitcode"]) != 0:
         exit(shellout_exe.results["exitcode"])
 
+    print(f"Command executed with exit code: {shellout_exe.results['exitcode']}")
     return shellout_exe.results
 
 def execute2(cmd, **kwargs):
-    return execute3(cmd,**kwargs)
+    return execute3(cmd, **kwargs)
 
 def execute3a(cmd, **kwargs):
 
@@ -124,7 +102,7 @@ def execute3a(cmd, **kwargs):
 
 def execute4(cmd, **kwargs):
 
-    return execute3a(cmd,**kwargs)
+    return execute3a(cmd, **kwargs)
 
 def execute5(cmd, **kwargs):
 
@@ -147,7 +125,7 @@ def execute7(cmd, **kwargs):
 
     shellout_exe.execute7()
 
-    if kwargs.get("print_out",True):
+    if kwargs.get("print_out", True):
         shellout_exe.print_out()
 
     if kwargs.get("exit_error"):
@@ -155,12 +133,12 @@ def execute7(cmd, **kwargs):
 
     return shellout_exe.results
 
-def execute(cmd,unbuffered=False,logfile=None,print_out=True):
+def execute(cmd, unbuffered=False, logfile=None, print_out=True):
 
-    '''executes a shell command, returning status of execution,
-    standard out, and standard error'''
+    """executes a shell command, returning status of execution,
+    standard out, and standard error"""
 
-    inputargs = {"unbuffered":unbuffered}
+    inputargs = {"unbuffered": unbuffered}
 
     if logfile:
         inputargs["logfile"] = logfile
@@ -174,7 +152,7 @@ def execute(cmd,unbuffered=False,logfile=None,print_out=True):
     if print_out and unbuffered:
         shellout_exe.print_out()
 
-    return shellout_exe.results["exitcode"],shellout_exe.results["stdout"],shellout_exe.results["stderr"]
+    return shellout_exe.results["exitcode"], shellout_exe.results["stdout"], shellout_exe.results["stderr"]
 
 class ShellOutExecute(object):
 
@@ -217,8 +195,9 @@ class ShellOutExecute(object):
                         "output": None,
                         "exitcode": None}
 
-    def _id_generator(self,size=6,chars=string.ascii_uppercase+string.digits):
-        return ''.join(random.choice(chars) for x in range(size))
+    @staticmethod
+    def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+        return ''.join(random.choice(chars) for _ in range(size))
 
     def _set_cwd(self):
 
@@ -233,10 +212,7 @@ class ShellOutExecute(object):
 
     def _get_system_cmd(self):
 
-        cmd = '({} 2>&1 ; echo $? > {}) | tee -a {}; exit `cat {}`'.format(self.cmd,
-                                                                           self.exit_file,
-                                                                           self.logfile,
-                                                                           self.exit_file)
+        cmd = f'({self.cmd} 2>&1 ; echo $? > {self.exit_file}) | tee -a {self.logfile}; exit `cat {self.exit_file}`'
 
         return cmd
 
@@ -250,10 +226,10 @@ class ShellOutExecute(object):
         if not self.unset_envs:
             return
 
-        unset_envs = [ _element.strip() for _element in self.unset_envs.split(",") ]
+        unset_envs = [_element.strip() for _element in self.unset_envs.split(",")]
 
         for _env in unset_envs:
-            self.cmd = "unset {}; {}".format(_env,self.cmd)
+            self.cmd = f"unset {_env}; {self.cmd}"
 
     def set_env_vars(self):
 
@@ -265,15 +241,15 @@ class ShellOutExecute(object):
         for ek, ev in _env_vars.items():
             if ev is None:
                 ev = "None"
-            elif isinstance(ev,bytes):
+            elif isinstance(ev, bytes):
                 ev = ev.decode("utf-8")
-            elif not isinstance(ev,str):
+            elif not isinstance(ev, str):
                 ev = str(ev)
 
             if os.environ.get("JIFFY_ENHANCED_LOG") or os.environ.get("DEBUG_STATEFUL"):
-                self.logger.debug("key -> {} value -> {} type -> {}".format(ek,ev,type(ev)))
+                self.logger.debug(f"key -> {ek} value -> {ev} type -> {type(ev)}")
             else:
-                self.logger.debug("Setting environment variable {}, type {}".format(ek,type(ev)))
+                self.logger.debug(f"Setting environment variable {ek}, type {type(ev)}")
 
             self.env_vars_set[ek] = ev
             os.environ[ek] = ev
@@ -343,9 +319,9 @@ class ShellOutExecute(object):
 
     def set_popen_kwargs(self):
 
-        self.popen_kwargs = {"shell":True,
+        self.popen_kwargs = {"shell": True,
                              "universal_newlines": True,
-                             "stdout":subprocess.PIPE,
+                             "stdout": subprocess.PIPE,
                              "stderr": subprocess.STDOUT}
 
     def run(self):
@@ -374,7 +350,7 @@ class ShellOutExecute(object):
         return subprocess.Popen(self.cmd,
                                 **self.popen_kwargs)
 
-    def _add_log_file(self,line):
+    def _add_log_file(self, line):
 
         if not self.logfile_handle:
             return
@@ -398,14 +374,14 @@ class ShellOutExecute(object):
 
         return True
 
-    def _eval_popen_exe(self,process):
+    def _eval_popen_exe(self, process):
 
         lines = []
 
         while True:
 
             readline = process.stdout.readline()
-            self._eval_log_line(readline,lines)
+            self._eval_log_line(readline, lines)
 
             exitcode = process.poll()
 
@@ -416,7 +392,7 @@ class ShellOutExecute(object):
 
             if _last_lines:
                 for _last_line in _last_lines:
-                    self._eval_log_line(_last_line,lines)
+                    self._eval_log_line(_last_line, lines)
             break
 
         if self.logfile_handle:
@@ -434,7 +410,7 @@ class ShellOutExecute(object):
 
         self._eval_execute()
 
-    def _popen_communicate(self,process):
+    def _popen_communicate(self, process):
 
         out, err = process.communicate()
 
@@ -478,8 +454,7 @@ class ShellOutExecute(object):
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             self.logger.debug_highlight("ShellOutExecute:::method: execute6")
 
-        self.logger.debug("from directory {} - command {}".format(os.getcwd(),
-                                                                  self.cmd))
+        self.logger.debug(f"from directory {os.getcwd()} - command {self.cmd}")
 
         self.set_env_vars()
         self.add_unset_envs_to_cmd()
@@ -491,8 +466,7 @@ class ShellOutExecute(object):
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             self.logger.debug_highlight("ShellOutExecute:::method: execute3")
 
-        self.logger.debug("from directory {} - command {}".format(os.getcwd(),
-                                                                  self.cmd))
+        self.logger.debug(f"from directory {os.getcwd()} - command {self.cmd}")
 
         self.set_env_vars()
         self.popen()
@@ -513,7 +487,8 @@ class ShellOutExecute(object):
         # calculate the return value code
         return int(bin(_return_code).replace("0b", "").rjust(16, '0')[:8], 2)
 
-    def _eval_exitcode(self,exitcode):
+    @staticmethod
+    def _eval_exitcode(exitcode):
 
         try:
             return int(exitcode)
@@ -540,8 +515,7 @@ class ShellOutExecute(object):
         exitcode = self.system(direct_return=True)
 
         if exitcode != 0:
-            raise RuntimeError('system command\n{}\nexitcode {}'.format(self.cmd,
-                                                                        exitcode))
+            raise RuntimeError(f'system command\n{self.cmd}\nexitcode {exitcode}')
 
         self.results["exitcode"] = exitcode
         self.results["output"] = open(self.logfile, "r").read()
@@ -559,7 +533,7 @@ class ShellOutExecute(object):
 
         return self.results
 
-def exec_method_bg(bg_method,args=None,kwargs=None):
+def exec_method_bg(bg_method, args=None, kwargs=None):
 
     # Use ThreadPoolExecutor
     with concurrent.futures.ThreadPoolExecutor() as executor:

@@ -19,10 +19,8 @@ def dict_to_s3(data, bucket_name, bucket_key):
     try:
         # Serialize the dictionary using pickle
         json_data = json.dumps(data)
-        #serialized_data = pickle.dumps(data)
 
         # Encode the serialized data to Base64
-        #base64_data = base64.b64encode(json_data).decode('utf-8')
         base64_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
 
         # Upload the Base64 string to S3
@@ -51,11 +49,9 @@ def s3_to_dict(bucket_name, bucket_key):
         base64_data = response['Body'].read().decode('utf-8')
 
         # Decode the Base64 string
-        #json_data = base64.b64decode(base64_data)
         json_data = base64.b64decode(base64_data).decode('utf-8')
 
         # Deserialize the data back to dictionary
-        #data = pickle.loads(serialized_data)
         data = json.loads(json_data)
 
         return data

@@ -31,9 +31,9 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tf_install(self):
 
-        '''
+        """
         https://github.com/opentofu/opentofu/releases/download/v1.6.2/tofu_1.6.2_linux_amd64.zip
-        '''
+        """
         
         return get_tf_install(
                 runtime_env=self.runtime_env,
@@ -45,7 +45,8 @@ class TFCmdOnAWS(TFAppHelper):
 
     # ref 4354523
     # used only for codebuild
-    def _get_ssm_concat_cmds(self):
+    @staticmethod
+    def _get_ssm_concat_cmds():
 
         base_cmd = f'echo $SSM_VALUE | base64 -d >> $TMPDIR/.ssm_value'
 

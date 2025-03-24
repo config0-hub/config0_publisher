@@ -2,86 +2,65 @@
 
 import tarfile
 import os
+from typing import List, Optional
 import sys
-import glob
-import fnmatch
 import re
 from time import time
 from zipfile import ZipFile
 
-def zip_file(filename,srcfile=".env",filedirectory=None):
-  
+def zip_file(filename: str, srcfile: str = ".env", filedirectory: Optional[str] = None) -> None:
     pwd = os.getcwd()
+    filedirectory = filedirectory or pwd
 
-    if not filedirectory: 
-        filedirectory = pwd
-  
-    os.chdir(filedirectory)
-
-    dstfile = "{}.zip".format(filename)
-
+    dstfile = f"{filename}.zip"
     ZipFile(dstfile, mode='w').write(srcfile)
-
     os.chdir(pwd)
-  
-    print(("file zipped here {}".format(os.path.join(filedirectory,
-                                                     dstfile))))
+    print(f"file zipped here {os.path.join(filedirectory, dstfile)}")
 
-def list_all_files(rootdir,ignores=[ ".pyc$", ".swp$"]):
-
-    fileList = []
-
+def list_all_files(rootdir: str, ignores: List[str] = [".pyc$", ".swp$"]) -> List[str]:
+    file_list = []
     if not os.path.exists(rootdir): 
-        return fileList
+        return file_list
 
     for root, subFolders, files in os.walk(rootdir):
-
-        tempList = []
-
+        temp_list = []
         for file in files:
-            f = os.path.join(root,file)
-            tempList.append(f)
+            f = os.path.join(root, file)
+            temp_list.append(f)
 
         for d in subFolders:
-            g = os.path.join(root,d)
-            tempList.append(g)
+            g = os.path.join(root, d)
+            temp_list.append(g)
 
-        if not tempList:
+        if not temp_list:
             continue
 
         if not ignores:
-            fileList.extend(tempList)
+            file_list.extend(temp_list)
             continue
 
-        for file in tempList:
-
+        for file in temp_list:
             add = True
-
             for ignore in ignores:
-                if re.search(ignore,file):
+                if re.search(ignore, file):
                     add = False
                     break
-
             if add: 
-                fileList.append(file)
+                file_list.append(file)
+    return file_list
 
-    return fileList
-
-def count_files_targz(file_path):
-
+def count_files_targz(file_path: str) -> int:
     count = 0
-
     with tarfile.open(file_path, 'r:gz') as tar:
         for member in tar.getmembers():
             if member.isfile():
                 count += 1
-
     return count
-def zipcli(src,dst,filename,exit_error=True):
 
+def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
     if os.path.exists(src):
         try:
-            exit_status = os.system("cd %s && zip -r %s/%s.zip ." % (src,dst,filename))
+            exit_status = os.system(f"cd {src} && zip -r {dst}/{filename}.zip .")
             if int(exit_status) != 0:
                 raise Exception("zip-ing")
         except:
@@ -89,34 +68,29 @@ def zipcli(src,dst,filename,exit_error=True):
                 raise Exception("zip-ing")
             return False
     else:
-        print(("Source %s does not exists.\n" % src))
-
+        print(f"Source {src} does not exists.\n")
         if exit_error:
             sys.exit(78)
-
         return False
 
-    return "{}.zip".format(os.path.join(dst,filename))
+    return f"{filename}.zip"
 
-def unzipcli(directory,name,newlocation,exit_error=True):
-
+def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True) -> Optional[str]:
     if "zip" in name:
         filename = name
-    elif os.path.exists(directory+"/"+name+".zip"):
-        filename = name+".zip"
+    elif os.path.exists(f"{directory}/{name}.zip"):
+        filename = f"{name}.zip"
     else:
-        print(("\n%s is not in the correct .zip format!\n" % name))
-
+        print(f"\n{name} is not in the correct .zip format!\n")
         if exit_error:
             sys.exit(78)
-
         return False
 
-    cmd = "unzip -o %s/%s -d %s/ > /dev/null" % (directory,filename,newlocation)
+    cmd = f"unzip -o {directory}/{filename} -d {newlocation}/ > /dev/null"
     exit_status = os.system(cmd)
 
     if int(exit_status) != 0:
-        failed_message = "FAILED: {}".format(cmd)
+        failed_message = f"FAILED: {cmd}"
         print(failed_message)
         if not exit_error:
             return False
@@ -124,28 +98,18 @@ def unzipcli(directory,name,newlocation,exit_error=True):
 
     return newlocation
 
-def targz(srcdir,dstdir,filename,verbose=True):
-
-    '''This will tar a file to a new location'''
-
-    if verbose:
-        flags = "cvf"
-    else:
-        flags = "cv"
-
-    tarfile = "{}.tar.gz".format(os.path.join(dstdir,
-                                              filename))
+def targz(srcdir: str, dstdir: str, filename: str, verbose: bool = True) -> str:
+    """This will tar a file to a new location"""
+    flags = "cvf" if verbose else "cv"
+    tarfile = f"{os.path.join(dstdir, filename)}.tar.gz"
 
     if os.path.exists(srcdir):
-        cmd = "cd %s; tar %s - . | gzip -n > %s" % (srcdir,
-                                                    flags,
-                                                    tarfile)
+        cmd = f"cd {srcdir}; tar {flags} - . | gzip -n > {tarfile}"
         exit_status = os.system(cmd)
-
         if int(exit_status) != 0:
-            raise Exception("{} failed".format(cmd))
+            raise Exception(f"{cmd} failed")
     else:
-        raise Exception(("Source %s does not exists.\n" % srcdir))
+        raise Exception(f"Source {srcdir} does not exists.\n")
 
     count = count_files_targz(tarfile)
 
@@ -154,60 +118,43 @@ def targz(srcdir,dstdir,filename,verbose=True):
 
     return tarfile
 
-def un_targz(directory,name,newlocation,striplevel=None):
-
-    '''This will untar a file to a new location'''
-
+def un_targz(directory: str, name: str, newlocation: str, striplevel: Optional[int] = None) -> str:
+    """This will untar a file to a new location"""
     if "tar.gz" in name or "tgz" in name:
         filename = name
-    elif os.path.exists(directory+"/"+name+".tgz"):
-        filename = name+".tgz"
-    elif os.path.exists(directory+"/"+name+".tar.gz"):
-        filename = name+".tar.gz"
+    elif os.path.exists(f"{directory}/{name}.tgz"):
+        filename = f"{name}.tgz"
+    elif os.path.exists(f"{directory}/{name}.tar.gz"):
+        filename = f"{name}.tar.gz"
     else:
-        failed_msg = "%s is not in the correct tar.gz or tgz format!" % name
+        failed_msg = f"{name} is not in the correct tar.gz or tgz format!"
         raise Exception(failed_msg)
-
-    cmd = None
 
     if striplevel:
         alternative_untar = None
-
-        # Depending on the tar, there are different options
-        cmd = "tar xvfz --strip %d %s/%s -C %s > /dev/null" % (striplevel,
-                                                               directory,
-                                                               filename,
-                                                               newlocation)
+        cmd = f"tar xvfz --strip {striplevel} {directory}/{filename} -C {newlocation} > /dev/null"
         exit_status = os.system(cmd)
 
         if int(exit_status) != 0:
-            print("FAILED: method 1 - {}".format(cmd))
+            print(f"FAILED: method 1 - {cmd}")
             alternative_untar = True
 
         if alternative_untar:
-            cmd = "tar xvfz %s/%s --strip-components=%d -C %s > /dev/null" % (directory,
-                                                                              filename,
-                                                                              striplevel,
-                                                                              newlocation)
+            cmd = f"tar xvfz {directory}/{filename} --strip-components={striplevel} -C {newlocation} > /dev/null"
             exit_status = os.system(cmd)
-
             if int(exit_status) != 0:
-                failed_message = "FAILED: method 1 & 2 - {}".format(cmd)
+                failed_message = f"FAILED: method 1 & 2 - {cmd}"
                 raise Exception(failed_message)
     else:
-        cmd = "tar xvfz %s/%s -C %s > /dev/null" % (directory,
-                                                    filename,
-                                                    newlocation)
+        cmd = f"tar xvfz {directory}/{filename} -C {newlocation} > /dev/null"
         exit_status = os.system(cmd)
-
         if int(exit_status) != 0:
-            failed_message = "FAILED: {}".format(cmd)
+            failed_message = f"FAILED: {cmd}"
             raise Exception(failed_message)
 
     return newlocation
 
-def get_file_age(file_path):
-
+def get_file_age(file_path: str) -> Optional[int]:
     try:
         mtime_file = int((os.stat(file_path)[-2]))
     except:
@@ -222,8 +169,8 @@ def get_file_age(file_path):
         time_elapse = None
 
     return time_elapse
-def extract_tar_gz(file_path, extract_path='.'):
 
+def extract_tar_gz(file_path: str, extract_path: str = '.') -> None:
     with tarfile.open(file_path, 'r:gz') as tar:
         # Extract all contents into the specified directory
         tar.extractall(path=extract_path)

@@ -1,5 +1,30 @@
 #!/usr/bin/env python
-#
+"""
+Base class for managing cloud infrastructure resources and command execution.
+
+Provides core functionality for:
+
+Attributes:
+    classname (str): Name of the resource command helper class
+    cwd (str): Current working directory
+    template_dir (str): Directory containing templates
+    resources_dir (str): Directory for resource files
+    docker_env_file (str): Path to Docker environment file
+    inputargs (dict): Input arguments for resource operations
+    output (list): Command execution output collection
+
+    # TODO phases not fully implemented
+    # phases allow for non-blocking/bg execution
+    # => submit, retrieve
+    phases_info (dict): Information about all phases
+    phase (str): Current execution phase
+    current_phase (dict): Details of current phase
+
+Environment Variables:
+    JIFFY_ENHANCED_LOG: Enable enhanced logging
+    DEBUG_STATEFUL: Enable debug mode for stateful operations
+    CONFIG0_INITIAL_APPLY: Flag for initial application
+"""
 
 import os
 import jinja2
@@ -26,7 +51,23 @@ from config0_publisher.shellouts import rm_rf
 from config0_publisher.variables import EnvVarsToClassVars
 
 # ref 34532045732
-def to_jsonfile(values,filename,exec_dir=None):
+def to_jsonfile(values, filename, exec_dir=None):
+    """
+    Write values to a JSON file in the config0_resources directory.
+
+    Args:
+        values (dict): Data to write to JSON file
+        filename (str): Name of the file to create
+        exec_dir (str, optional): Execution directory. Defaults to current directory.
+
+    Returns:
+        bool: True if write successful, False otherwise
+
+    Example:
+        >>> to_jsonfile({"key": "value"}, "resource.json")
+        Successfully wrote contents to /path/to/config0_resources/resource.json
+        True
+    """
 
     if not exec_dir: 
         exec_dir = os.getcwd()
@@ -41,8 +82,8 @@ def to_jsonfile(values,filename,exec_dir=None):
         os.system(f"mkdir -p {file_dir}")
 
     try:
-        with open(file_path,"w") as f:
-            f.write(json.dumps(values))
+        with open(file_path, "w") as file:
+            file.write(json.dumps(values))
         status = True
         print(f"Successfully wrote contents to {file_path}")
     except:
@@ -52,15 +93,14 @@ def to_jsonfile(values,filename,exec_dir=None):
     return status
 
 def _to_json(output):
-
-    if isinstance(output,dict):
+    if isinstance(output, dict):
         return output
 
     try:
         _output = to_json(output)
         if not _output:
             raise Exception("output is None")
-        if not isinstance(_output,dict):
+        if not isinstance(_output, dict):
             raise Exception("output is not a dict")
         output = _output
     except:
@@ -71,19 +111,18 @@ def _to_json(output):
 
 class ResourceCmdHelper:
 
-    def __init__(self,**kwargs):
-
-        '''
-        # stateful_id = abc123
-        # run_dir -> exec_base_dir - e.g. /tmp/ondisktmp/abc123
-        # app_dir -> exec_dir - e.g. var/tmp/ansible
-        # share_dir - share directory with docker or execution container - e.g. /var/tmp/share
-        # run_share_dir - share directory with stateful_id - e.g. /var/tmp/share/ABC123
-        '''
+    def __init__(self, **kwargs):
+        """
+        stateful_id = abc123
+        run_dir -> exec_base_dir - e.g. /tmp/ondisktmp/abc123
+        app_dir -> exec_dir - e.g. var/tmp/ansible
+        share_dir - share directory with docker or execution container - e.g. /var/tmp/share
+        run_share_dir - share directory with stateful_id - e.g. /var/tmp/share/ABC123
+        """
 
         self.classname = 'ResourceCmdHelper'
         self.logger = Config0Logger(self.classname)
-        self.logger.debug("Instantiating %s" % self.classname)
+        self.logger.debug(f"Instantiating {self.classname}")
 
         self.cwd = os.getcwd()
 
@@ -101,7 +140,7 @@ class ResourceCmdHelper:
         self.app_name = kwargs.get("app_name")
         self.app_dir = kwargs.get("app_dir")
 
-        if not hasattr(self,"build_env_vars"):
+        if not hasattr(self, "build_env_vars"):
             self.build_env_vars = kwargs.get("build_env_vars")
 
         if not self.build_env_vars:
@@ -120,8 +159,8 @@ class ResourceCmdHelper:
         self._set_env_vars(env_vars=kwargs.get("env_vars"),
                            clobber=True)
 
-        self._set_os_env_prefix(**kwargs)
-        self._set_app_params(**kwargs)
+        self._set_os_env_prefix()
+        self._set_app_params()
 
         self._init_syncvars(**kwargs)
         self._finalize_set_vars()
@@ -133,8 +172,7 @@ class ResourceCmdHelper:
         self.final_output = None
 
     def _set_build_timeout(self):
-
-        if hasattr(self,"build_timeout") and self.build_timeout:
+        if hasattr(self, "build_timeout") and self.build_timeout:
             return
 
         try:
@@ -156,10 +194,9 @@ class ResourceCmdHelper:
         self.build_timeout = 500
 
     def _set_aws_region(self):
-
         self.aws_backend_region = os.environ.get("AWS_BACKEND_REGION") or "us-east-1"
 
-        if hasattr(self,"aws_region") and self.aws_region:
+        if hasattr(self, "aws_region") and self.aws_region:
             return
 
         self.aws_region = os.environ.get("AWS_DEFAULT_REGION")
@@ -170,7 +207,6 @@ class ResourceCmdHelper:
         self.aws_region = "us-east-1"
 
     def _set_phases_params(self):
-
         if self.phases_params_hash:
             return
 
@@ -183,7 +219,6 @@ class ResourceCmdHelper:
             return
 
     def init_phase_run(self):
-
         if not self.current_phase:
             return
 
@@ -198,7 +233,6 @@ class ResourceCmdHelper:
         sleep(timewait)
 
     def get_phase_inputargs(self):
-
         if not self.current_phase:
             return
 
@@ -210,7 +244,6 @@ class ResourceCmdHelper:
         return inputargs
 
     def _finalize_set_vars(self):
-
         self._set_stateful_params()
         self._set_exec_dir()
         self._set_docker_settings()
@@ -237,16 +270,15 @@ class ResourceCmdHelper:
         #self._debug_print_out_key_class_vars()
 
     def _set_json_files(self):
-
-        if not hasattr(self,"config0_ resource_json_file") or not self.cnfig0_resource_json_file:
+        if not hasattr(self, "config0_resource_json_file") or not self.config0_resource_json_file:
             self.config0_resource_json_file = os.environ.get("CONFIG0_RESOURCE_JSON_FILE")
 
-        if not hasattr(self,"config0_phases_json_file") or not self.config0_phases_json_file:
+        if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
             self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
 
         if not self.config0_resource_json_file:
             try:
-                self.config0_resource_json_file = os.path.join({self.stateful_dir},
+                self.config0_resource_json_file = os.path.join(self.stateful_dir,
                                                                f"resource-{self.stateful_id}.json")
             except:
                 self.config0_resource_json_file = None
@@ -255,7 +287,7 @@ class ResourceCmdHelper:
 
         if not self.config0_phases_json_file:
             try:
-                self.config0_phases_json_file = os.path.join({self.stateful_dir},
+                self.config0_phases_json_file = os.path.join(self.stateful_dir,
                                                              f"phases-{self.stateful_id}.json")
             except:
                 self.config0_phases_json_file = None
@@ -263,17 +295,18 @@ class ResourceCmdHelper:
         self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json_file}"')
 
     def _debug_print_out_key_class_vars(self):
-
-        for _k,_v in self.syncvars.class_vars.items():
+        for _k, _v in self.syncvars.class_vars.items():
             try:
                 self.logger.debug(f"{_k} -> {_v}")
             except:
                 self.logger.warn(f"could not print class vars {_k}")
 
     def _set_special_keywords_classvars(self):
-
+        """
+        # below not currently used but may be in future
         chrootfiles_dest_dir = self.syncvars.class_vars.get("chrootfiles_dest_dir")
         working_dir = self.syncvars.class_vars.get("working_dir")
+        """
         run_share_dir = self.syncvars.class_vars.get("run_share_dir")
 
         keys = [
@@ -298,8 +331,7 @@ class ResourceCmdHelper:
             else:
                 self.syncvars.class_vars[key] = run_share_dir
 
-    def _init_syncvars(self,**kwargs):
-
+    def _init_syncvars(self, **kwargs):
         set_must_exists = kwargs.get("set_must_exists")
         set_non_nullable = kwargs.get("set_non_nullable")
         set_default_values = kwargs.get("set_default_values")
@@ -324,7 +356,7 @@ class ResourceCmdHelper:
             "docker_image",
             "mod_execgroup",
             "destroy_env_vars",
-            "validate_env_vars"
+            "validate_env_vars",
             "schedule_id",
             "run_id",
             "job_instance_id",
@@ -368,16 +400,14 @@ class ResourceCmdHelper:
         self.syncvars.set(init=True)
         self.set_class_vars()
 
-    def set_class_vars(self,class_vars=None):
-
+    def set_class_vars(self, class_vars=None):
         if not class_vars:
             class_vars = self.syncvars.class_vars
 
-        for _k,_v in class_vars.items():
-
+        for _k, _v in class_vars.items():
             # check is the class vars already exists
             # and if not None/False, skip
-            if hasattr(self,_k) and getattr(self,_k):
+            if hasattr(self, _k) and getattr(self, _k):
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
@@ -394,8 +424,7 @@ class ResourceCmdHelper:
 
             exec(exp)
 
-    def _set_env_vars(self,env_vars=None,clobber=False):
-
+    def _set_env_vars(self, env_vars=None, clobber=False):
         auto_clobber_keys = [
             "CHROOTFILES_DEST_DIR",
             "WORKING_DIR"
@@ -406,8 +435,7 @@ class ResourceCmdHelper:
         if not set_env_vars:
             return
 
-        for _k,_v in set_env_vars.items():
-
+        for _k, _v in set_env_vars.items():
             if self.os_env_prefix and self.os_env_prefix in _k:
                 _key = _k
             else:
@@ -427,12 +455,11 @@ class ResourceCmdHelper:
                 continue
 
             if os.environ.get("JIFFY_ENHANCED_LOG"):
-               print(f"{_key} -> {_v}")
+                print(f"{_key} -> {_v}")
 
             os.environ[_key] = str(_v)
 
-    def _set_os_env_prefix(self,**kwargs):
-
+    def _set_os_env_prefix(self):
         if self.os_env_prefix: 
             return
 
@@ -441,20 +468,19 @@ class ResourceCmdHelper:
         elif self.app_name == "ansible":
             self.os_env_prefix = "ANS_VAR"
 
-    def _get_template_vars(self,**kwargs):
-
+    def _get_template_vars(self, **kwargs):
         # if the app_template_vars is provided, we use it, otherwise, we
         # assume it is the <APP_NAME>_EXEC_TEMPLATE_VARS
         _template_vars = kwargs.get("app_template_vars")
 
         if not _template_vars and self.app_name:
-            _template_vars = "{}_EXEC_TEMPLATE_VARS".format(self.app_name)
+            _template_vars = f"{self.app_name}_EXEC_TEMPLATE_VARS"
 
         if not os.environ.get(_template_vars.upper()): 
             _template_vars = "ED_EXEC_TEMPLATE_VARS"
 
         if os.environ.get(_template_vars.upper()):
-            return [ _var.strip() for _var in os.environ.get(_template_vars.upper()).split(",") ]
+            return [_var.strip() for _var in os.environ.get(_template_vars.upper()).split(",")]
 
         if not self.os_env_prefix: 
             return
@@ -466,10 +492,9 @@ class ResourceCmdHelper:
             if self.os_env_prefix not in _var: 
                 continue
 
-            self.logger.debug("{} found in {}".format(self.os_env_prefix,
-                                                      _var))
+            self.logger.debug(f"{self.os_env_prefix} found in {_var}")
 
-            self.logger.debug("templating variable {}".format(_var))
+            self.logger.debug(f"templating variable {_var}")
 
             _template_vars.append(_var)
 
@@ -479,7 +504,6 @@ class ResourceCmdHelper:
         return _template_vars
 
     def _set_mod_env_vars(self):
-
         try:
             self.destroy_env_vars = eval(self.destroy_env_vars)
         except:
@@ -495,7 +519,6 @@ class ResourceCmdHelper:
         self.syncvars.class_vars["validate_env_vars"] = self.validate_env_vars
 
     def _set_docker_settings(self):
-
         # docker image explicitly set
         if self.docker_image:
             return
@@ -509,23 +532,21 @@ class ResourceCmdHelper:
         if self.app_name == "terraform":
             return
 
-        # docker image noet set but app_name is set
-        self.docker_image = "config0/{}-run-env".format(self.app_name)
+        # docker image not set but app_name is set
+        self.docker_image = f"config0/{self.app_name}-run-env"
         self.syncvars.class_vars["docker_image"] = self.docker_image
 
-    def _mkdir(self,dir_path):
-
+    def _mkdir(self, dir_path):
         if os.path.exists(dir_path): 
             return
 
-        cmd = "mkdir -p {}".format(dir_path)
+        cmd = f"mkdir -p {dir_path}"
 
         self.execute(cmd,
                      output_to_json=False,
                      exit_error=True)
 
     def _set_stateful_params(self):
-
         self.postscript_path = None
         self.postscript = None
 
@@ -542,8 +563,7 @@ class ResourceCmdHelper:
 
         return
 
-    def _set_app_params(self,**kwargs):
-
+    def _set_app_params(self):
         if not self.app_name:
             return
 
@@ -551,20 +571,19 @@ class ResourceCmdHelper:
 
         # set app_dir
         if not self.app_dir:
-            self.app_dir = os.environ.get("{}_DIR".format(self.app_name.upper()))
+            self.app_dir = os.environ.get(f"{self.app_name.upper()}_DIR")
 
         if not self.app_dir:
-            self.app_dir = "var/tmp/{}".format(self.app_name)
+            self.app_dir = f"var/tmp/{self.app_name}"
 
         if self.app_dir[0] == "/": 
             self.app_dir = self.app_dir[1:]
 
         # this can be overided by inherited class
         if not self.shelloutconfig:
-            self.shelloutconfig = "config0-publish:::{}::resource_wrapper".format(self.app_name)
+            self.shelloutconfig = f"config0-publish:::{self.app_name}::resource_wrapper"
 
     def _set_exec_dir(self):
-
         if self.stateful_id:
             self.exec_dir = self.run_share_dir
         else:
@@ -582,23 +601,21 @@ class ResourceCmdHelper:
 
         self._mkdir(self.exec_dir)
 
-        if hasattr(self,"exec_dir") and self.exec_dir:
-
-            self.template_dir = "{}/_config0_templates".format(self.exec_dir)
+        if hasattr(self, "exec_dir") and self.exec_dir:
+            self.template_dir = f"{self.exec_dir}/_config0_templates"
 
             # ref 34532045732
             self.resources_dir = os.path.join(self.exec_dir,
                                               "config0_resources")  
 
     def _get_resource_files(self):
-
-        self.logger.debug("getting json files from resources_dir {}".format(self.resources_dir))
+        self.logger.debug(f"getting json files from resources_dir {self.resources_dir}")
 
         if not os.path.exists(self.resources_dir): 
-            self.logger.debug("DOES NOT EXIST resources_dir {}".format(self.resources_dir))
+            self.logger.debug(f"DOES NOT EXIST resources_dir {self.resources_dir}")
             return
 
-        _files = glob.glob("{}/*.json".format(self.resources_dir))
+        _files = glob.glob(f"{self.resources_dir}/*.json")
 
         self.logger.debug(_files)
 
@@ -608,12 +625,11 @@ class ResourceCmdHelper:
         resources = []
 
         for _file in _files:
-
             try:
-                _values = json.loads(open(_file,"r").read())
+                _values = json.loads(open(_file, "r").read())
                 resources.append(_values)
             except:
-                self.logger.warn("could not retrieve resource json contents from {}".format(_file))
+                self.logger.warn(f"could not retrieve resource json contents from {_file}")
 
         if not resources: 
             return 
@@ -623,22 +639,20 @@ class ResourceCmdHelper:
 
         return resources
 
-    def get_os_env_prefix_envs(self,remove_os_environ=True):
-
-        '''
+    def get_os_env_prefix_envs(self, remove_os_environ=True):
+        """
         get os env prefix vars e.g. TF_VAR_ipadddress and return
-        the variables as lowercase withoout the prefix
+        the variables as lowercase without the prefix
         e.g. ipaddress
-        '''
+        """
 
         if not self.os_env_prefix:
             return {}
 
-        _split_key = "{}_".format(self.os_env_prefix)
+        _split_key = f"{self.os_env_prefix}_"
         inputargs = {}
 
         for i in os.environ.keys():
-
             if self.os_env_prefix not in i: 
                 continue
 
@@ -651,22 +665,19 @@ class ResourceCmdHelper:
         return inputargs
 
     def get_app_env_keys(self):
-
         if not self.os_env_prefix:
             return {}
 
         try:
-            _env_keys = [ _key for _key in os.environ.keys() if self.os_env_prefix in _key ]
+            _env_keys = [_key for _key in os.environ.keys() if self.os_env_prefix in _key]
         except:
             _env_keys = None
 
-        self.logger.debug_highlight('app_env_keys "{}" for os_env_prefix "{}"'.format(_env_keys,
-                                                                                      self.os_env_prefix))
+        self.logger.debug_highlight(f'app_env_keys "{_env_keys}" for os_env_prefix "{self.os_env_prefix}"')
 
         return _env_keys
 
-    def insert_os_env_prefix_envs(self,env_vars,exclude_vars=None):
-
+    def insert_os_env_prefix_envs(self, env_vars, exclude_vars=None):
         _env_keys = self.get_app_env_keys()
 
         if not _env_keys: 
@@ -675,14 +686,13 @@ class ResourceCmdHelper:
         if not exclude_vars:
             exclude_vars = []
 
-        _split_key = "{}_".format(self.os_env_prefix)
+        _split_key = f"{self.os_env_prefix}_"
 
         for _env_key in _env_keys:
-
             _var = _env_key.split(_split_key)[1].lower()
 
             if _var in exclude_vars: 
-                self.logger.debug("insert_os_env_prefix_envs - excluding {}".format(_env_key))
+                self.logger.debug(f"insert_os_env_prefix_envs - excluding {_env_key}")
                 continue
 
             _env_value = os.environ.get(_env_key)
@@ -690,16 +700,15 @@ class ResourceCmdHelper:
             if not _env_key: 
                 continue
 
-            if _env_value in [ "False", "false", "null", False]: 
+            if _env_value in ["False", "false", "null", False]: 
                 _env_value = "false"
 
-            if _env_value in [ "True", "true", True]: 
+            if _env_value in ["True", "true", True]: 
                 _env_value = "true"
 
             env_vars[_env_key] = _env_value
 
-    def append_log(self,log):
-
+    def append_log(self, log):
         append = True
 
         if os.environ.get("JIFFY_LOG_FILE"):
@@ -709,10 +718,10 @@ class ResourceCmdHelper:
         elif os.environ.get("LOG_FILE"):
             logfile = os.environ["LOG_FILE"]
         else:
-            logfile = "/tmp/{}.log".format(self.stateful_id)
+            logfile = f"/tmp/{self.stateful_id}.log"
             append = False
 
-        if isinstance(log,list) or eval_str_to_join(log):
+        if isinstance(log, list) or eval_str_to_join(log):
             try:
                 _str = "\n".join(log)
             except:
@@ -748,8 +757,8 @@ class ResourceCmdHelper:
 
         return logfile
 
-    def to_resource_db(self,resources):
-
+    @staticmethod
+    def to_resource_db(resources):
         output = _to_json(resources)
         print('_config0_begin_output')
         print(output)
@@ -758,7 +767,6 @@ class ResourceCmdHelper:
         return
 
     def _get_docker_env_filepath(self):
-
         _docker_env_file = self.get_env_var("DOCKER_ENV_FILE",
                                             default=".env")
 
@@ -776,29 +784,24 @@ class ResourceCmdHelper:
         return self.docker_env_file
 
     # referenced and related to: dup dhdskyeucnfhrt2634521
-    def get_env_var(self,variable,default=None,must_exists=None):
-
+    def get_env_var(self, variable, default=None, must_exists=None):
         _value = os.environ.get(variable)
 
         if _value:
             return _value
 
         if self.os_env_prefix:
-
-            _value = os.environ.get("{}_{}".format(self.os_env_prefix,
-                                                   variable))
+            _value = os.environ.get(f"{self.os_env_prefix}_{variable}")
 
             if _value:
                 return _value
 
-            _value = os.environ.get("{}_{}".format(self.os_env_prefix,
-                                                   variable.lower()))
+            _value = os.environ.get(f"{self.os_env_prefix}_{variable.lower()}")
 
             if _value:
                 return _value
 
-            _value = os.environ.get("{}_{}".format(self.os_env_prefix,
-                                                   variable.upper()))
+            _value = os.environ.get(f"{self.os_env_prefix}_{variable.upper()}")
 
             if _value:
                 return _value
@@ -811,11 +814,11 @@ class ResourceCmdHelper:
 
         raise Exception(f"{variable} does not exist")
 
-    def print_json(self,values):
+    @staticmethod
+    def print_json(values):
         print_json(values)
 
-    def templify(self,**kwargs):
-
+    def templify(self, **kwargs):
         clobber = kwargs.get("clobber")
         _template_vars = self._get_template_vars(**kwargs)
 
@@ -823,7 +826,7 @@ class ResourceCmdHelper:
             self.logger.debug_highlight("template vars is not set or empty")
             return
 
-        self.logger.debug_highlight("template vars {} not set or empty".format(_template_vars))
+        self.logger.debug_highlight(f"template vars {_template_vars} not set or empty")
 
         if not self.template_dir:
             self.logger.warn("template_dir not set (None) - skipping templating")
@@ -832,11 +835,10 @@ class ResourceCmdHelper:
         template_files = list_template_files(self.template_dir)
 
         if not template_files:
-            self.logger.warn("template_files in directory {} empty - skipping templating".format(self.template_dir))
+            self.logger.warn(f"template_files in directory {self.template_dir} empty - skipping templating")
             return
 
         for _file_stats in template_files:
-
             template_filepath = _file_stats["file"]
 
             file_dir = os.path.join(self.exec_dir,
@@ -847,21 +849,19 @@ class ResourceCmdHelper:
                                      _file_stats["filename"].split(".ja2")[0])
 
             if not os.path.exists(file_dir):
-                os.system("mkdir -p {}".format(file_dir))
+                os.system(f"mkdir -p {file_dir}")
 
             if os.path.exists(file_path) and not clobber:
-                self.logger.warn("destination templated file already exists at {} - skipping templifying of it".format(file_path))
+                self.logger.warn(f"destination templated file already exists at {file_path} - skipping templifying of it")
                 continue
 
-            self.logger.debug("creating templated file file {} from {}".format(file_path,
-                                                                               template_filepath))
+            self.logger.debug(f"creating templated file file {file_path} from {template_filepath}")
 
-
-            templateVars = {}
+            template_vars = {}
 
             if self.os_env_prefix:
-                self.logger.debug("using os_env_prefix {}".format(self.os_env_prefix))
-                _split_char = "{}_".format(self.os_env_prefix)
+                self.logger.debug(f"using os_env_prefix {self.os_env_prefix}")
+                _split_char = f"{self.os_env_prefix}_"
             else:
                 _split_char = None
 
@@ -869,20 +869,17 @@ class ResourceCmdHelper:
                 self.logger.error("_template_vars is empty")
                 exit(9)
 
-            self.logger.debug("_template_vars {}".format(_template_vars))
+            self.logger.debug(f"_template_vars {_template_vars}")
 
             for _var in _template_vars:
-
                 _value = None
 
                 if self.os_env_prefix:
-
                     if self.os_env_prefix in _var:
                         _key = _var.split(_split_char)[1]
                         _value = os.environ.get(_var)
                     else:
-                        _key = str("{}_{}".format(self.os_env_prefix,
-                                                  _var))
+                        _key = str(f"{self.os_env_prefix}_{_var}")
                         _value = os.environ.get(_key)
 
                     if _value: _mapped_key = _key
@@ -896,46 +893,44 @@ class ResourceCmdHelper:
                     if _value: _mapped_key = _var.upper()
 
                 self.logger.debug("")
-                self.logger.debug("mapped_key {}".format(_mapped_key))
-                self.logger.debug("var {}".format(_var))
-                self.logger.debug("value {}".format(_value))
+                self.logger.debug(f"mapped_key {_mapped_key}")
+                self.logger.debug(f"var {_var}")
+                self.logger.debug(f"value {_value}")
                 self.logger.debug("")
 
                 if not _value: 
-                    self.logger.warn("skipping templify var {}".format(_var))
+                    self.logger.warn(f"skipping templify var {_var}")
                     continue
 
-                value = _value.replace("'",'"')
+                value = _value.replace("'", '"')
 
                 # include both uppercase and regular keys
-                templateVars[_mapped_key] = value
-                templateVars[_mapped_key.upper()] = value
+                template_vars[_mapped_key] = value
+                template_vars[_mapped_key.upper()] = value
 
             self.logger.debug("")
-            self.logger.debug("templateVars {}".format(templateVars))
+            self.logger.debug(f"template_vars {template_vars}")
             self.logger.debug("")
 
-            templateLoader = jinja2.FileSystemLoader(searchpath="/")
-            templateEnv = jinja2.Environment(loader=templateLoader)
-            template = templateEnv.get_template(template_filepath)
-            outputText = template.render( templateVars )
-            writefile = open(file_path,"w")
-            writefile.write(outputText)
+            template_loader = jinja2.FileSystemLoader(searchpath="/")
+            template_env = jinja2.Environment(loader=template_loader)
+            template = template_env.get_template(template_filepath)
+            output_text = template.render(template_vars)
+            writefile = open(file_path, "w")
+            writefile.write(output_text)
             writefile.close()
 
         return True
 
-    def write_key_to_file(self,**kwargs):
-
-        '''
-        writing the value of a key in inputargs 
-        into a file
-        '''
+    def write_key_to_file(self, **kwargs):
+        """
+        writing the value of a key in kwargs to a file
+        """
 
         key = kwargs["key"]
         filepath = kwargs["filepath"]
         split_char = kwargs.get("split_char")
-        add_return = kwargs.get("add_return",True)
+        add_return = kwargs.get("add_return", True)
         copy_to_share = kwargs.get("copy_to_share")
         deserialize = kwargs.get("deserialize")
 
@@ -959,8 +954,7 @@ class ResourceCmdHelper:
         else:
             _lines = _value
 
-        with open(filepath,"w") as wfile:
-
+        with open(filepath, "w") as wfile:
             for _line in _lines:
                 # ref 45230598450
                 #wfile.write(_line.replace('"','').replace("'",""))
@@ -973,15 +967,14 @@ class ResourceCmdHelper:
                 wfile.write("\n")
 
         if permission: 
-            os.system("chmod {} {}".format(permission,filepath))
+            os.system(f"chmod {permission} {filepath}")
 
         if copy_to_share: 
             self.copy_file_to_share(filepath)
 
         return filepath
 
-    def copy_file_to_share(self,srcfile,dst_subdir=None):
-
+    def copy_file_to_share(self, srcfile, dst_subdir=None):
         if not self.run_share_dir: 
             self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
             return
@@ -990,24 +983,23 @@ class ResourceCmdHelper:
         _dirname = os.path.dirname(self.run_share_dir)
 
         if not os.path.exists(_dirname):
-            cmds.append("mkdir -p {}".format(_dirname))
+            cmds.append(f"mkdir -p {_dirname}")
 
         _file_subpath = os.path.basename(srcfile)
 
         if dst_subdir:
-            _file_subpath = "{}/{}".format(dst_subdir,_file_subpath)
+            _file_subpath = f"{dst_subdir}/{_file_subpath}"
 
-        dstfile = "{}/{}".format(self.run_share_dir,_file_subpath)
+        dstfile = f"{self.run_share_dir}/{_file_subpath}"
 
-        cmds.append("cp -rp {} {}".format(srcfile,dstfile))
+        cmds.append(f"cp -rp {srcfile} {dstfile}")
 
         for cmd in cmds:
             self.execute(cmd,
                          output_to_json=False,
                          exit_error=True)
 
-    def sync_to_share(self,rsync_args=None,exclude_existing=None):
-
+    def sync_to_share(self, rsync_args=None, exclude_existing=None):
         if not self.run_share_dir: 
             self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
             return
@@ -1016,19 +1008,16 @@ class ResourceCmdHelper:
         _dirname = os.path.dirname(self.run_share_dir)
 
         if not os.path.exists(_dirname):
-            cmds.append("mkdir -p {}".format(_dirname))
+            cmds.append(f"mkdir -p {_dirname}")
 
         if not rsync_args:
             rsync_args = "-avug"
 
         if exclude_existing:
-            rsync_args = '{} --ignore-existing '.format(rsync_args)
+            rsync_args = f'{rsync_args} --ignore-existing '
 
         #rsync -h -v -r -P -t source target
-
-        cmd = "rsync {} {}/ {}".format(rsync_args,
-                                       self.exec_dir,
-                                       self.run_share_dir)
+        cmd = f"rsync {rsync_args} {self.exec_dir}/ {self.run_share_dir}"
 
         self.logger.debug(cmd)
         cmds.append(cmd)
@@ -1038,20 +1027,18 @@ class ResourceCmdHelper:
                          output_to_json=False,
                          exit_error=True)
 
-        self.logger.debug("Sync-ed to run share dir {}".format(self.run_share_dir))
+        self.logger.debug(f"Sync-ed to run share dir {self.run_share_dir}")
 
     def remap_app_vars(self):
-
         if not self.os_env_prefix: 
             return
 
-        _split_char = "{}_".format(self.os_env_prefix)
+        _split_char = f"{self.os_env_prefix}_"
 
         _add_values = {}
         keys_to_delete = []
 
-        for _key,_value in self.inputargs.items():
-
+        for _key, _value in self.inputargs.items():
             if _split_char not in _key:
                 continue
 
@@ -1060,20 +1047,19 @@ class ResourceCmdHelper:
             _add_values[_mapped_key] = _value
             keys_to_delete.append(_key)
 
-            self.logger.debug("mapped key {} value {}".format(_key,
-                                                              _value))
+            self.logger.debug(f"mapped key {_key} value {_value}")
 
-        for _mapped_key,_value in _add_values.items():
+        for _mapped_key, _value in _add_values.items():
             self.inputargs[_mapped_key] = _value
 
         for key_to_delete in keys_to_delete:
             del self.inputargs[key_to_delete]
 
-    def get_hash(self,_object):
+    @staticmethod
+    def get_hash(_object):
         return get_hash(_object)
 
-    def add_output(self,cmd=None,remove_empty=None,**results):
-
+    def add_output(self, cmd=None, remove_empty=None, **results):
         try:
             _outputs = to_json(results["output"])
         except:
@@ -1089,36 +1075,36 @@ class ResourceCmdHelper:
             if remove_empty and not _output: continue
             self.output.extend(_output)
 
-    def to_json(self,output):
+    @staticmethod
+    def to_json(output):
         return _to_json(output)
 
-    def print_output(self,**kwargs):
-
+    @staticmethod
+    def print_output(**kwargs):
         output = _to_json(kwargs["output"])
 
         try:
-            if isinstance(output,bytes):
+            if isinstance(output, bytes):
                 output = output.decode()
         except:
             print("could not convert output to string")
 
         try:
-            if isinstance(output,str):
+            if isinstance(output, str):
                 output = output.split("\n")
         except:
             print("could not convert output to list")
 
         print('_config0_begin_output')
 
-        if isinstance(output,list):
+        if isinstance(output, list):
             for _output in output:
                 print(_output)
         else:
             print(output)
 
     def jsonfile_to_phases_info(self):
-
-        if not hasattr(self,"config0_phases_json_file"):
+        if not hasattr(self, "config0_phases_json_file"):
             self.logger.debug("jsonfile_to_phases_info - config0_phases_json_file not set")
             return
 
@@ -1131,8 +1117,7 @@ class ResourceCmdHelper:
         self.phases_info = get_values_frm_json(json_file=self.config0_phases_json_file)
 
     def delete_phases_to_json_file(self):
-
-        if not hasattr(self,"config0_phases_json_file"):
+        if not hasattr(self, "config0_phases_json_file"):
             self.logger.debug("delete_phases_to_json_file - config0_phases_json_file not set")
             return
 
@@ -1144,9 +1129,8 @@ class ResourceCmdHelper:
 
         rm_rf(self.config0_phases_json_file)
 
-    def write_phases_to_json_file(self,content_json):
-
-        if not hasattr(self,"config0_phases_json_file"):
+    def write_phases_to_json_file(self, content_json):
+        if not hasattr(self, "config0_phases_json_file"):
             self.logger.debug("write_phases_to_json_file - config0_phases_json_file not set")
             return
 
@@ -1158,11 +1142,10 @@ class ResourceCmdHelper:
         to_jsonfile(content_json,
                     self.config0_phases_json_file)
 
-    def write_resource_to_json_file(self,resource,must_exist=None):
-
+    def write_resource_to_json_file(self, resource, must_exist=None):
         msg = "config0_resource_json_file needs to be set"
 
-        if not hasattr(self,"config0_resource_json_file") or not self.config0_resource_json_file:
+        if not hasattr(self, "config0_resource_json_file") or not self.config0_resource_json_file:
             if must_exist:
                 raise Exception(msg)
             else:
@@ -1174,15 +1157,15 @@ class ResourceCmdHelper:
         to_jsonfile(resource,
                     self.config0_resource_json_file)
 
-    def successful_output(self,**kwargs):
+    def successful_output(self, **kwargs):
         self.print_output(**kwargs)
         exit(0)
         
-    def clean_output(self,results,replace=True):
-
+    @staticmethod
+    def clean_output(results, replace=True):
         clean_lines = []
 
-        if isinstance(results["output"],list):
+        if isinstance(results["output"], list):
             for line in results["output"]:
                 try:
                     clean_lines.append(line.decode("utf-8"))
@@ -1199,23 +1182,24 @@ class ResourceCmdHelper:
 
         return clean_lines
 
-    def execute(self,cmd,**kwargs):
-
-        results = self.execute3(cmd,**kwargs)
+    def execute(self, cmd, **kwargs):
+        results = self.execute3(cmd, **kwargs)
 
         return results
 
-    def execute3(self,cmd,**kwargs):
-        return execute3(cmd,**kwargs)
+    @staticmethod
+    def execute3(cmd, **kwargs):
+        return execute3(cmd, **kwargs)
 
-    def execute2(self,cmd,**kwargs):
-        return execute3(cmd,**kwargs)
+    @staticmethod
+    def execute2(cmd, **kwargs):
+        return execute3(cmd, **kwargs)
 
-    def execute4(self,cmd,**kwargs):
-        return execute4(cmd,**kwargs)
+    @staticmethod
+    def execute4(cmd, **kwargs):
+        return execute4(cmd, **kwargs)
 
-    def cmd_failed(self,**kwargs):
-         
+    def cmd_failed(self, **kwargs):
         failed_message = kwargs.get("failed_message")
 
         if not failed_message: 
@@ -1225,21 +1209,17 @@ class ResourceCmdHelper:
         exit(9)
 
     def _set_inputargs_to_false(self):
-
-        for _k,_v in self.inputargs.items():
-
+        for _k, _v in self.inputargs.items():
             if _v != "False": 
                 continue
 
             self.inputargs[_k] = False
 
-    def _add_to_inputargs(self,ref,inputargs=None):
-
+    def _add_to_inputargs(self, ref, inputargs=None):
         if not inputargs:
             return
 
-        for _k,_v in inputargs.items():
-
+        for _k, _v in inputargs.items():
             if _k in self.inputargs:
                 continue
 
@@ -1250,45 +1230,43 @@ class ResourceCmdHelper:
 
             self.inputargs[_k] = _v
 
-    def set_inputargs(self,**kwargs):
-
+    def set_inputargs(self, **kwargs):
         _inputargs = None
 
         if kwargs.get("inputargs"):
             _inputargs = kwargs["inputargs"]
-            self._add_to_inputargs("ref 34524-1",_inputargs)
+            self._add_to_inputargs("ref 34524-1", _inputargs)
 
         elif kwargs.get("json_input"):
             _inputargs = to_json(kwargs["json_input"],
                                      exit_error=True)
-            self._add_to_inputargs("ref 34524-2",_inputargs)
+            self._add_to_inputargs("ref 34524-2", _inputargs)
 
         if kwargs.get("add_app_vars") and self.os_env_prefix:
             _inputargs = self.get_os_env_prefix_envs(remove_os_environ=False)
-            self._add_to_inputargs("ref 34524-3",_inputargs)
+            self._add_to_inputargs("ref 34524-3", _inputargs)
 
         if kwargs.get("set_env_vars"):
             _inputargs = self.parse_set_env_vars(kwargs["set_env_vars"])
-            self._add_to_inputargs("ref 34524-4",_inputargs)
+            self._add_to_inputargs("ref 34524-4", _inputargs)
 
-        standard_env_vars = [ "JOB_INSTANCE_ID",
+        standard_env_vars = ["JOB_INSTANCE_ID",
                               "SCHEDULE_ID",
                               "RUN_ID",
                               "RESOURCE_TYPE",
                               "METHOD",
-                              "PHASE" ]
+                              "PHASE"]
 
         _inputargs = self.parse_set_env_vars(standard_env_vars)
-        self._add_to_inputargs("ref 34524-5",_inputargs)
+        self._add_to_inputargs("ref 34524-5", _inputargs)
         self._set_inputargs_to_false()
 
     # This can be replaced by the inheriting class
-    def parse_set_env_vars(self,env_vars):
-
+    @staticmethod
+    def parse_set_env_vars(env_vars):
         inputargs = {}
 
         for env_var in env_vars:
-
             if not os.environ.get(env_var.upper()): 
                 continue
 
@@ -1303,8 +1281,7 @@ class ResourceCmdHelper:
 
         return inputargs
 
-    def check_required_inputargs(self,**kwargs):
-
+    def check_required_inputargs(self, **kwargs):
         status = True
         required_keys = []
 
@@ -1321,31 +1298,21 @@ class ResourceCmdHelper:
         if status: 
             return True
 
-        self.logger.aggmsg("These keys missing and need to be set:",new=True)
-        #self.logger.aggmsg("")
-        #self.logger.aggmsg(f"{required_keys}")
-        #self.logger.aggmsg("")
+        self.logger.aggmsg("These keys missing and need to be set:", new=True)
         self.logger.aggmsg("")
         self.logger.aggmsg(f"\tkeys found include: {list(self.inputargs.keys())}")
         self.logger.aggmsg("")
 
         for key in required_keys:
-
             if self.os_env_prefix:
-                self.logger.aggmsg("\t{} or Environmental Variable {}/{}_{}".format(key,
-                                                                                    key.upper(),
-                                                                                    self.os_env_prefix,
-                                                                                    key))
+                self.logger.aggmsg(f"\t{key} or Environmental Variable {key.upper()}/{self.os_env_prefix}_{key}")
             else:
-                self.logger.aggmsg("\t{} or Environmental Variable {}".format(key,
-                                                                              key.upper()))
-
+                self.logger.aggmsg(f"\t{key} or Environmental Variable {key.upper()}")
 
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
-    def check_either_inputargs(self,**kwargs):
-      
+    def check_either_inputargs(self, **kwargs):
         _keys = kwargs.get("keys")
 
         if not _keys: 
@@ -1355,28 +1322,24 @@ class ResourceCmdHelper:
             if key in self.inputargs: 
                 return 
 
-        self.logger.aggmsg("one of these keys need to be set:",new=True)
+        self.logger.aggmsg("one of these keys need to be set:", new=True)
         self.logger.aggmsg("")
 
         for key in kwargs["keys"]:
             if self.os_env_prefix:
-                self.logger.aggmsg("\t{} or Environmental Variable {}/{}_{}".format(key,
-                                                                                    key.upper(),
-                                                                                    self.os_env_prefix,
-                                                                                    key))
+                self.logger.aggmsg(f"\t{key} or Environmental Variable {key.upper()}/{self.os_env_prefix}_{key}")
             else:
-                self.logger.aggmsg("\t{} or Environmental Variable {}".format(key,
-                                                                              key.upper()))
+                self.logger.aggmsg(f"\t{key} or Environmental Variable {key.upper()}")
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
     # testtest456
     # ref 4354523
     #def create_build_envfile(self):
-    def create_build_envfile(self,encrypt=None,openssl=True):
-        '''
+    def create_build_envfile(self, encrypt=None, openssl=True):
+        """
         we use stateful_id for the encrypt key
-        '''
+        """
 
         if not self.build_env_vars:
             return
@@ -1409,22 +1372,20 @@ class ResourceCmdHelper:
         return True
 
     def _write_local_log(self):
-
         cli_log_file = f'/tmp/{self.stateful_id}.cli.log'
 
-        with open(cli_log_file,"w") as f:
+        with open(cli_log_file, "w") as f:
             f.write(self.final_output)
 
         print(f'local log file here: {cli_log_file}')
 
         return True
 
-    def eval_log(self,results,local_log=None):
-
+    def eval_log(self, results, local_log=None):
         if not results.get("output"):
             return
 
-        self.clean_output(results,replace=True)
+        self.clean_output(results, replace=True)
         self.final_output = results["output"]
         self.append_log(self.final_output)
         del results["output"]
@@ -1438,12 +1399,14 @@ class ResourceCmdHelper:
 
         print(self.final_output)
 
-    def eval_failure(self,results,method):
-
+    def eval_failure(self, results, method):
         if results.get("status") is not False:
             return
 
         self.eval_log(results)
+
+        # TODO phases
+        # self.delete_phases_to_json_file()
 
         print("")
         print("-"*32)
@@ -1453,16 +1416,7 @@ class ResourceCmdHelper:
         print("")
         exit(43)
 
-        # this should also be removed further upstream
-        # but included to be explicit
-        #self.delete_phases_to_json_file()
-        #print(self.final_output)  # this will create duplicates
-        #raise Exception(failed_message)
-
-        return True
-
-    def _get_next_phase(self,method="create",**json_info):
-
+    def _get_next_phase(self, method="create", **json_info):
         results = json_info["results"]
         method_phases_params = b64_decode(json_info["phases_params_hash"])[method]
 
@@ -1485,14 +1439,13 @@ class ResourceCmdHelper:
         raise Exception("Cannot determine next phase to run")
 
     def set_cur_phase(self):
-
-        '''
+        """
         self.phases_params_hash = None
         self.phases_params = None
         self.phases_info = None
         self.phase = None  # can be "run" since will only one phase
         self.current_phase None
-        '''
+        """
 
         self.jsonfile_to_phases_info()
 

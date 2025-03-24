@@ -1,37 +1,67 @@
 #!/usr/bin/env python
 
+"""
+CodebuildResourceHelper: AWS CodeBuild project and build management.
+
+This class manages AWS CodeBuild operations including:
+
+Attributes:
+    buildspec (str): BuildSpec for CodeBuild project
+    build_id (str): Current build ID
+    project_name (str): CodeBuild project name
+    build_timeout (int): Maximum build time in seconds
+    build_expire_at (int): Timestamp when build expires
+    logarn (str): CloudWatch log ARN
+
+Environment Variables:
+    AWS_DEFAULT_REGION: AWS region for CodeBuild
+    CODEBUILD_BUILD_IMAGE: Docker image for builds
+    CODEBUILD_COMPUTE_TYPE: Compute resources for builds
+"""
+
 import re
 import gzip
 import traceback
-
 from io import BytesIO
-from time import sleep
-from time import time
-
-from config0_publisher.utilities import print_json
+from time import sleep, time
 from config0_publisher.cloud.aws.common import AWSCommonConn
 
 class CodebuildResourceHelper(AWSCommonConn):
+    DEFAULT_CONFIG = {
+        "build_image": "aws/codebuild/standard:7.0",
+        "image_type": "LINUX_CONTAINER",
+        "compute_type": "BUILD_GENERAL1_SMALL",
+        "codebuild_basename": "config0-iac"
+    }
 
-    def __init__(self,**kwargs):
+    ENV_VARS = {
+        "tmp_bucket": True,
+        "log_bucket": True,
+        "build_image": True,
+        "image_type": True,
+        "compute_type": True,
+        "codebuild_basename": True,
+        "app_dir": None,
+        "stateful_id": None,
+        "remote_stateful_bucket": None,
+        "run_share_dir": None,
+        "share_dir": None
+    }
 
+    SKIP_KEYS = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
+    SPARSE_KEYS = ["STATEFUL_ID", "REMOTE_STATEFUL_BUCKET", "TMPDIR", "APP_DIR", "SSM_NAME"]
+
+    def __init__(self, **kwargs):
         self.buildspec = kwargs.get("buildspec")
         self.build_id = None
         self.project_name = None
         self.logarn = None
 
-        default_values = {
-            "build_image":'aws/codebuild/standard:7.0',
-            "image_type":'LINUX_CONTAINER',
-            "compute_type":"BUILD_GENERAL1_SMALL",
-            "codebuild_basename":"config0-iac"
-        }
-
         if "set_env_vars" in kwargs:
-            kwargs["set_env_vars"] = self.get_set_env_vars()
+            kwargs["set_env_vars"] = self.ENV_VARS
 
         AWSCommonConn.__init__(self,
-                               default_values=default_values,
+                               default_values=self.DEFAULT_CONFIG,
                                **kwargs)
 
         # codebuild specific settings and variables
@@ -49,36 +79,18 @@ class CodebuildResourceHelper(AWSCommonConn):
         if not self.results["inputargs"].get("codebuild_basename"):
             self.results["inputargs"]["codebuild_basename"] = self.codebuild_basename
 
-    def get_set_env_vars(self):
-
-        return {
-            "tmp_bucket":True,
-            "log_bucket":True,
-            "build_image":True,
-            "image_type":True,
-            "compute_type":True,
-            "codebuild_basename":True,
-            "app_dir":None,
-            "stateful_id":None,
-            "remote_stateful_bucket":None,
-            "run_share_dir":None,
-            "share_dir":None
-        }
-
-    def _get_build_status(self,build_ids):
-
+    def _get_build_status(self, build_ids):
         results = {}
 
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
-            results[build["id"]] = { "status":build["buildStatus"],
-                                     "logarn":build["logs"]["s3LogsArn"] }
+            results[build["id"]] = {"status": build["buildStatus"],
+                                   "logarn": build["logs"]["s3LogsArn"]}
 
         return results
 
     def _set_current_build(self):
-
         _build = self._get_build_status([self.build_id])[self.build_id]
         self.logarn = _build["logarn"]
 
@@ -86,7 +98,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.results["inputargs"]["logarn"] = self.logarn
 
     def _check_build_status(self):
-
         _build = self._get_build_status([self.build_id])[self.build_id]
 
         build_status = _build["status"]
@@ -97,18 +108,17 @@ class CodebuildResourceHelper(AWSCommonConn):
         if build_status == 'IN_PROGRESS':
             return
 
-        done = [ "SUCCEEDED",
-                 "STOPPED",
-                 "TIMED_OUT",
-                 "FAILED_WITH_ABORT",
-                 "FAILED",
-                 "FAULT" ]
+        done = ["SUCCEEDED",
+                "STOPPED",
+                "TIMED_OUT",
+                "FAILED_WITH_ABORT",
+                "FAILED",
+                "FAULT"]
 
         if build_status in done:
             return build_status
 
     def _set_build_status_codes(self):
-
         build_status = self.results["build_status"]
 
         if build_status == 'SUCCEEDED':
@@ -116,7 +126,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.results["status"] = True
             return True
 
-        failed_message = f"codebuld failed with build status {build_status}"
+        failed_message = f"codebuild failed with build status {build_status}"
 
         if build_status == 'FAILED':
             self.results["failed_message"] = failed_message
@@ -163,14 +173,11 @@ class CodebuildResourceHelper(AWSCommonConn):
         return
 
     def _eval_build(self):
-
         self._set_current_build()
 
         _t1 = int(time())
-        status = None
 
         while True:
-
             sleep(5)
 
             if self._check_build_status() and self._set_build_status_codes():
@@ -180,7 +187,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             _time_elapsed = _t1 - self.results["run_t0"]
 
             if _time_elapsed > self.build_timeout:
-                failed_message = "run max time exceeded {}".format(self.build_timeout)
+                failed_message = f"run max time exceeded {self.build_timeout}"
                 self.phase_result["logs"].append(failed_message)
                 self.results["failed_message"] = failed_message
                 self.results["status"] = False
@@ -192,7 +199,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             if _t1 > self.build_expire_at:
                 self.results["status_code"] = "timed_out"
                 self.results["status"] = False
-                failed_message = "build timed out: after {} seconds.".format(str(self.build_timeout))
+                failed_message = f"build timed out: after {str(self.build_timeout)} seconds."
                 self.phase_result["logs"].append(failed_message)
                 self.results["failed_message"] = failed_message
                 self.logger.warn(failed_message)
@@ -203,30 +210,25 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.results["time_elapsed"] = int(time()) - self.results["run_t0"]
 
         if not self.output:
-            self.output = 'Could not get log build_id "{}"'.format(self.build_id)
+            self.output = f'Could not get log build_id "{self.build_id}"'
 
         return status
 
     def wait_for_log(self):
-
+        build_id_suffix = self.build_id.split(":")[1]
         maxtime = 30
         t0 = int(time())
 
-        build_id_suffix = self.build_id.split(":")[1]
-
-        results = {"status":None}
-
         while True:
-
             _time_elapsed = int(time()) - t0
 
             if _time_elapsed > maxtime:
-                self.logger.debug("time expired to retrieved log {} seconds".format(str(_time_elapsed)))
+                self.logger.debug(f"time expired to retrieved log {_time_elapsed} seconds")
                 return False
 
             results = self._set_log(build_id_suffix)
 
-            if results.get("status") == True:
+            if results.get("status") is True:
                 return True
 
             if results.get("status") is False and results.get("failed_message"):
@@ -235,61 +237,50 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             sleep(2)
 
-    def _set_log(self,build_id_suffix):
-
+    def _set_log(self, build_id_suffix):
         if self.output:
-            return {"status":True}
+            return {"status": True}
 
         if self.logarn:
             _log_elements = self.logarn.split("/codebuild/logs/")
-            _logname = "codebuild/logs/{}".format(_log_elements[1])
+            _logname = f"codebuild/logs/{_log_elements[1]}"
             _log_bucket = _log_elements[0].split("arn:aws:s3:::")[1]
         else:
-            _logname = "codebuild/logs/{}.gz".format(build_id_suffix)
+            _logname = f"codebuild/logs/{build_id_suffix}.gz"
             _log_bucket = self.log_bucket
 
-        _dstfile = '/tmp/{}.gz'.format(build_id_suffix)
+        _dstfile = f'/tmp/{build_id_suffix}.gz'
 
         try:
             obj = self.s3.Object(_log_bucket,
-                                 _logname)
+                                _logname)
 
             _read = obj.get()['Body'].read()
         except:
             msg = traceback.format_exc()
-            failed_message = "failed to get log: s3://{}/{}\n\nstacktrace:\n\n{}".format(_log_bucket,
-                                                                                         _logname,
-                                                                                         msg)
-            return {"status":False,
-                    "failed_message":failed_message}
+            failed_message = f"failed to get log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{msg}"
+            return {"status": False,
+                    "failed_message": failed_message}
 
-        self.logger.debug("retrieved log: s3://{}/{}".format(_log_bucket,
-                                                             _logname))
-
+        self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
         gzipfile = BytesIO(_read)
         gzipfile = gzip.GzipFile(fileobj=gzipfile)
         log = gzipfile.read().decode('utf-8')
-
         self.output = log
 
-        return {"status":True}
+        return {"status": True}
 
     def _set_build_summary(self):
-
         if self.results["status_code"] == "successful":
-            summary_msg = "# Successful \n# build_id {}".format(self.build_id)
-
+            summary_msg = f"# Successful \n# build_id {self.build_id}"
         elif self.results["status_code"] == "timed_out":
-            summary_msg = "# Timed out \n# build_id {}".format(self.build_id)
-
+            summary_msg = f"# Timed out \n# build_id {self.build_id}"
         elif self.build_id is False:
             self.results["status_code"] = "failed"
             summary_msg = "# Never Triggered"
-
         elif self.build_id:
             self.results["status_code"] = "failed"
-            summary_msg = "# Failed \n# build_id {}".format(self.build_id)
-
+            summary_msg = f"# Failed \n# build_id {self.build_id}"
         else:
             self.results["status_code"] = "failed"
             summary_msg = "# Never Triggered"
@@ -298,36 +289,23 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return summary_msg
 
-    def _env_vars_to_codebuild_format(self,sparse=True):
-
-        skip_keys = [ "AWS_ACCESS_KEY_ID",
-                      "AWS_SECRET_ACCESS_KEY",
-                      "AWS_SESSION_TOKEN" ]
-
-        sparse_keys = [ "STATEFUL_ID",
-                        "REMOTE_STATEFUL_BUCKET",
-                        "TMPDIR",
-                        "APP_DIR",
-                        "SSM_NAME" ]
-
-        env_vars = []
-        _added = []
-
+    def _env_vars_to_codebuild_format(self, sparse=True):
+        env_vars = [] 
+        _added = [] 
         if not self.build_env_vars:
             return env_vars
 
         pattern = r"^CODEBUILD"
 
-        for _k,_v in self.build_env_vars.items():
-
+        for _k, _v in self.build_env_vars.items():
             if not _v:
-                self.logger.debug("env var {} is empty/None - skipping".format(_k))
+                self.logger.debug(f"env var {_k} is empty/None - skipping")
                 continue
 
-            if _k in skip_keys:
+            if _k in self.SKIP_KEYS:
                 continue
 
-            if sparse and _k not in sparse_keys:
+            if sparse and _k not in self.SPARSE_KEYS:
                 continue
 
             if re.search(pattern, _k):
@@ -339,15 +317,15 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             _added.append(_k)
 
-            _env_var = { 'name': _k,
+            _env_var = {'name': _k,
                          'value': _v,
                          'type': 'PLAINTEXT'}
 
             env_vars.append(_env_var)
 
-        _env_var={'name': "OUTPUT_BUCKET",
-                  'value': self.tmp_bucket,
-                  'type': 'PLAINTEXT'}
+        _env_var = {'name': "OUTPUT_BUCKET",
+                    'value': self.tmp_bucket,
+                    'type': 'PLAINTEXT'}
 
         env_vars.append(_env_var)
 
@@ -358,25 +336,17 @@ class CodebuildResourceHelper(AWSCommonConn):
         env_vars.append(_env_var)
 
         _env_var = {'name': "BUILD_EXPIRE_AT",
-        'value': str(self.build_expire_at),
-        'type': 'PLAINTEXT'}
+                    'value': str(self.build_expire_at),
+                    'type': 'PLAINTEXT'}
 
         return env_vars
 
-    def _get_avail_codebuild_projects(self,max_queue_size=5):
-
+    def get_available_projects(self, max_queue_size=5):
         results = {}
-
-        # Get a list of all projects
         response = self.codebuild_client.list_projects()
-
-        for project in response['projects']:
-
+        projects = [p for p in response['projects'] if self.codebuild_basename in p]
+        for project in projects:
             self.logger.debug(f"evaluating codebuild project {project}")
-
-            if self.codebuild_basename not in project:
-                self.logger.debug(f"codebuild project {project} not a match")
-                continue
 
             response = self.codebuild_client.list_builds_for_project(projectName=project,
                                                                      sortOrder='ASCENDING')
@@ -389,8 +359,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             current_build_ids = []
 
-            for build_id,build_status in build_statues.items():
-
+            for build_id, build_status in build_statues.items():
                 if build_status == "IN_PROGRESS":
                     current_build_ids.append(build_id)
                     continue
@@ -411,12 +380,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return sorted(results, key=lambda x: results[x])
 
-    def _get_codebuild_projects(self,sleep_int=10):
-
+    def _get_codebuild_projects(self, sleep_int=10):
         for retry in range(3):
-
             try:
-                empty_queue_projects = self._get_avail_codebuild_projects()
+                empty_queue_projects = self.get_available_projects()
             except:
                 empty_queue_projects = False
 
@@ -427,32 +394,27 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return False
 
-    def _trigger_build(self,sparse_env_vars=True):
-
-        projects = self._get_codebuild_projects()
+    def trigger_build(self, sparse_env_vars=True):
+        projects = self.get_available_projects()
         self.project_name = None
 
         if not projects:
             self.logger.warn(f"cannot find matching project - using codebuild_basename {self.codebuild_basename}")
-            projects = [ self.codebuild_basename ]
+            projects = [self.codebuild_basename]
 
-        try:
-            timeout = int(self.build_timeout/60)
-        except:
-            timeout = 60
+        timeout = max(1, int(self.build_timeout/60))
 
         for project_name in projects:
-
             self.logger.debug_highlight(f"running job on codebuild project {project_name}")
 
             env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
 
-            inputargs = {"projectName":project_name,
-                         "environmentVariablesOverride":env_vars_codebuild_format,
-                         "timeoutInMinutesOverride":timeout,
+            inputargs = {"projectName": project_name,
+                         "environmentVariablesOverride": env_vars_codebuild_format,
+                         "time_outInMinutesOverride": timeout,
                          "imageOverride": self.build_image,
                          "computeTypeOverride": self.compute_type,
-                         "environmentTypeOverride":self.image_type}
+                         "environmentTypeOverride": self.image_type}
 
             if self.buildspec:
                 inputargs["buildspecOverride"] = self.buildspec
@@ -465,7 +427,6 @@ class CodebuildResourceHelper(AWSCommonConn):
                 continue
 
             self.project_name = project_name
-
             break
 
         if not self.project_name:
@@ -481,8 +442,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return new_build
 
-    def _submit(self,sparse_env_vars=True):
-
+    def _submit(self, sparse_env_vars=True):
         self.phase_result = self.new_phase("submit")
 
         # we don't want to clobber the intact
@@ -491,7 +451,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.upload_to_s3_stateful()
             self.phase_result["executed"].append("upload_to_s3")
 
-        self._trigger_build(sparse_env_vars=sparse_env_vars)
+        self.trigger_build(sparse_env_vars=sparse_env_vars)
 
         self.phase_result["executed"].append("trigger_codebuild")
         self.phase_result["status"] = True
@@ -499,8 +459,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return self.results
 
-    def check(self,wait_int=10,retries=12):
-
+    def check(self, wait_int=10, retries=12):
         self._set_current_build()
 
         for retry in range(retries):
@@ -511,9 +470,8 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return
 
-    def retrieve(self,**kwargs):
-
-        '''
+    def retrieve(self, **kwargs):
+        """
         {
           "inputargs": {
               "interval": 10,
@@ -526,12 +484,12 @@ class CodebuildResourceHelper(AWSCommonConn):
         retrieve is the same as _retrieve except
         there is a check of the build status
         where the check itself times out
-        '''
+        """
 
         self.phase_result = self.new_phase("retrieve")
 
-        wait_int = kwargs.get("interval",10)
-        retries = kwargs.get("retries",12)
+        wait_int = kwargs.get("interval", 10)
+        retries = kwargs.get("retries", 12)
 
         if not self.check(wait_int=wait_int,
                           retries=retries):
@@ -551,7 +509,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         return _output + '\n' + "\n".join(self.output)
 
     def _retrieve(self):
-
         self._eval_build()
         self.phase_result["executed"].append("eval_build")
 
@@ -570,8 +527,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     # this is a single run and not in phases
     # we use _retrieve instead of retrieve method
-    def run(self,sparse_env_vars=True):
-
+    def run(self, sparse_env_vars=True):
         self._submit(sparse_env_vars=sparse_env_vars)
         self._retrieve()
 

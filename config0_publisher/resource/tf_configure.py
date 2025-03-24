@@ -41,7 +41,7 @@ class ConfigureTFConfig0Db:
 
     def _insert_mod_params(self):
 
-        '''
+        """
         - we typically load the modifications parameters along with created resource like a
         VPC or database
 
@@ -50,7 +50,7 @@ class ConfigureTFConfig0Db:
 
         - for terraform, we include things like the docker image used to
         validate/destroy the resource and any environmental variables
-        '''
+        """
 
         # environmental variables to include during destruction
         #"CONFIG0_RESOURCE_EXEC_SETTINGS_HASH": self.CONFIG0_RESOURCE_EXEC_SETTINGS_HASH,
@@ -109,13 +109,13 @@ class ConfigureTFConfig0Db:
         for key in self.std_labels_keys:
 
             if not self.db_values.get(key):
-                self.logger.debug('source standard label key "{}" not found'.format(key))
+                self.logger.debug(f'source standard label key "{key}" not found')
                 continue
 
-            label_key = "label-{}".format(key)
+            label_key = f"label-{key}"
 
             if self.db_values.get(label_key):
-                self.logger.debug('label key "{}" already found'.format(label_key))
+                self.logger.debug(f'label key "{label_key}" already found')
                 continue
 
             self.db_values[label_key] = self.db_values[key]
@@ -126,7 +126,7 @@ class ConfigureTFConfig0Db:
             return
 
         for _k,_v in self.resource_labels.items():
-            self.logger.debug(f'resource labels: key "{"label-{}".format(_k)}" -> value "{_v}"')
+            self.logger.debug(f'resource labels: key "{f"label-{_k}"}" -> value "{_v}"')
             label_key = f"label-{_k}"
             self.db_values[label_key] = _v
 

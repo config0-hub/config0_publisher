@@ -11,16 +11,16 @@ from config0_publisher.cloud.aws.common import AWSCommonConn
 
 class LambdaResourceHelper(AWSCommonConn):
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
 
         default_values = {
-            "lambda_function_name":"config0-iac"
+            "lambda_function_name": "config0-iac"
         }
 
         AWSCommonConn.__init__(self,
-                               default_values=default_values,
-                               set_env_vars=self.get_set_env_vars(),
-                               **kwargs)
+                             default_values=default_values,
+                             set_env_vars=self.get_set_env_vars(),
+                             **kwargs)
 
         self.init_env_vars = kwargs.get("init_env_vars")
         self.cmds_b64 = b64_encode(kwargs["cmds"])
@@ -30,30 +30,31 @@ class LambdaResourceHelper(AWSCommonConn):
         if not self.results["inputargs"].get("lambda_function_name"):
             self.results["inputargs"]["lambda_function_name"] = self.lambda_function_name
 
-    def get_set_env_vars(self):
+    @staticmethod
+    def get_set_env_vars():
 
         return {
-            "tmp_bucket":True,
-            "log_bucket":True,
-            "app_dir":None,
-            "stateful_id":None,
-            "remote_stateful_bucket":None,
-            "lambda_function_name":None,
-            "run_share_dir":None,
-            "share_dir":None
+            "tmp_bucket": True,
+            "log_bucket": True,
+            "app_dir": None,
+            "stateful_id": None,
+            "remote_stateful_bucket": None,
+            "lambda_function_name": None,
+            "run_share_dir": None,
+            "share_dir": None
         }
 
-    def _env_vars_to_lambda_format(self,timeout=None):
+    def _env_vars_to_lambda_format(self):
 
-        skip_keys = [ "AWS_ACCESS_KEY_ID",
+        skip_keys = ["AWS_ACCESS_KEY_ID",
                       "AWS_SECRET_ACCESS_KEY",
-                      "AWS_SESSION_TOKEN" ]
+                      "AWS_SESSION_TOKEN"]
 
-        minimum_keys = [ "STATEFUL_ID",
-                         "REMOTE_STATEFUL_BUCKET",
-                         "TMPDIR",
-                         "APP_DIR",
-                         "SSM_NAME" ]
+        minimum_keys = ["STATEFUL_ID",
+                        "REMOTE_STATEFUL_BUCKET",
+                        "TMPDIR",
+                        "APP_DIR",
+                        "SSM_NAME"]
 
         if self.init_env_vars:
             env_vars = self.init_env_vars
@@ -71,10 +72,10 @@ class LambdaResourceHelper(AWSCommonConn):
 
         pattern = r"^AWS_LAMBDA_"
 
-        for _k,_v in self.build_env_vars.items():
+        for _k, _v in self.build_env_vars.items():
 
             if not _v:
-                self.logger.debug("env var {} is empty/None - skipping".format(_k))
+                self.logger.debug(f"env var {_k} is empty/None - skipping")
                 continue
 
             if _k in skip_keys:
@@ -99,7 +100,7 @@ class LambdaResourceHelper(AWSCommonConn):
             env_vars["TMPDIR"] = "/tmp"
 
         if not env_vars.get("APP_DIR") and self.build_env_vars.get("APP_NAME"):
-            env_vars["APP_DIR"] = "var/tmp/{}".format(self.build_env_vars["APP_NAME"])
+            env_vars["APP_DIR"] = f"var/tmp/{self.build_env_vars['APP_NAME']}"
 
         # we need to provide this for lambda to work
         if not env_vars.get("APP_DIR"):
@@ -113,7 +114,7 @@ class LambdaResourceHelper(AWSCommonConn):
         # less than 10 minutes
         try:
             timeout = int(self.build_timeout)
-        except:
+        except Exception as e:
             timeout = 500
 
         if timeout > 500:
@@ -128,19 +129,19 @@ class LambdaResourceHelper(AWSCommonConn):
         # Define the configuration for invoking the Lambda function
         env_vars = self._env_vars_to_lambda_format()
 
-        self.logger.debug("#"*32)
+        self.logger.debug("#" * 32)
         self.logger.debug("# ref 324523453 env vars for lambda build")
         self.logger.json(env_vars)
-        self.logger.debug("#"*32)
+        self.logger.debug("#" * 32)
 
         invocation_config = {
             'FunctionName': self.lambda_function_name,
             'InvocationType': 'RequestResponse',
-            'LogType':'Tail',
+            'LogType': 'Tail',
             'Payload': json.dumps(
                 {
-                    "cmds_b64":self.cmds_b64,
-                    "env_vars_b64":b64_encode(env_vars),
+                    "cmds_b64": self.cmds_b64,
+                    "env_vars_b64": b64_encode(env_vars),
                 })
         }
 
@@ -152,12 +153,19 @@ class LambdaResourceHelper(AWSCommonConn):
 
         # we don't want to clobber the intact
         # stateful files from creation
-        if self.method in ["create","pre-create"]:
+        if self.method in ["create", "pre-create"]:
             self.upload_to_s3_stateful()
 
-        # ['ResponseMetadata', 'StatusCode', 'LogResult', 'ExecutedVersion', 'Payload']
-        self.response = self._trigger_build()
+        """
+        options:
+          - ResponseMetadata
+          - StatusCode
+          - LogResult
+          - ExecutedVersion
+          - Payload
+        """
 
+        self.response = self._trigger_build()
         lambda_status = int(self.response["StatusCode"])
         self.results["lambda_status"] = lambda_status
 
@@ -165,7 +173,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         try:
             lambda_results = json.loads(payload["body"])
-        except:
+        except Exception as e:
             lambda_results = payload
             lambda_results["status"] = False
             self.results["failed_message"] = " ".join(lambda_results["stackTrace"])
@@ -189,7 +197,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         try:
             output = self.download_log_from_s3()
-        except:
+        except Exception as e:
             output = b64_decode(self.response["LogResult"])
 
         if not self.results.get("output"):

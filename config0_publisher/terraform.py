@@ -1,32 +1,17 @@
 #!/usr/bin/env python
 #
-#Project: config0_publisher: Config0 is a SaaS for building and managing
-#software and DevOps automation. This particular packages is a python
-#helper for publishing stacks, hostgroups, shellouts/scripts and other
-#assets used for automation
-#
-#Examples include cloud infrastructure, CI/CD, and data analytics
-#
-#Copyright (C) Gary Leong - All Rights Reserved
-#Unauthorized copying of this file, via any medium is strictly prohibited
-#Proprietary and confidential
-#Written by Gary Leong  <gary@config0.com, March 11,2023
 
 import json
 import os
 from config0_publisher.shellouts import execute3
 from config0_publisher.loggerly import Config0Logger
 
-def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
-
+def get_tfstate_file_remote(remote_stateful_bucket, stateful_id):
     # ref 4353253452354
-    cmd = f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}/state/{stateful_id}.tfstate /tmp/{stateful_id}.tfstate'
+    cmd = (f'aws s3 cp s3://{remote_stateful_bucket}/{stateful_id}/state/'
+           f'{stateful_id}.tfstate /tmp/{stateful_id}.tfstate')
 
-    data = None
-
-    execute3(cmd,
-             output_to_json=False,
-             exit_error=True)
+    execute3(cmd, output_to_json=False, exit_error=True)
 
     tfstate_file = f"/tmp/{stateful_id}.tfstate"
 
@@ -40,18 +25,17 @@ def get_tfstate_file_remote(remote_stateful_bucket,stateful_id):
 
 class TFConstructor(object):
 
-    def __init__(self,**kwargs):
-
+    def __init__(self, **kwargs):
         self.classname = 'TFConstructor'
         self.logger = Config0Logger(self.classname)
-        self.logger.debug(f"Instantiating {self.classname}")
+        self.logger.debug(f'Instantiating {self.classname}')
 
         self.stack = kwargs["stack"]
         self.provider = kwargs["provider"]
         self.execgroup_name = kwargs["execgroup_name"]
         self.resource_name = kwargs["resource_name"]
         self.resource_type = kwargs["resource_type"]
-        self.resource_id = kwargs.get("resource_id")
+        self.resource_id = kwargs.get('resource_id')
 
         self.tf_runtime = kwargs.get("tf_runtime")
         self.terraform_type = kwargs.get("terraform_type")
@@ -79,20 +63,15 @@ class TFConstructor(object):
         self.resource_values = self.stack.get_tagged_vars(tag="db",
                                                           output="dict")
 
-    def _get_ssm_value(self,ssm_format):
-
+    def _get_ssm_value(self, ssm_format):
         if ssm_format == ".env":
             return self.stack.to_envfile(self.ssm_obj,
                                          b64=True,
                                          include_export=True)
-            #return self.stack.to_envfile(self.ssm_obj,
-            #                             b64=True,
-            #                             include_export=False)
 
         return self.stack.b64_encode(self.ssm_obj)
 
     def _set_ssm_name(self):
-
         if self.ssm_name:
             return
 
@@ -113,10 +92,9 @@ class TFConstructor(object):
         if self.ssm_format == ".env":
             self.ssm_name = f"{os.path.join(base_prefix, _name)}.env"
         else:
-            self.ssm_name = os.path.join(base_prefix,_name)
+            self.ssm_name = os.path.join(base_prefix, _name)
 
     def _add_values_to_ssm(self):
-
         if self.stack.inputvars.get("infracost_api_key_hash"):
             infracost_api_key = self.stack.b64_decode(self.stack.inputvars["infracost_api_key_hash"])
         elif self.stack.inputvars.get("infracost_api_key"):
@@ -125,7 +103,7 @@ class TFConstructor(object):
             infracost_api_key = None
 
         if not self.ssm_obj and infracost_api_key:
-            self.ssm_obj = { "INFRACOST_API_KEY": infracost_api_key }
+            self.ssm_obj = {"INFRACOST_API_KEY": infracost_api_key}
         elif self.ssm_obj and infracost_api_key:
             self.ssm_obj["INFRACOST_API_KEY"] = infracost_api_key
 
@@ -143,22 +121,14 @@ class TFConstructor(object):
         else:
             ssm_key = self.ssm_name
 
-        #self.logger.debug("@"*32)
-        #self.logger.debug(f"@ self.ssm_name {self.ssm_name}")
-        #self.logger.debug(f"@ ssm_key {ssm_key}")
-        #self.logger.debug(f"@ value {value}")
-        #self.logger.json(self.ssm_obj)
-        #self.logger.debug("@"*32)
-
         self.stack.add_secret(name=ssm_key,
                               value=value,
                               insert_ssm=True)
 
     def _init_opt_args(self):
-
         include = []
 
-        if not hasattr(self.stack,"tf_runtime") or not self.stack.tf_runtime:
+        if not hasattr(self.stack, "tf_runtime") or not self.stack.tf_runtime:
             include.append("docker_image")
             if self.docker_image:
                 self.stack.set_variable("docker_image",
@@ -173,43 +143,43 @@ class TFConstructor(object):
                                     self.tf_runtime,
                                     types="str")
 
-        if not hasattr(self.stack,"stateful_id"):
+        if not hasattr(self.stack, "stateful_id"):
             include.append("stateful_id")
             self.stack.parse.add_optional(key="stateful_id",
                                           default="_random",
                                           types="str,null")
 
-        if not hasattr(self.stack,"remote_stateful_bucket"):
+        if not hasattr(self.stack, "remote_stateful_bucket"):
             include.append("remote_stateful_bucket")
             self.stack.parse.add_optional(key="remote_stateful_bucket",
                                           default="null",
                                           types="str,null")
 
-        if not hasattr(self.stack,"cloud_tags_hash"):
+        if not hasattr(self.stack, "cloud_tags_hash"):
             include.append("cloud_tags_hash")
             self.stack.parse.add_optional(key="cloud_tags_hash",
                                           default="null",
                                           types="str")
 
-        if not hasattr(self.stack,"publish_to_saas"):
+        if not hasattr(self.stack, "publish_to_saas"):
             include.append("publish_to_saas")
             self.stack.parse.add_optional(key="publish_to_saas",
                                           default="null",
                                           types="bool,null")
 
-        if not hasattr(self.stack,"timeout"):
+        if not hasattr(self.stack, "timeout"):
             include.append("timeout")
             self.stack.parse.add_optional(key="timeout",
                                           default=600,
                                           types="int")
 
-        if not hasattr(self.stack,"create_remote_state"):
+        if not hasattr(self.stack, "create_remote_state"):
             include.append("create_remote_state")
             self.stack.parse.add_optional(key="create_remote_state",
                                           default=True,
                                           types="bool,str")
 
-        if not hasattr(self.stack,"drift_protection"):
+        if not hasattr(self.stack, "drift_protection"):
             include.append("drift_protection")
             self.stack.parse.add_optional(key="drift_protection",
                                           default=True,
@@ -236,7 +206,6 @@ class TFConstructor(object):
         self.stack.parse.tag_key(key="timeout",
                                  tags="execgroup_inputargs")
 
-
         self.stack.reset_variables(include=include)
 
         if not self.stack.stateful_id:
@@ -248,12 +217,10 @@ class TFConstructor(object):
 
     @staticmethod
     def _add_to_list(existing_keys, keys=None):
-
         if not keys:
             return
 
         for _key in keys:
-
             if _key in existing_keys:
                 continue
 
@@ -261,39 +228,36 @@ class TFConstructor(object):
 
     @staticmethod
     def _add_to_dict(existing_values, values=None):
-
         if not values:
             return
 
-        for _key,_value in values.items():
-
+        for _key, _value in values.items():
             if _key in existing_values:
                 continue
 
             existing_values[_key] = _value
 
-    def add_include_keys(self,keys=None):
+    def add_include_keys(self, keys=None):
         return self._add_to_list(self.include_keys,
                                  keys=keys)
 
-    def add_exclude_keys(self,keys=None):
+    def add_exclude_keys(self, keys=None):
         return self._add_to_list(self.exclude_keys,
                                  keys=keys)
 
-    def add_output_keys(self,keys=None):
+    def add_output_keys(self, keys=None):
         return self._add_to_list(self.output_keys,
                                  keys=keys)
 
-    def add_resource_values(self,values=None):
+    def add_resource_values(self, values=None):
         return self._add_to_dict(self.resource_values,
                                  values=values)
 
-    def add_query_maps(self,maps=None):
+    def add_query_maps(self, maps=None):
         return self._add_to_dict(self.maps,
                                  values=maps)
 
-    def include(self,keys=None,values=None,maps=None):
-
+    def include(self, keys=None, values=None, maps=None):
         if keys:
             self.add_include_keys(keys)
         elif values:
@@ -301,19 +265,16 @@ class TFConstructor(object):
         elif maps:
             self.add_query_maps(maps=maps)
 
-    def output(self,keys,prefix_key=None):
-
+    def output(self, keys, prefix_key=None):
         if prefix_key:
             self.output_prefix_key = prefix_key
 
         self.add_output_keys(keys)
 
-    def exclude(self,keys):
-
+    def exclude(self, keys):
         self.add_exclude_keys(keys)
 
     def _get_resource_configs_hash(self):
-
         env_vars = self.stack.get_tagged_vars(
             tag="resource",
             output="dict",
@@ -335,7 +296,6 @@ class TFConstructor(object):
         return self.stack.b64_encode(_configs)
 
     def _get_runtime_env_vars(self):
-
         # docker env vars during execution
         env_vars = self.stack.get_tagged_vars(tag="tf_exec_env",
                                               output="dict",
@@ -347,16 +307,14 @@ class TFConstructor(object):
         return self.stack.b64_encode(env_vars)
 
     def _get_tf_vars_hash(self):
-
         # terraform variables converted to TF_VAR_<var>
         tf_vars = self.stack.get_tagged_vars(tag="tfvar",
                                              include_type=True,
                                              output="dict")
 
-        return  self.stack.b64_encode(tf_vars)
+        return self.stack.b64_encode(tf_vars)
 
     def get_inputargs(self):
-
         self.stack.verify_variables()
 
         execgroup_ref = self.stack.get_locked(execgroup=self.execgroup_name)

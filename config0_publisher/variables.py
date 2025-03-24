@@ -7,35 +7,25 @@ import traceback
 from ast import literal_eval
 from config0_publisher.serialization import b64_decode
 from config0_publisher.loggerly import Config0Logger
-from config0_publisher.utilities import print_json
 
 def get_init_var_type(value):
+    boolean = ["None", "none", "null", "NONE", "None",
+               "false", "False", "FALSE", 
+               "TRUE", "true", "True"]
 
-    boolean = [ "None",
-                "none",
-                "null",
-                "NONE",
-                "None",
-                "false",
-                "False",
-                "FALSE",
-                "TRUE",
-                "true",
-                "True" ]
-
-    if isinstance(value,dict):
+    if isinstance(value, dict):
         return "dict"
     
-    if isinstance(value,list):
+    if isinstance(value, list):
         return "list"
 
-    if isinstance(value,float):
+    if isinstance(value, float):
         return "float"
 
-    if isinstance(value,bool):
+    if isinstance(value, bool):
         return "bool"
 
-    if isinstance(value,int):
+    if isinstance(value, int):
         return "int"
 
     try:
@@ -58,34 +48,18 @@ def get_init_var_type(value):
 class EvaluateVar(object):
 
     def __init__(self):
-
         self.classname = 'EvaluateVar'
-
         self.logger = Config0Logger(self.classname)
 
-        # revisit 3542353245
-        # the boolean types need to cover
-        # boolean for things like Terraform
-        # and Ansible
-        self.bool_none = [ "None",
-                           "none",
-                           "null",
-                           "NONE",
-                           "None",
-                           None ]
-
-        self.bool_false = [ "false",
-                            "False",
-                            "FALSE",
-                            False ]
-
-        self.bool_true = [ "TRUE",
-                           "true",
-                           "True",
-                           True ]
+        # Boolean types for Terraform and Ansible compatibility
+        self.bool_none = ["None", "none", "null", 
+                         "NONE", "None", None]
+        self.bool_false = ["false", "False", 
+                          "FALSE", False]
+        self.bool_true = ["TRUE", "true", 
+                         "True", True]
 
     def _set_init_var(self):
-
         self.results["provided"]["value"] = self.init_value
         self.results["current"]["value"] = self.init_value
         init_type = get_init_var_type(self.init_value)
@@ -95,15 +69,13 @@ class EvaluateVar(object):
             self.results["current"]["type"] = init_type
 
     def _check_value_is_set(self):
-
-        if not hasattr(self,"init_value"):
+        if not hasattr(self, "init_value"):
             raise Exception("self.init_value not set")
 
     def is_float(self):
-
         self._check_value_is_set()
 
-        if isinstance(self.results["check"]["value"],float):
+        if isinstance(self.results["check"]["value"], float):
             return True
     
         try:
@@ -120,14 +92,12 @@ class EvaluateVar(object):
         return True
     
     def is_integer(self):
-
         self._check_value_is_set()
     
-        if isinstance(self.results["check"]["value"],int):
+        if isinstance(self.results["check"]["value"], int):
             return True
     
-        if self.results["check"]["value"] in [ "0", 0 ]: 
-
+        if self.results["check"]["value"] in ["0", 0]: 
             self.results["current"]["type"] = "int"
             self.results["current"]["value"] = "0"
 
@@ -136,8 +106,7 @@ class EvaluateVar(object):
 
             return True
 
-        if self.results["check"]["value"] in [ "1", 1 ]: 
-
+        if self.results["check"]["value"] in ["1", 1]: 
             self.results["current"]["value"] = "1"
             self.results["current"]["type"] = "int"
 
@@ -151,7 +120,7 @@ class EvaluateVar(object):
         except:
             first_character = None
 
-        if first_character in [ "0", 0 ]:
+        if first_character in ["0", 0]:
             return False
 
         try:
@@ -165,9 +134,7 @@ class EvaluateVar(object):
 
         return True
 
-
-    def check_none(self,value):
-
+    def check_none(self, value):
         try:
             _value = str(value)
         except:
@@ -176,21 +143,19 @@ class EvaluateVar(object):
         if _value in self.bool_none:
             return True
 
-    def check_bool(self,value):
-
+    def check_bool(self, value):
         if str(value) in self.bool_true:
-            return "bool",True
+            return "bool", True
 
         if str(value) in self.bool_false:
-            return "bool",False
+            return "bool", False
 
         if str(value) in self.bool_none:
-            return "bool",None
+            return "bool", None
 
-        return None,None
+        return None, None
 
     def is_bool(self):
-
         self._check_value_is_set()
 
         if self.results["check"]["value"] in self.bool_true:
@@ -212,22 +177,20 @@ class EvaluateVar(object):
             return True
 
     def is_str(self):
-
         self._check_value_is_set()
 
-        if isinstance(self.results["check"]["value"],str):
+        if isinstance(self.results["check"]["value"], str):
             self.results["current"]["type"] = "str"
             self.results["current"]["value"] = self.results["check"]["value"]
             return True
 
         return
 
-    def init_results(self,**kwargs):
-
-        self.results = { "current": {},
-                         "check": {},
-                         "provided": {}
-                         }
+    def init_results(self, **kwargs):
+        self.results = {"current": {},
+                        "check": {},
+                        "provided": {}
+                        }
 
         if "value" not in kwargs:
             return
@@ -242,9 +205,8 @@ class EvaluateVar(object):
         if kwargs.get("default_type"):
             self.results["default_type"] = kwargs["default_type"]
 
-    def _update_objiter(self,**kwargs):
-
-        update_iterobj = kwargs.get("update_iterobj",True)
+    def _update_objiter(self, **kwargs):
+        update_iterobj = kwargs.get("update_iterobj", True)
 
         if not update_iterobj:
             return self.init_value
@@ -254,16 +216,14 @@ class EvaluateVar(object):
         except:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug(traceback.format_exc())
-            self.logger.debug("current init_value {} type {}".format(self.init_value,
-                                                                     type(self.init_value)))
+            self.logger.debug(f"current init_value {self.init_value} type {type(self.init_value)}")
             self.logger.json(self.results)
             self.logger.debug("could not update iterable object to not contain unicode")
             new_obj = self.init_value
 
         return new_obj
 
-    def get(self,**kwargs):
-
+    def get(self, **kwargs):
         # update iterobj to have string elements
         # rather than at times contain unicode
         self.init_results(**kwargs)
@@ -276,25 +236,25 @@ class EvaluateVar(object):
 
         self._check_value_is_set()
 
-        if isinstance(self.init_value,dict):
+        if isinstance(self.init_value, dict):
             self.results["current"]["value"] = self._update_objiter()
             self.results["current"]["type"] = "dict"
             self.results["initial_check"] = True
             return "dict"
 
-        if isinstance(self.init_value,list):
+        if isinstance(self.init_value, list):
             self.results["current"]["value"] = self._update_objiter()
             self.results["current"]["type"] = "list"
             self.results["initial_check"] = True
             return "list"
 
-        if isinstance(self.init_value,float):
+        if isinstance(self.init_value, float):
             self.results["current"]["value"] = self.init_value
             self.results["current"]["type"] = "float"
             self.results["initial_check"] = True
             return "float"
 
-        if isinstance(self.init_value,str):
+        if isinstance(self.init_value, str):
             self.results["check"]["value"] = self.init_value
         else:
             self.results["check"]["value"] = str(self.init_value)
@@ -326,8 +286,7 @@ class EvaluateVar(object):
 
         return "__unknown_variable_type__"
 
-    def set(self,key=None,**kwargs):
-        
+    def set(self, key=None, **kwargs):
         self.get(**kwargs)
 
         if os.environ.get("JIFFY_ENHANCED_LOG") and key:
@@ -338,8 +297,7 @@ class EvaluateVar(object):
 
 class EnvVarsToClassVars:
 
-    def __init__(self,**kwargs):
-
+    def __init__(self, **kwargs):
         self.main_env_var_key = kwargs["main_env_var_key"]
         self.app_name = kwargs.get("app_name")
         self.app_dir = kwargs.get("app_dir")
@@ -377,8 +335,7 @@ class EnvVarsToClassVars:
         if self.app_dir:
             self.class_vars["app_dir"] = self.app_dir
 
-    def init_env_vars(self,**kwargs):
-
+    def init_env_vars(self):
         try:
             self.main_vars = b64_decode(os.environ[self.main_env_var_key])
         except:
@@ -387,13 +344,11 @@ class EnvVarsToClassVars:
         self.env_vars = self.main_vars["env_vars"]
         self.env_vars_to_class_vars(self.env_vars)
 
-    def env_vars_to_class_vars(self,env_vars):
-
-        for key,value in env_vars.items():
+    def env_vars_to_class_vars(self, env_vars):
+        for key, value in env_vars.items():
             self.class_vars[key.lower()] = value
 
-    def add_env_var(self,_env_var):
-
+    def add_env_var(self, _env_var):
         if _env_var.upper() in os.environ:
             #print(f"==> {_env_var} is os.environ")
             self.class_vars[_env_var.lower()] = os.environ[_env_var.upper()]  # we convert to lowercase
@@ -404,7 +359,6 @@ class EnvVarsToClassVars:
             self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we convert to lowercase
 
     def set_default_env_keys(self):
-
         if not self.default_keys:
             return
 
@@ -414,17 +368,15 @@ class EnvVarsToClassVars:
             self.add_env_var(_env_var)
 
     def set_default_values(self):
-
         if not self._default_values:
             return
 
-        for _k,_v in self._default_values.items():
+        for _k, _v in self._default_values.items():
             if _k.lower() in self.class_vars:
                 continue
             self.class_vars[_k.lower()] = _v
 
     def eval_must_exists(self):
-
         if not self._must_exists:
             return
 
@@ -434,7 +386,6 @@ class EnvVarsToClassVars:
             raise Exception(f"class var {_k} must be set")
 
     def eval_non_nullable(self):
-
         if not self._non_nullable:
             return
 
@@ -443,8 +394,7 @@ class EnvVarsToClassVars:
                 continue
             raise Exception(f"class var {_k} cannot be null/None")
 
-    def set(self,init=None):
-
+    def set(self, init=None):
         if init:
             self.init_env_vars()
 

@@ -2,9 +2,9 @@
 
 def get_tf_install(**kwargs):
 
-    '''
+    """
     https://github.com/opentofu/opentofu/releases/download/v1.6.2/tofu_1.6.2_linux_amd64.zip
-    '''
+    """
 
     binary = kwargs["binary"]
     version = kwargs["version"]
@@ -28,11 +28,11 @@ def get_tf_install(**kwargs):
     else:  # opentofu
         _install_cmd = f'({bucket_install}) || (echo "terraform/tofu not found in local s3 bucket" && {tofu_direct})'
 
-    cmds = [ {f"install {binary}" : _install_cmd }]
-
-    cmds.extend([
+    cmds = [
+        {f"install {binary}": _install_cmd },
         {"mkdir bin dir": f'mkdir -p {bin_dir} || echo "trouble making bin_dir {bin_dir}"'},
         {f"move {binary}_{version} to bin": f'(cd $TMPDIR && unzip {binary}_{version} && mv {binary} {bin_dir}/{binary} > /dev/null) || exit 0'},
-        {f"chmod {binary}": f'chmod 777 {bin_dir}/{binary}'}])
+        {f"chmod {binary}": f'chmod 777 {bin_dir}/{binary}'}
+    ]
 
     return cmds

@@ -1,26 +1,10 @@
 #!/usr/bin/env python
 #
-#Project: config0_publisher: Config0 is a SaaS for building and managing
-#software and DevOps automation. This particular packages is a python
-#helper for publishing stacks, hostgroups, shellouts/scripts and other
-#assets used for automation
-#
-#Examples include cloud infrastructure, CI/CD, and data analytics
-#
-#Copyright (C) Gary Leong - All Rights Reserved
-#Unauthorized copying of this file, via any medium is strictly prohibited
-#Proprietary and confidential
-#Written by Gary Leong  <gary@config0.com, Dec 04,2020
 
 import os
 import re
-from time import sleep
 
-def list_template_files(rootdir,split_dir=None):
-
-    '''
-    list files with .ja2 suffix for templating
-    '''
+def list_template_files(rootdir, split_dir=None):
 
     if not split_dir: 
         try:
@@ -33,36 +17,38 @@ def list_template_files(rootdir,split_dir=None):
     # get a base file lists
     base_files = []
 
-    for _root, _subFolders, _files in os.walk(rootdir):
-        tempList = []
+    for root, subFolders, files in os.walk(rootdir):
+        temp_list = []
 
-        for _file in _files:
-            f = os.path.join(_root,_file)
-            tempList.append(f)
+        for file in files:
+            f = os.path.join(root, file)
+            temp_list.append(f)
 
-        if not tempList: continue
+        if not temp_list:
+            continue
 
-        for _file in tempList:
-            if not re.search(".ja2$",_file): continue
-            base_files.append(_file)
+        for file in temp_list:
+            if not re.search(".ja2$", file):
+                continue
+            base_files.append(file)
 
     # categorize files
-    fileList = []
+    file_list = []
 
-    for _file in base_files:
-        _rel_file = _file.split("{}/".format(split_dir))[-1]
+    for file in base_files:
+        rel_file = file.split(f"{split_dir}/")[-1]
 
-        filename = os.path.basename(_rel_file)
+        filename = os.path.basename(rel_file)
 
         try:
-            directory = os.path.dirname(_rel_file)
+            directory = os.path.dirname(rel_file)
         except:
             directory = None
 
-        _finput = { "file":_file,
-                    "filename":filename,
-                    "directory":directory }
+        finput = { "file": file,
+                    "filename": filename,
+                    "directory": directory }
 
-        fileList.append(_finput)
+        file_list.append(finput)
 
-    return fileList
+    return file_list

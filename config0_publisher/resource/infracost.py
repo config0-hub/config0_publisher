@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 
 from config0_publisher.resource.common import TFAppHelper
 

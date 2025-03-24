@@ -30,10 +30,10 @@ class TFOpaHelper(TFAppHelper):
 
         return cmds
 
-    # TODO
-    # opa is quite specific so not sure if
-    # users should be versed in it.
-    def exec_cmds(self):
+    # TODO opa not yet supported
+    # opa is quite specific
+    @staticmethod
+    def exec_cmds():
 
         # cmds tbd
 

@@ -1,5 +1,24 @@
 #!/usr/bin/env python
 
+"""
+Base class for AWS connectivity and resource management.
+Provides core AWS functionality including:
+
+Attributes:
+    classname (str): Name of the AWS connection class
+    session (boto3.Session): AWS session object
+    s3 (boto3.resource): AWS S3 resource
+    lambda_client (boto3.client): AWS Lambda client
+    build_timeout (int): Maximum build time in seconds
+    build_expire_at (int): Build expiration timestamp
+
+Environment Variables:
+    AWS_DEFAULT_REGION: AWS region for operations
+    AWS_ACCESS_KEY_ID: AWS access key
+    AWS_SECRET_ACCESS_KEY: AWS secret key
+    AWS_SESSION_TOKEN: AWS session token (optional)
+"""
+
 import traceback
 import logging
 import botocore.session
@@ -15,7 +34,18 @@ from config0_publisher.shellouts import execute3
 
 class AWSCommonConn(SetClassVarsHelper):
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
+        """
+        Initialize AWS connection and resources.
+
+        Args:
+            kwargs: Keyword arguments including:
+                results (dict): Existing results to continue from
+                build_env_vars (dict): Environment variables for build
+                build_timeout (int): Maximum build time in seconds
+                method (str): Execution method (create/destroy)
+                set_env_vars (dict): Environment variables to set
+        """
 
         self.classname = "AWSCommonConn"
         self.logger = Config0Logger(self.classname)
@@ -39,21 +69,20 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results = kwargs.get("results")
         self.zipfile = None
 
-        self.s3_output_key = os.environ.get("EXEC_INST_ID")
-
+        self.s3_output_key = os.environ.get("EXEC_INST_ID", None)
         if not self.s3_output_key:
             self.s3_output_key = kwargs.get("s3_output_key",
                                             f'{id_generator2()}/{str(int(time()))}')
 
         if not self.results:
             self.results = {
-                "status":None,
-                "status_code":None,
-                "build_status":None,
+                "status": None,
+                "status_code": None,
+                "build_status": None,
                 "run_t0": int(time()),
                 "phases_info": [],
-                "inputargs":{},
-                "env_vars":{},
+                "inputargs": {},
+                "env_vars": {},
             }
             self._set_buildparams(**kwargs)
         else:
@@ -71,7 +100,8 @@ class AWSCommonConn(SetClassVarsHelper):
                                           config=cfg,
                                           region_name=self.aws_region)
 
-    def new_phase(self,name):
+    @staticmethod
+    def new_phase(name):
 
         return {"name": name,
                 "status": None,
@@ -82,7 +112,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
     def set_class_vars_frm_results(self):
 
-        for k,v in self.results["inputargs"].items():
+        for k, v in self.results["inputargs"].items():
             if v is None:
                 exp = f'self.{k}=None'
             else:
@@ -90,25 +120,26 @@ class AWSCommonConn(SetClassVarsHelper):
 
             exec(exp)
 
-    def get_default_env_vars(self):
+    @staticmethod
+    def get_default_env_vars():
 
         return {
-            "tmp_bucket":True,
-            "log_bucket":True,
-            "app_dir":None,
-            "stateful_id":None,
-            "remote_stateful_bucket":None,
-            "run_share_dir":None,
-            "share_dir":None
+            "tmp_bucket": True,
+            "log_bucket": True,
+            "app_dir": None,
+            "stateful_id": None,
+            "remote_stateful_bucket": None,
+            "run_share_dir": None,
+            "share_dir": None
         }
 
-    def _set_buildparams(self,**kwargs):
+    def _set_buildparams(self, **kwargs):
 
         self.method = kwargs.get("method")
         self.build_env_vars = kwargs.get("build_env_vars")
 
         try:
-            self.build_timeout = int(kwargs.get("build_timeout",500))
+            self.build_timeout = int(kwargs.get("build_timeout", 500))
         except:
             self.build_timeout = 500
 
@@ -128,7 +159,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.set_class_vars_srcs()
 
-        #if not self.upload_bucket:
+        # if not self.upload_bucket:
         if self.remote_stateful_bucket:
             self.upload_bucket = self.remote_stateful_bucket
         else:
@@ -147,12 +178,10 @@ class AWSCommonConn(SetClassVarsHelper):
         self.zipfile = os.path.join("/tmp",
                                     f'{self.stateful_id}.zip')
 
-        # we hard wire to us-east-1 to avoid
-        # any environmental variable changes the region
+        # TODO have option to install executors in different region
+        # we hard wire to us-east-1 to since the executors should only be in this region for now
+        # this can change in the future
         self.aws_region = "us-east-1"
-
-        #if not hasattr(self,'aws_region') or not self.aws_region:
-        #    self.aws_region = kwargs.get("aws_region","us-east-1")
 
         # record these variables
         self.results["inputargs"].update(self._vars_set)
@@ -187,7 +216,7 @@ class AWSCommonConn(SetClassVarsHelper):
         os.chdir(self.cwd)
         rm_rf(self.zipfile)
 
-    def download_log_from_s3(self,bucket_name=None):
+    def download_log_from_s3(self, bucket_name=None):
 
         if not bucket_name:
             bucket_name = self.tmp_bucket
@@ -245,7 +274,6 @@ class AWSCommonConn(SetClassVarsHelper):
 
         if not self._download_s3_stateful():
             return
-            #raise Exception("could not fetch s3 stateful")
 
         self._reset_share_dir()
 
@@ -304,7 +332,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         clean_lines = []
 
-        if isinstance(self.output,list):
+        if isinstance(self.output, list):
             for line in self.output:
                 try:
                     clean_lines.append(line.decode("utf-8"))
@@ -318,5 +346,6 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self.output = clean_lines
 
-    def execute(self,cmd,**kwargs):
-        return execute3(cmd,**kwargs)
+    @staticmethod
+    def execute(cmd, **kwargs):
+        return execute3(cmd, **kwargs)

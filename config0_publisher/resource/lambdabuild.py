@@ -89,6 +89,7 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         return self.lambda_helper.results
 
+    # TODO can remove inputargs it seems
     def run(self,**inputargs):
 
         self._init_lambda_helper()

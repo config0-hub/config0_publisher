@@ -115,7 +115,8 @@ class Codebuild(CodebuildParams):
         # ref 435254
         # we will do tfsec, infracost, and opa in lambda
 
-    def _add_cmds(self,contents,cmds):
+    @staticmethod
+    def _add_cmds(contents, cmds):
 
         for cmd in cmds:
             contents = contents + f'       - {cmd}' + "\n"

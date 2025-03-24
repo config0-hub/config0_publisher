@@ -72,8 +72,7 @@ def tf_map_list_fix_value(_value):
         _first_char = None
 
     if not _first_char:
-        msg = "cannot determine first character for _value {} type {}".format(_value,
-                                                                              type(_value))
+        msg = f"cannot determine first character for _value {_value} type {type(_value)}"
 
         raise Exception(msg)
 
@@ -85,11 +84,11 @@ def tf_map_list_fix_value(_value):
     _value = _value.replace("'",'"')
 
     if _value[0] not in _map_list_prefixes and _value[0] in ["'",'"']:
-        msg = "the first character should be {}".format(_map_list_prefixes)
+        msg = f"the first character should be {_map_list_prefixes}"
         raise Exception(msg)
 
     if _value[-1] not in _map_list_suffixes and _value[-1] in ["'",'"']:
-        msg = "the last character should be {}".format(_map_list_suffixes)
+        msg = f"the last character should be {_map_list_suffixes}"
         raise Exception(msg)
 
     return _value,_status

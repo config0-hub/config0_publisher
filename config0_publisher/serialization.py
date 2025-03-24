@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-import subprocess
 import os
-import pickle
-import gzip
 import io
 import json
+import gzip
 import zlib
+import pickle
 import base64
+import subprocess
 
-from io import StringIO
 from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
@@ -22,9 +21,7 @@ from cryptography.fernet import Fernet
 def convert_b64_to_zlib_b64(token):
     return compress_and_encode_dict(b64_decode(token))
 
-def compress_and_encode_dict(data):
-
-    # Convert the dictionary to a JSON string
+def compress_and_encode_dict(data):    
     json_string = json.dumps(data)
     
     # Compress the JSON string
@@ -37,7 +34,6 @@ def compress_and_encode_dict(data):
     return base64_encoded_data.decode('utf-8')
 
 def decode_and_decompress_string(encoded_str):
-
     # Convert the base64 string back to bytes
     compressed_data = base64.b64decode(encoded_str)
     
@@ -48,7 +44,6 @@ def decode_and_decompress_string(encoded_str):
     return json.loads(json_string)
 
 def convert_to_fernet_key(key):
-
     # Pad the key with zeros to make it 32 bytes long
     padded_key = key.ljust(32, "\x00")
 
@@ -61,13 +56,13 @@ def convert_to_fernet_key(key):
     return base64_key
 
 def encrypt_file(secret, input_file=None, file_content=None, output_file=None):
-
     passphrase = convert_to_fernet_key(secret)
 
     if input_file:
         with open(input_file, 'rb') as file:
             file_content = file.read()
-    elif file_content:
+
+    if file_content:
         # Convert the file content to base64
         base64_content = base64.b64encode(file_content.encode())
     else:
@@ -85,7 +80,6 @@ def encrypt_file(secret, input_file=None, file_content=None, output_file=None):
         file.write(encrypted_content)
 
 def decrypt_file(input_file, output_file, secret):
-
     passphrase = convert_to_fernet_key(secret)
 
     # Read the encrypted content from the input file
@@ -104,7 +98,6 @@ def decrypt_file(input_file, output_file, secret):
         file.write(base64_content)
 
 def b64_encode(obj):
-
     if not isinstance(obj,str):
         obj = json.dumps(obj)
 
@@ -115,7 +108,6 @@ def b64_encode(obj):
     return base64_bytes.decode('ascii')
 
 def b64_decode(token):
-
     base64_bytes = token.encode('ascii')
     _bytes = base64.b64decode(base64_bytes)
 
@@ -148,7 +140,6 @@ def b64_decode(token):
     return _results
 
 def gz_pickle(fname, obj):
-
     return pickle.dump(obj=obj,
                        file=gzip.open(fname,
                                       "wb",
@@ -156,11 +147,9 @@ def gz_pickle(fname, obj):
                        protocol=2)
 
 def gz_upickle(fname):
-
     return pickle.load(gzip.open(fname,"rb"))
 
 def zpickle(obj):
-
     return zlib.compress(pickle.dumps(obj,
                                       pickle.HIGHEST_PROTOCOL),
                          9)
@@ -169,24 +158,21 @@ def z_unpickle(zstr):
     return pickle.loads(zlib.decompress(zstr))
 
 def compress(indata):
-
     return zlib.compress(indata,zlib.Z_BEST_COMPRESSION)
 
 def uncompress(zdata):
-
-    return zlib.decompress(zdata)  
+    return zlib.decompress(zdata)
 
 def create_envfile(dict_obj,b64=None,file_path=None):
-
     # Create a StringIO object
     file_buffer = io.StringIO()
 
     for _k,_v in list(dict_obj.items()):
-        file_buffer.write("{}={}\n".format(_k,_v))
+        file_buffer.write(f"{_k}={_v}\n")
 
     contents = file_buffer.getvalue()
 
-    # close the StringIO object
+    # Close the StringIO object
     file_buffer.close()
 
     if not b64 and not file_path:
@@ -208,7 +194,6 @@ def create_envfile(dict_obj,b64=None,file_path=None):
     return base64_hash
 
 def encrypt_str(password, str_obj):
-
     salt = os.urandom(16)
     backend = default_backend()
     kdf = PBKDF2HMAC(
@@ -237,14 +222,13 @@ def encrypt_str(password, str_obj):
     return (salt + iv + ciphertext).hex()
 
 def decrypt_str(password, encrypted_str):
-
     # Convert string to byte code
     ciphertext = bytes.fromhex(encrypted_str)
 
     salt = ciphertext[:16]
     iv = ciphertext[16:32]
     ciphertext = ciphertext[32:]
-
+    
     backend = default_backend()
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -268,9 +252,7 @@ def decrypt_str(password, encrypted_str):
     # Convert byte code to string
     return unpadded_data.decode()
 
-# dup 435245632532465
 def encrypt_str_openssl(password, str_obj):
-
     cmd = f'echo -n "{str_obj}" | openssl enc -e -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:{password} -base64'
 
     process = subprocess.Popen(cmd,
@@ -281,9 +263,7 @@ def encrypt_str_openssl(password, str_obj):
 
     return encrypted_output.strip().decode()
 
-# dup 435245632532465
 def decrypt_str_openssl(password, encrypted_text):
-
     cmd = f'echo "{encrypted_text}" | openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass pass:{password} -base64'
 
     process = subprocess.Popen(cmd,
@@ -294,18 +274,17 @@ def decrypt_str_openssl(password, encrypted_text):
 
     return decrypted_output.strip().decode()
 
-def create_encrypted_envfile(env_vars,secret,file_path,openssl=True):
-
-    '''
+def create_encrypted_envfile(env_vars, secret, file_path, openssl=True):
+    """
     we use stateful_id for the encrypt key
-    '''
+    """
 
     if not env_vars.items():
         return
 
-    virtual_file = StringIO()
+    virtual_file = io.StringIO()
 
-    for key,value in env_vars.items():
+    for key, value in env_vars.items():
         virtual_file.write(f"{key}={value}\n")
 
     base64_string = b64_encode(virtual_file.getvalue())
@@ -321,5 +300,7 @@ def create_encrypted_envfile(env_vars,secret,file_path,openssl=True):
                                          output_file=file_path)
 
     print(f"encrypted file_path {file_path}/openssl {openssl} written.")
+
+    print(f"decrypted file_path {file_path} written.")
 
     return encrypted_content
