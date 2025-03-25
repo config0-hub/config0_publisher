@@ -67,8 +67,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         # codebuild specific settings and variables
         self.codebuild_client = self.session.client('codebuild')
         # testtest456
-        import os
-        os.system("touch /tmp/here456.txt")
         response = self.codebuild_client.list_projects()
         raise Exception("hello world")
 
