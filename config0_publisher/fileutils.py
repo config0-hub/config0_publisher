@@ -139,67 +139,87 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_
             sys.exit(78)
         return False
 
-    # testtest456
-    if os.path.exists(zip_path):
-        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
-        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
-        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
-        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
-        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
-
-    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
-    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
-    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
     print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
     return zip_path
 
-#def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
-#
-#    filedirectory = os.getcwd()
-#
-#    if not filename.endswith('.zip'):
-#        filename += '.zip'
-#
-#    if os.path.exists(src):
-#        try:
-#            exit_status = os.system(f"cd {src} && zip -r {dst}/{filename} .")
-#            if int(exit_status) != 0:
-#                raise Exception("ref 34534263246/zipcli: zip-ing failed")
-#        except:
-#            if exit_error:
-#                raise Exception("ref 34534263246/zipcli: zip-ing failed")
-#            return False
-#    else:
-#        print(f"ref 34534263246/zipcli: source {src} does not exists.\n")
-#        if exit_error:
-#            sys.exit(78)
-#        return False
-#
-#    print(f"ref 34534263246/zipcli file successfully zipped here: {os.path.join(filedirectory, filename)}")
-#    return f"{os.path.join(filedirectory, filename)}"
-
-def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True) -> Optional[str]:
+def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True, raise_on_empty: bool = False) -> Optional[str]:
+    # Determine the filename
     if "zip" in name:
         filename = name
-    elif os.path.exists(f"{directory}/{name}.zip"):
+    elif os.path.exists(os.path.join(directory, f"{name}.zip")):
         filename = f"{name}.zip"
     else:
         print(f"\n{name} is not in the correct .zip format!\n")
         if exit_error:
             sys.exit(78)
         return False
-
-    cmd = f"unzip -o {directory}/{filename} -d {newlocation}/ > /dev/null"
-    exit_status = os.system(cmd)
-
-    if int(exit_status) != 0:
-        failed_message = f"FAILED: {cmd}"
+    
+    # Full path to the zip file
+    zip_path = os.path.join(directory, filename)
+    
+    # Check if the zip file exists
+    if not os.path.exists(zip_path):
+        error_message = f"FAILED: Zip file does not exist: {zip_path}"
+        print(error_message)
+        if exit_error:
+            raise FileNotFoundError(error_message)
+        return False
+    
+    # Check if the file is actually a zip file
+    if not zipfile.is_zipfile(zip_path):
+        error_message = f"FAILED: Not a valid zip file: {zip_path}"
+        print(error_message)
+        if exit_error:
+            raise zipfile.BadZipFile(error_message)
+        return False
+    
+    try:
+        # Create the destination directory if it doesn't exist
+        os.makedirs(newlocation, exist_ok=True)
+        
+        # Extract all files from the zip
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            # Check if the zip file is empty
+            file_list = zip_ref.namelist()
+            if not file_list:
+                empty_message = f"Zip file is empty: {zip_path}"
+                print(f"WARNING: {empty_message}")
+                if raise_on_empty:
+                    raise ValueError(empty_message)
+            
+            # Extract the files
+            zip_ref.extractall(path=newlocation)
+        
+        return newlocation
+    
+    except zipfile.BadZipFile as e:
+        failed_message = f"FAILED: Invalid zip file format {zip_path}: {str(e)}"
+        print(failed_message)
+        if not exit_error:
+            return False
+        raise Exception(failed_message)
+    
+    except PermissionError as e:
+        failed_message = f"FAILED: Permission denied when extracting {zip_path} to {newlocation}: {str(e)}"
         print(failed_message)
         if not exit_error:
             return False
         raise Exception(failed_message)
 
-    return newlocation
+    except ValueError as e:
+        # This would catch the empty zip file error we raise above
+        failed_message = f"FAILED: {str(e)}"
+        print(failed_message)
+        if not exit_error:
+            return False
+        raise Exception(failed_message)
+
+    except Exception as e:
+        failed_message = f"FAILED: Error extracting {zip_path} to {newlocation}: {str(e)}"
+        print(failed_message)
+        if not exit_error:
+            return False
+        raise Exception(failed_message)
 
 def targz(srcdir: str, dstdir: str, filename: str, verbose: bool = True) -> str:
     """This will tar a file to a new location"""
