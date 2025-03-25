@@ -8,6 +8,7 @@ from typing import List, Optional
 import sys
 import re
 from time import time
+from time import sleep
 
 def zip_file(filename: str, srcfile: str = ".env", filedirectory: Optional[str] = None) -> None:
     pwd = os.getcwd()
@@ -140,7 +141,12 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_
         return False
 
     result_path = os.path.join(filedirectory, filename)
+    # testtest456
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
+    sleep(300)
     return result_path
 
 #def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
