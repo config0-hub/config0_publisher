@@ -411,7 +411,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             inputargs = {"projectName": project_name,
                          "environmentVariablesOverride": env_vars_codebuild_format,
-                         "time_outInMinutesOverride": timeout,
+                         "timeoutInMinutesOverride": timeout,
                          "imageOverride": self.build_image,
                          "computeTypeOverride": self.compute_type,
                          "environmentTypeOverride": self.image_type}
