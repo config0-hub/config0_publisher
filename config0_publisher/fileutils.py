@@ -59,6 +59,8 @@ def count_files_targz(file_path: str) -> int:
 
 def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
 
+    filedirectory = os.getcwd()
+
     if not filename.endswith('.zip'):
         filename += '.zip'
 
@@ -77,7 +79,8 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Option
             sys.exit(78)
         return False
 
-    return filename
+    print(f"file zipped here: {os.path.join(filedirectory, filename)}")
+    return f"{os.path.join(filedirectory, filename)}"
 
 def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True) -> Optional[str]:
     if "zip" in name:
