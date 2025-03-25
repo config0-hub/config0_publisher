@@ -68,18 +68,18 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Option
         try:
             exit_status = os.system(f"cd {src} && zip -r {dst}/{filename} .")
             if int(exit_status) != 0:
-                raise Exception("zip-ing")
+                raise Exception("ref 34534263246/zipcli: zip-ing failed")
         except:
             if exit_error:
-                raise Exception("zip-ing")
+                raise Exception("ref 34534263246/zipcli: zip-ing failed")
             return False
     else:
-        print(f"Source {src} does not exists.\n")
+        print(f"ref 34534263246/zipcli: source {src} does not exists.\n")
         if exit_error:
             sys.exit(78)
         return False
 
-    print(f"file zipped here: {os.path.join(filedirectory, filename)}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {os.path.join(filedirectory, filename)}")
     return f"{os.path.join(filedirectory, filename)}"
 
 def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True) -> Optional[str]:
