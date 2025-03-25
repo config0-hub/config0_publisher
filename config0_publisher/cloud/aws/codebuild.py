@@ -66,6 +66,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         # codebuild specific settings and variables
         self.codebuild_client = self.session.client('codebuild')
+        # testtest456
+        import os
+        os.system("touch /tmp/here456.txt")
+        raise Exception("hello world")
 
         if not self.results["inputargs"].get("build_image"):
             self.results["inputargs"]["build_image"] = self.build_image
