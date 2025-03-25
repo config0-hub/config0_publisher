@@ -153,7 +153,6 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
-    sleep(300)
     return result_path
 
 #def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
