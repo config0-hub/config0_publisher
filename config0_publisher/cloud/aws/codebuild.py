@@ -342,9 +342,9 @@ class CodebuildResourceHelper(AWSCommonConn):
         return env_vars
 
     def get_available_projects(self, max_queue_size=5):
-        results = {}
         response = self.codebuild_client.list_projects()
         projects = [p for p in response['projects'] if self.codebuild_basename in p]
+        results = {}
         for project in projects:
             self.logger.debug(f"evaluating codebuild project {project}")
 
