@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 
 import tarfile
+import zipfile
+import traceback
 import os
 from typing import List, Optional
 import sys
 import re
 from time import time
-from zipfile import ZipFile
 
 def zip_file(filename: str, srcfile: str = ".env", filedirectory: Optional[str] = None) -> None:
     pwd = os.getcwd()
     filedirectory = filedirectory or pwd
 
     dstfile = f"{filename}.zip"
-    ZipFile(dstfile, mode='w').write(srcfile)
+    zipfile.ZipFile(dstfile, mode='w').write(srcfile)
     os.chdir(pwd)
     print(f"file zipped here {os.path.join(filedirectory, dstfile)}")
 
@@ -57,30 +58,115 @@ def count_files_targz(file_path: str) -> int:
                 count += 1
     return count
 
-def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
-
+def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_empty: bool = True) -> Optional[str]:
     filedirectory = os.getcwd()
 
     if not filename.endswith('.zip'):
         filename += '.zip'
-
+    
+    zip_path = os.path.join(dst, filename)
+    
+    # Ensure destination directory exists
+    try:
+        os.makedirs(dst, exist_ok=True)
+    except Exception as e:
+        error_msg = f"ref 34534263246/zipcli: Failed to create destination directory: {str(e)}"
+        print(error_msg)
+        if exit_error:
+            raise Exception(error_msg)
+        return False
+    
     if os.path.exists(src):
         try:
-            exit_status = os.system(f"cd {src} && zip -r {dst}/{filename} .")
-            if int(exit_status) != 0:
-                raise Exception("ref 34534263246/zipcli: zip-ing failed")
-        except:
+            # Create a ZipFile object
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                files_added = 0
+                # Check if src is a file or directory
+                if os.path.isfile(src):
+                    # If src is a file, just add it to the zip
+                    arcname = os.path.basename(src)
+                    zipf.write(src, arcname)
+                    files_added += 1
+                else:
+                    # Walk through the directory
+                    for root, _, files in os.walk(src):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            # Calculate path relative to src
+                            arcname = os.path.relpath(file_path, src)
+                            # Add file to zip
+                            zipf.write(file_path, arcname)
+                            files_added += 1
+        except zipfile.BadZipFile as e:
+            error_msg = f"ref 34534263246/zipcli: Bad zip file: {str(e)}"
+            print(error_msg)
             if exit_error:
-                raise Exception("ref 34534263246/zipcli: zip-ing failed")
+                raise Exception(error_msg)
+            return False
+        except PermissionError as e:
+            error_msg = f"ref 34534263246/zipcli: Permission denied: {str(e)}"
+            print(error_msg)
+            if exit_error:
+                raise Exception(error_msg)
+            return False
+        except Exception as e:
+            error_msg = f"ref 34534263246/zipcli: zip-ing failed: {str(e)}"
+            print(f"{error_msg}\n{traceback.format_exc()}")
+            if exit_error:
+                raise Exception(error_msg)
+            return False
+            
+        # Check if zip file was created and is not empty
+        if not os.path.exists(zip_path):
+            error_msg = f"ref 34534263246/zipcli: zip file was not created at {zip_path}"
+            print(error_msg)
+            if exit_error:
+                raise Exception(error_msg)
+            return False
+            
+        # Check if the zip file is empty (either no files added or zero file size)
+        if files_added == 0 or os.path.getsize(zip_path) == 0:
+            warning_msg = f"WARNING: ref 34534263246/zipcli: The created zip file appears to be empty: {zip_path}"
+            print(warning_msg)
+            if raise_on_empty:
+                error_msg = f"ref 34534263246/zipcli: Created zip file is empty: {zip_path}"
+                raise Exception(error_msg)
             return False
     else:
-        print(f"ref 34534263246/zipcli: source {src} does not exists.\n")
+        error_msg = f"ref 34534263246/zipcli: source {src} does not exist."
+        print(f"{error_msg}\n")
         if exit_error:
             sys.exit(78)
         return False
 
-    print(f"ref 34534263246/zipcli file successfully zipped here: {os.path.join(filedirectory, filename)}")
-    return f"{os.path.join(filedirectory, filename)}"
+    result_path = os.path.join(filedirectory, filename)
+    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
+    return result_path
+
+#def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
+#
+#    filedirectory = os.getcwd()
+#
+#    if not filename.endswith('.zip'):
+#        filename += '.zip'
+#
+#    if os.path.exists(src):
+#        try:
+#            exit_status = os.system(f"cd {src} && zip -r {dst}/{filename} .")
+#            if int(exit_status) != 0:
+#                raise Exception("ref 34534263246/zipcli: zip-ing failed")
+#        except:
+#            if exit_error:
+#                raise Exception("ref 34534263246/zipcli: zip-ing failed")
+#            return False
+#    else:
+#        print(f"ref 34534263246/zipcli: source {src} does not exists.\n")
+#        if exit_error:
+#            sys.exit(78)
+#        return False
+#
+#    print(f"ref 34534263246/zipcli file successfully zipped here: {os.path.join(filedirectory, filename)}")
+#    return f"{os.path.join(filedirectory, filename)}"
 
 def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True) -> Optional[str]:
     if "zip" in name:
