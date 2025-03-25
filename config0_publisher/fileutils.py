@@ -142,6 +142,13 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_
 
     result_path = os.path.join(filedirectory, filename)
     # testtest456
+    if os.path.exists(result_path):
+        print(f"ref 34534263246/zipcli file verified here: {result_path}")
+        print(f"ref 34534263246/zipcli file verified here: {result_path}")
+        print(f"ref 34534263246/zipcli file verified here: {result_path}")
+        print(f"ref 34534263246/zipcli file verified here: {result_path}")
+        print(f"ref 34534263246/zipcli file verified here: {result_path}")
+
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
     print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
