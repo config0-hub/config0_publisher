@@ -69,6 +69,7 @@ class CodebuildResourceHelper(AWSCommonConn):
         # testtest456
         import os
         os.system("touch /tmp/here456.txt")
+        response = self.codebuild_client.list_projects()
         raise Exception("hello world")
 
         if not self.results["inputargs"].get("build_image"):
