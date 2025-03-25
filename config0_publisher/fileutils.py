@@ -58,9 +58,13 @@ def count_files_targz(file_path: str) -> int:
     return count
 
 def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
+
+    if not filename.endswith('.zip'):
+        filename += '.zip'
+
     if os.path.exists(src):
         try:
-            exit_status = os.system(f"cd {src} && zip -r {dst}/{filename}.zip .")
+            exit_status = os.system(f"cd {src} && zip -r {dst}/{filename} .")
             if int(exit_status) != 0:
                 raise Exception("zip-ing")
         except:
@@ -73,7 +77,7 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Option
             sys.exit(78)
         return False
 
-    return f"{filename}.zip"
+    return filename
 
 def unzipcli(directory: str, name: str, newlocation: str, exit_error: bool = True) -> Optional[str]:
     if "zip" in name:
