@@ -60,7 +60,6 @@ def count_files_targz(file_path: str) -> int:
     return count
 
 def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_empty: bool = True) -> Optional[str]:
-    filedirectory = os.getcwd()
 
     if not filename.endswith('.zip'):
         filename += '.zip'
@@ -140,20 +139,19 @@ def zipcli(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_
             sys.exit(78)
         return False
 
-    result_path = os.path.join(filedirectory, filename)
     # testtest456
-    if os.path.exists(result_path):
-        print(f"ref 34534263246/zipcli file verified here: {result_path}")
-        print(f"ref 34534263246/zipcli file verified here: {result_path}")
-        print(f"ref 34534263246/zipcli file verified here: {result_path}")
-        print(f"ref 34534263246/zipcli file verified here: {result_path}")
-        print(f"ref 34534263246/zipcli file verified here: {result_path}")
+    if os.path.exists(zip_path):
+        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
+        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
+        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
+        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
+        print(f"ref 34534263246/zipcli file verified here: {zip_path}")
 
-    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
-    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
-    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
-    print(f"ref 34534263246/zipcli file successfully zipped here: {result_path}")
-    return result_path
+    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
+    print(f"ref 34534263246/zipcli file successfully zipped here: {zip_path}")
+    return zip_path
 
 #def zipcli(src: str, dst: str, filename: str, exit_error: bool = True) -> Optional[str]:
 #
