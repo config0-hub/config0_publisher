@@ -19,13 +19,23 @@ def ensure_str(obj, strip=True):
     return new_obj
 
 def mkdir(directory):
-    """uses the shell to make a directory."""
-
+    """
+    Create a directory and any necessary parent directories.
+    
+    Args:
+        directory (str): Path to the directory to create.
+        
+    Returns:
+        bool: True if the directory exists or was created successfully, False otherwise.
+    """
     try:
         if not os.path.exists(directory):
-            os.system(f"mkdir -p {directory}")
+            # Use os.makedirs instead of os.system for better portability and security
+            os.makedirs(directory, exist_ok=True)
         return True
-    except:
+    except Exception as e:
+        # Log the specific error for debugging
+        print(f"Error creating directory {directory}: {e}")
         return False
 
 def chkdir(directory):

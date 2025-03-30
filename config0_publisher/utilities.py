@@ -86,22 +86,60 @@ def shellout_hash(str_obj):
     return ret
 
 def get_hash(data):
-
-    """determines the hash of a data object"""
-
-    logger = Config0Logger("get_hash")
-
+    """
+    Determines a consistent hash of a data object across platforms and environments
+    
+    Args:
+        data: The data to hash (can be str, bytes, or other Python objects)
+        
+    Returns:
+        String hash or False on error
+    """
+    import hashlib
+    import json
+    import logging
+    
+    # Setup logger (assuming Config0Logger is a custom logger class)
+    logger = logging.getLogger("get_hash")  # Replace with your logger if needed
+    
+    # Convert data to bytes with consistent serialization
     try:
-        calculated_hash = hashlib.md5(data).hexdigest()
-    except:
-        logger.debug("Falling back to shellout md5sum for hash")
-        calculated_hash = shellout_hash(data)
-
-    if not calculated_hash:
-        logger.error(f"Could not calculate hash for {data}")
+        if isinstance(data, bytes):
+            # Already in bytes format
+            data_bytes = data
+        elif isinstance(data, str):
+            # Convert string to UTF-8 bytes
+            data_bytes = data.encode('utf-8')
+        elif isinstance(data, (dict, list, tuple, set)):
+            # Handle collections with consistent ordering
+            if isinstance(data, dict):
+                # Sort dictionary keys for consistent serialization
+                data_bytes = json.dumps(data, sort_keys=True).encode('utf-8')
+            elif isinstance(data, set):
+                # Sort set elements for consistent serialization
+                data_bytes = json.dumps(sorted(list(data))).encode('utf-8')
+            else:
+                # Lists and tuples maintain their order in JSON
+                data_bytes = json.dumps(data).encode('utf-8')
+        elif isinstance(data, (int, float, bool, type(None))):
+            # Handle primitive types
+            data_bytes = str(data).encode('utf-8')
+        else:
+            # For other object types, convert to string representation
+            # Note: This may not be consistent for all object types
+            logger.warning(f"Hashing non-primitive type {type(data)}. Results may be inconsistent.")
+            data_bytes = str(data).encode('utf-8')
+    except Exception as e:
+        logger.error(f"Failed to prepare data for hashing: {str(e)}")
         return False
-
-    return calculated_hash
+    
+    # Calculate hash using hashlib only (no shell fallback)
+    try:
+        calculated_hash = hashlib.md5(data_bytes).hexdigest()
+        return calculated_hash
+    except Exception as e:
+        logger.error(f"Could not calculate hash: {str(e)}")
+        return False
 
 def id_generator2(size=6, lowercase=True):
 
