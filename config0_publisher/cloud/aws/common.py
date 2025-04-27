@@ -139,9 +139,9 @@ class AWSCommonConn(SetClassVarsHelper):
         self.build_env_vars = kwargs.get("build_env_vars")
 
         try:
-            self.build_timeout = int(kwargs.get("build_timeout", 500))
+            self.build_timeout = int(kwargs.get("build_timeout", 600))
         except:
-            self.build_timeout = 500
+            self.build_timeout = 600
 
         self.build_expire_at = int(time()) + int(self.build_timeout)
 

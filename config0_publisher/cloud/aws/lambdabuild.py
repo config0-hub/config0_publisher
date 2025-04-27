@@ -64,6 +64,7 @@ class LambdaResourceHelper(AWSCommonConn):
         env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
         env_vars["OUTPUT_BUCKET_KEY"] = self.s3_output_key
         env_vars["BUILD_EXPIRE_AT"] = str(int(self.build_expire_at))
+        env_vars["BUILD_TIMEOUT"] = str(int(self.build_timeout))
 
         _added = []
 
@@ -114,6 +115,7 @@ class LambdaResourceHelper(AWSCommonConn):
         # less than 10 minutes
         try:
             timeout = int(self.build_timeout)
+            self.logger.debug(f"_get_timeout - using user specified timeout {str(timeout)}s")
         except Exception as e:
             self.logger.debug("_get_timeout - using default of 800s")
             timeout = 800
@@ -126,6 +128,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
     def _trigger_build(self):
 
+        self.build_timeout = self._get_timeout()
         self.build_expire_at = time() + self._get_timeout()
 
         # Define the configuration for invoking the Lambda function
