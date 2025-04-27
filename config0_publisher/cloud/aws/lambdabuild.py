@@ -110,15 +110,17 @@ class LambdaResourceHelper(AWSCommonConn):
 
     def _get_timeout(self):
 
-        # we limit the build to 500 seconds, which is one min
+        # we limit the build to 800 seconds, which is one min
         # less than 10 minutes
         try:
             timeout = int(self.build_timeout)
         except Exception as e:
-            timeout = 500
+            self.logger.debug("_get_timeout - using default of 800s")
+            timeout = 800
 
-        if timeout > 500:
-            timeout = 500
+        if timeout > 800:
+            self.logger.debug(f"_get_timeout - timeout of {str(timeout)} exceeds limit of 800s for lambda -> reseting to 800s")
+            timeout = 800
 
         return timeout
 
