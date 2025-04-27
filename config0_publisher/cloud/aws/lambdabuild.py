@@ -140,7 +140,7 @@ class LambdaResourceHelper(AWSCommonConn):
         self.logger.debug("#" * 32)
 
         # testtest456
-        raise Exception("testtest456")
+        #raise Exception("testtest456")
 
         invocation_config = {
             'FunctionName': self.lambda_function_name,
