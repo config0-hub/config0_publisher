@@ -26,10 +26,15 @@ Environment Variables:
     CONFIG0_INITIAL_APPLY: Flag for initial application
 """
 
+import base64
 import os
 import jinja2
 import glob
 import json
+import shutil
+import stat
+import subprocess
+from pathlib import Path
 from time import sleep
 from copy import deepcopy
 
@@ -72,14 +77,11 @@ def to_jsonfile(values, filename, exec_dir=None):
     if not exec_dir: 
         exec_dir = os.getcwd()
 
-    file_dir = os.path.join(exec_dir,
-                            "config0_resources")
+    file_dir = os.path.join(exec_dir, "config0_resources")
+    file_path = os.path.join(file_dir, filename)
 
-    file_path = os.path.join(file_dir,
-                             filename)
-
-    if not os.path.exists(file_dir):
-        os.system(f"mkdir -p {file_dir}")
+    # Create directory if it doesn't exist
+    Path(file_dir).mkdir(parents=True, exist_ok=True)
 
     try:
         with open(file_path, "w") as file:
@@ -540,11 +542,7 @@ class ResourceCmdHelper:
         if os.path.exists(dir_path): 
             return
 
-        cmd = f"mkdir -p {dir_path}"
-
-        self.execute(cmd,
-                     output_to_json=False,
-                     exit_error=True)
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
 
     def _set_stateful_params(self):
         self.postscript_path = None
@@ -848,8 +846,7 @@ class ResourceCmdHelper:
                                      _file_stats["directory"],
                                      _file_stats["filename"].split(".ja2")[0])
 
-            if not os.path.exists(file_dir):
-                os.system(f"mkdir -p {file_dir}")
+            Path(file_dir).mkdir(parents=True, exist_ok=True)
 
             if os.path.exists(file_path) and not clobber:
                 self.logger.warn(f"destination templated file already exists at {file_path} - skipping templifying of it")
@@ -924,9 +921,8 @@ class ResourceCmdHelper:
 
     def write_key_to_file(self, **kwargs):
         """
-        writing the value of a key in kwargs to a file
+        Writing the value of a key in kwargs to a file
         """
-
         key = kwargs["key"]
         filepath = kwargs["filepath"]
         split_char = kwargs.get("split_char")
@@ -935,11 +931,11 @@ class ResourceCmdHelper:
         deserialize = kwargs.get("deserialize")
 
         try:
-            permission = str(int(kwargs.get("permission")))
+            permission = int(kwargs.get("permission"))
         except:
-            permission = "400"
+            permission = 0o400  # Default permission for SSH private keys (octal notation)
 
-        if not self.inputargs.get(key): 
+        if not self.inputargs.get(key):
             return
 
         _value = self.inputargs[key]
@@ -956,20 +952,14 @@ class ResourceCmdHelper:
 
         with open(filepath, "w") as wfile:
             for _line in _lines:
-                # ref 45230598450
-                #wfile.write(_line.replace('"','').replace("'",""))
-
                 wfile.write(_line)
+                if add_return:
+                    wfile.write("\n")
 
-                if not add_return: 
-                    continue
+        if permission:
+            os.chmod(filepath, permission)
 
-                wfile.write("\n")
-
-        if permission: 
-            os.system(f"chmod {permission} {filepath}")
-
-        if copy_to_share: 
+        if copy_to_share:
             self.copy_file_to_share(filepath)
 
         return filepath
@@ -979,36 +969,31 @@ class ResourceCmdHelper:
             self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
             return
             
-        cmds = []
+        # Create destination directory if needed
         _dirname = os.path.dirname(self.run_share_dir)
-
-        if not os.path.exists(_dirname):
-            cmds.append(f"mkdir -p {_dirname}")
+        Path(_dirname).mkdir(parents=True, exist_ok=True)
 
         _file_subpath = os.path.basename(srcfile)
 
         if dst_subdir:
             _file_subpath = f"{dst_subdir}/{_file_subpath}"
+            # Create dst_subdir if needed
+            dst_path = os.path.join(self.run_share_dir, dst_subdir)
+            Path(dst_path).mkdir(parents=True, exist_ok=True)
 
         dstfile = f"{self.run_share_dir}/{_file_subpath}"
 
-        cmds.append(f"cp -rp {srcfile} {dstfile}")
-
-        for cmd in cmds:
-            self.execute(cmd,
-                         output_to_json=False,
-                         exit_error=True)
+        # Copy file
+        shutil.copy2(srcfile, dstfile)
 
     def sync_to_share(self, rsync_args=None, exclude_existing=None):
         if not self.run_share_dir: 
             self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
             return
             
-        cmds = []
+        # Create destination directory if needed
         _dirname = os.path.dirname(self.run_share_dir)
-
-        if not os.path.exists(_dirname):
-            cmds.append(f"mkdir -p {_dirname}")
+        Path(_dirname).mkdir(parents=True, exist_ok=True)
 
         if not rsync_args:
             rsync_args = "-avug"
@@ -1020,14 +1005,15 @@ class ResourceCmdHelper:
         cmd = f"rsync {rsync_args} {self.exec_dir}/ {self.run_share_dir}"
 
         self.logger.debug(cmd)
-        cmds.append(cmd)
-
-        for cmd in cmds:
-            self.execute(cmd,
-                         output_to_json=False,
-                         exit_error=True)
-
-        self.logger.debug(f"Sync-ed to run share dir {self.run_share_dir}")
+        
+        # Using subprocess to run rsync
+        try:
+            subprocess.run(["rsync"] + rsync_args.split() + [f"{self.exec_dir}/", f"{self.run_share_dir}"], 
+                           check=True, capture_output=True, text=True)
+            self.logger.debug(f"Sync-ed to run share dir {self.run_share_dir}")
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Failed to sync to {self.run_share_dir}: {e.stderr}")
+            exit(1)
 
     def remap_app_vars(self):
         if not self.os_env_prefix: 
@@ -1359,6 +1345,9 @@ class ResourceCmdHelper:
         base_file_path = os.path.join(self.run_share_dir,
                                       self.app_dir)
 
+        # Ensure directory exists
+        Path(base_file_path).mkdir(parents=True, exist_ok=True)
+
         if build_env_vars:
             create_envfile(build_env_vars,
                            b64=True,
@@ -1433,7 +1422,8 @@ class ResourceCmdHelper:
             self.logger.debug(f'Next phase to run: "{phase_param["name"]}"')
             return phase_param
 
-        os.system(f"rm -rf {self.run_share_dir}")
+        # Using shutil to remove directory
+        shutil.rmtree(self.run_share_dir, ignore_errors=True)
 
         self.logger.error("Cannot determine next phase to run - reset")
         raise Exception("Cannot determine next phase to run")

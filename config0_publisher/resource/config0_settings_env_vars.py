@@ -88,7 +88,7 @@ class Config0SettingsEnvVarHelper:
         if tf_runtime:
             self.logger.debug(f'tf_runtime {tf_runtime} from env var "TF_RUNTIME"')
         else:
-            tf_runtime = "tofu:1.6.2"
+            tf_runtime = "tofu:1.9.1"
             self.logger.debug(f'using default tf_runtime "{tf_runtime}"')
 
         self._vars["tf_runtime"] = tf_runtime

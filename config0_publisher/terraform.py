@@ -136,7 +136,7 @@ class TFConstructor(object):
                                         types="str")
             else:
                 self.stack.parse.add_required(key="docker_image",
-                                              default="tofu:1.6.2",
+                                              default="tofu:1.9.1",
                                               types="str")
         else:
             self.stack.set_variable("docker_image",
