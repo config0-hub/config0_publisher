@@ -986,7 +986,40 @@ class ResourceCmdHelper:
         # Copy file
         shutil.copy2(srcfile, dstfile)
 
-    def sync_to_share(self, rsync_args=None, exclude_existing=None):
+    def sync_to_share(self, exclude_existing=None):
+        if not self.run_share_dir:
+            self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
+            return
+
+        # Create destination directory if needed
+        _dirname = os.path.dirname(self.run_share_dir)
+        Path(_dirname).mkdir(parents=True, exist_ok=True)
+
+        # Copy directory contents
+        source_dir = Path(self.exec_dir)
+        target_dir = Path(self.run_share_dir)
+
+        for item in source_dir.glob('**/*'):
+            if item.is_file():
+                # Get the relative path
+                relative_path = item.relative_to(source_dir)
+                destination = target_dir / relative_path
+
+                # Create parent directories if they don't exist
+                destination.parent.mkdir(parents=True, exist_ok=True)
+
+                # Skip existing files if exclude_existing is True
+                if exclude_existing and destination.exists():
+                    continue
+
+                # Copy with metadata (timestamps, permissions)
+                shutil.copy2(item, destination)
+
+        self.logger.debug(f"Sync-ed to run share dir {self.run_share_dir}")
+
+    # It's better to avoid shellouts
+    # so this is not really used.
+    def rsync_to_share(self, rsync_args=None, exclude_existing=None):
         if not self.run_share_dir: 
             self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
             return
