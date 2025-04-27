@@ -139,9 +139,6 @@ class LambdaResourceHelper(AWSCommonConn):
         self.logger.json(env_vars)
         self.logger.debug("#" * 32)
 
-        # testtest456
-        #raise Exception("testtest456")
-
         invocation_config = {
             'FunctionName': self.lambda_function_name,
             'InvocationType': 'RequestResponse',
@@ -153,6 +150,7 @@ class LambdaResourceHelper(AWSCommonConn):
                 })
         }
 
+        # TODO: add stop function in the future here
         return self.lambda_client.invoke(**invocation_config)
 
     def _submit(self):
