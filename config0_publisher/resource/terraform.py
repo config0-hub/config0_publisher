@@ -120,6 +120,7 @@ class TFCmdOnAWS(TFAppHelper):
     def _get_tf_plan(self):
 
         cmds = [
+            { "_get_tf_plan - create plan": f'{self.base_cmd} plan' },
             { "_get_tf_plan - create plan": f'{self.base_cmd} plan -out={self.tmp_base_output_file}.tfplan' },
             { "_get_tf_plan - plan to json": f'{self.base_cmd} show -no-color -json {self.tmp_base_output_file}.tfplan > {self.tmp_base_output_file}.tfplan.json' }
         ]
