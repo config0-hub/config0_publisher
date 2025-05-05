@@ -317,7 +317,7 @@ class TFConstructor(object):
     def get_inputargs(self):
         self.stack.verify_variables()
 
-        execgroup_ref = self.stack.get_locked(execgroup=self.execgroup_name)
+        execgroup_ref = self.stack.get_locked_asset(execgroup=self.execgroup_name)
 
         if not execgroup_ref:
             self.stack.logger.warn("execgroup_ref cannot be found through assets locks - will use the latest")

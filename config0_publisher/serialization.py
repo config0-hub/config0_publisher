@@ -18,9 +18,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
 
-def convert_b64_to_zlib_b64(token):
-    return compress_and_encode_dict(b64_decode(token))
-
 def compress_and_encode_dict(data):    
     json_string = json.dumps(data)
     
@@ -148,14 +145,6 @@ def gz_pickle(fname, obj):
 
 def gz_upickle(fname):
     return pickle.load(gzip.open(fname,"rb"))
-
-def zpickle(obj):
-    return zlib.compress(pickle.dumps(obj,
-                                      pickle.HIGHEST_PROTOCOL),
-                         9)
-
-def z_unpickle(zstr):
-    return pickle.loads(zlib.decompress(zstr))
 
 def compress(indata):
     return zlib.compress(indata,zlib.Z_BEST_COMPRESSION)

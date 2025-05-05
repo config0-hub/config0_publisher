@@ -38,13 +38,6 @@ def mkdir(directory):
         print(f"Error creating directory {directory}: {e}")
         return False
 
-def chkdir(directory):
-
-    if not os.path.exists(directory):
-        print(f"Directory {directory} does not exists")
-        return False
-    return True
-
 def rm_rf(location):
 
     """uses the shell to forcefully and recursively remove a file/entire directory."""
@@ -543,9 +536,3 @@ class ShellOutExecute(object):
 
         return self.results
 
-def exec_method_bg(bg_method, args=None, kwargs=None):
-
-    # Use ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit background tasks
-        return executor.submit(bg_method, *args, **kwargs)

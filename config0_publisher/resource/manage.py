@@ -47,7 +47,6 @@ from config0_publisher.utilities import eval_str_to_join
 from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
-from config0_publisher.serialization import create_encrypted_envfile
 from config0_publisher.serialization import b64_decode
 from config0_publisher.serialization import b64_encode
 from config0_publisher.templating import list_template_files

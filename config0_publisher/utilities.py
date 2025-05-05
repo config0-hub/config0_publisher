@@ -73,18 +73,6 @@ def to_json(_object, exit_error=None):
     return convert_str2json(_object,
                             exit_error=exit_error)
 
-def shellout_hash(str_obj):
-
-    try:
-        cmd = os.popen('echo "%s" | md5sum | cut -d " " -f 1' % str_obj, "r")
-        ret = cmd.read().rstrip()
-    except: 
-        if os.environ.get("JIFFY_ENHANCED_LOG"):
-            print(f"Failed to calculate the md5sum of a string {str_obj}")
-        return False
-
-    return ret
-
 def get_hash(data):
     """
     Determines a consistent hash of a data object across platforms and environments
@@ -281,28 +269,3 @@ def eval_str_to_join(str_obj):
         return True
     return
 
-def dict_to_dict(original_dict, keys_to_include=None, new_dict=None):
-
-    """
-    Create a new dictionary from the original dictionary with only the specified keys.
-
-    Parameters:
-    original_dict (dict): The dictionary to filter.
-    keys_to_include (list): The list of keys to include in the new dictionary.
-
-    Returns:
-    dict: A new dictionary containing only the specified keys.
-    """
-
-    if new_dict is None:
-        new_dict = {}
-
-    if not keys_to_include:
-        return new_dict
-
-    for key in keys_to_include:
-        if key not in original_dict:
-            continue
-        new_dict[key] = original_dict[key]
-
-    return new_dict
