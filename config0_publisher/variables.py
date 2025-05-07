@@ -3,12 +3,13 @@
 import os
 import json
 import traceback
-
 from ast import literal_eval
 from config0_publisher.serialization import b64_decode
 from config0_publisher.loggerly import Config0Logger
 
+
 def get_init_var_type(value):
+    """Determine the type of a variable value."""
     boolean = ["None", "none", "null", "NONE", "None",
                "false", "False", "FALSE", 
                "TRUE", "true", "True"]
@@ -30,7 +31,7 @@ def get_init_var_type(value):
 
     try:
         str_value = str(value).strip()
-    except:
+    except Exception:
         return False
 
     if str_value == "1":
@@ -45,7 +46,8 @@ def get_init_var_type(value):
     return "str"
 
 
-class EvaluateVar(object):
+class EvaluateVar:
+    """Class for evaluating and converting variable types."""
 
     def __init__(self):
         self.classname = 'EvaluateVar'
@@ -60,6 +62,7 @@ class EvaluateVar(object):
                          "True", True]
 
     def _set_init_var(self):
+        """Set initial variable values and types in results."""
         self.results["provided"]["value"] = self.init_value
         self.results["current"]["value"] = self.init_value
         init_type = get_init_var_type(self.init_value)
@@ -69,10 +72,12 @@ class EvaluateVar(object):
             self.results["current"]["type"] = init_type
 
     def _check_value_is_set(self):
+        """Verify init_value attribute is set."""
         if not hasattr(self, "init_value"):
             raise Exception("self.init_value not set")
 
     def is_float(self):
+        """Check if value is a float and update results if true."""
         self._check_value_is_set()
 
         if isinstance(self.results["check"]["value"], float):
@@ -82,7 +87,7 @@ class EvaluateVar(object):
             if "." not in str(self.results["check"]["value"]):
                 raise Exception("is probably an integer")
             updated_value = float(self.results["check"]["value"])
-        except:
+        except Exception:
             return False
 
         self.results["updated"] = True
@@ -92,6 +97,7 @@ class EvaluateVar(object):
         return True
     
     def is_integer(self):
+        """Check if value is an integer and update results if true."""
         self._check_value_is_set()
     
         if isinstance(self.results["check"]["value"], int):
@@ -117,7 +123,7 @@ class EvaluateVar(object):
 
         try:
             first_character = self.results["check"]["value"][0]
-        except:
+        except Exception:
             first_character = None
 
         if first_character in ["0", 0]:
@@ -125,7 +131,7 @@ class EvaluateVar(object):
 
         try:
             updated_value = int(self.results["check"]["value"])
-        except:
+        except Exception:
             return False
 
         self.results["current"]["value"] = updated_value
@@ -135,15 +141,17 @@ class EvaluateVar(object):
         return True
 
     def check_none(self, value):
+        """Check if value is equivalent to None."""
         try:
             _value = str(value)
-        except:
+        except Exception:
             return
 
         if _value in self.bool_none:
             return True
 
     def check_bool(self, value):
+        """Check if value is a boolean type and return its type and value."""
         if str(value) in self.bool_true:
             return "bool", True
 
@@ -156,6 +164,7 @@ class EvaluateVar(object):
         return None, None
 
     def is_bool(self):
+        """Check if value is a boolean and update results if true."""
         self._check_value_is_set()
 
         if self.results["check"]["value"] in self.bool_true:
@@ -177,6 +186,7 @@ class EvaluateVar(object):
             return True
 
     def is_str(self):
+        """Check if value is a string and update results if true."""
         self._check_value_is_set()
 
         if isinstance(self.results["check"]["value"], str):
@@ -187,10 +197,12 @@ class EvaluateVar(object):
         return
 
     def init_results(self, **kwargs):
-        self.results = {"current": {},
-                        "check": {},
-                        "provided": {}
-                        }
+        """Initialize results dictionary structure."""
+        self.results = {
+            "current": {},
+            "check": {},
+            "provided": {}
+        }
 
         if "value" not in kwargs:
             return
@@ -206,6 +218,7 @@ class EvaluateVar(object):
             self.results["default_type"] = kwargs["default_type"]
 
     def _update_objiter(self, **kwargs):
+        """Update iterable objects to contain string elements instead of unicode."""
         update_iterobj = kwargs.get("update_iterobj", True)
 
         if not update_iterobj:
@@ -213,7 +226,7 @@ class EvaluateVar(object):
 
         try:
             new_obj = literal_eval(json.dumps(self.init_value))
-        except:
+        except Exception:
             if os.environ.get("JIFFY_ENHANCED_LOG"):
                 self.logger.debug(traceback.format_exc())
             self.logger.debug(f"current init_value {self.init_value} type {type(self.init_value)}")
@@ -224,6 +237,7 @@ class EvaluateVar(object):
         return new_obj
 
     def get(self, **kwargs):
+        """Analyze and determine the type of a variable value."""
         # update iterobj to have string elements
         # rather than at times contain unicode
         self.init_results(**kwargs)
@@ -287,15 +301,18 @@ class EvaluateVar(object):
         return "__unknown_variable_type__"
 
     def set(self, key=None, **kwargs):
+        """Set variable type and value in results."""
         self.get(**kwargs)
 
         if os.environ.get("JIFFY_ENHANCED_LOG") and key:
-            self.logger.json(msg='\n\n## key {} ##\n'.format(key),
+            self.logger.json(msg=f'\n\n## key {key} ##\n',
                              data=self.results)
 
         return self.results
 
+
 class EnvVarsToClassVars:
+    """Class for converting environment variables to class variables."""
 
     def __init__(self, **kwargs):
         self.main_env_var_key = kwargs["main_env_var_key"]
@@ -336,29 +353,31 @@ class EnvVarsToClassVars:
             self.class_vars["app_dir"] = self.app_dir
 
     def init_env_vars(self):
+        """Initialize environment variables from base64 encoded environment variable."""
         try:
             self.main_vars = b64_decode(os.environ[self.main_env_var_key])
-        except:
+        except Exception:
             return
 
         self.env_vars = self.main_vars["env_vars"]
         self.env_vars_to_class_vars(self.env_vars)
 
     def env_vars_to_class_vars(self, env_vars):
+        """Convert environment variables to class variables."""
         for key, value in env_vars.items():
             self.class_vars[key.lower()] = value
 
     def add_env_var(self, _env_var):
+        """Add an environment variable to class variables."""
         if _env_var.upper() in os.environ:
-            #print(f"==> {_env_var} is os.environ")
             self.class_vars[_env_var.lower()] = os.environ[_env_var.upper()]  # we convert to lowercase
         elif self.os_env_prefix and ((self.os_env_prefix in _env_var) and (_env_var in self._default_values)):
             self.class_vars[_env_var] = self._default_values[_env_var]  # we don't modify os env prefixed vars
         elif _env_var in self._default_values:
-            #print(f"++> {_env_var} is default_values")
             self.class_vars[_env_var.lower()] = self._default_values[_env_var]  # we convert to lowercase
 
     def set_default_env_keys(self):
+        """Set default environment keys if they don't already exist."""
         if not self.default_keys:
             return
 
@@ -368,6 +387,7 @@ class EnvVarsToClassVars:
             self.add_env_var(_env_var)
 
     def set_default_values(self):
+        """Set default values for variables if they don't already exist."""
         if not self._default_values:
             return
 
@@ -377,6 +397,7 @@ class EnvVarsToClassVars:
             self.class_vars[_k.lower()] = _v
 
     def eval_must_exists(self):
+        """Verify that required variables exist."""
         if not self._must_exists:
             return
 
@@ -386,6 +407,7 @@ class EnvVarsToClassVars:
             raise Exception(f"class var {_k} must be set")
 
     def eval_non_nullable(self):
+        """Verify that non-nullable variables have values."""
         if not self._non_nullable:
             return
 
@@ -395,6 +417,7 @@ class EnvVarsToClassVars:
             raise Exception(f"class var {_k} cannot be null/None")
 
     def set(self, init=None):
+        """Set up all class variables and perform validations."""
         if init:
             self.init_env_vars()
 

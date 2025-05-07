@@ -12,70 +12,65 @@ from config0_publisher.loggerly import Config0Logger
 from config0_publisher.shellouts import mkdir
 from config0_publisher.shellouts import rm_rf
 
+
 class DateTimeJsonEncoder(json.JSONEncoder):
-
+    """JSON encoder that handles datetime objects by converting them to strings."""
+    
     def default(self, obj):
-
         if isinstance(obj, datetime.datetime):
             newobject = '-'.join([str(element) for element in list(obj.timetuple())][0:6])
             return newobject
-
         return json.JSONEncoder.default(self, obj)
 
+
 def print_json(results):
+    """Print JSON results in a pretty format."""
     print(json.dumps(results, sort_keys=True, cls=DateTimeJsonEncoder, indent=4))
 
+
 def nice_json(results):
+    """Return a pretty-formatted JSON string."""
     return json.dumps(results, sort_keys=True, cls=DateTimeJsonEncoder, indent=4)
 
-def convert_str2list(_object, split_char=None):
 
+def convert_str2list(_object, split_char=None):
+    """Convert a string to a list by splitting on the specified character."""
     if split_char:
         entries = [entry.strip() for entry in _object.split(split_char)]
     else:
         entries = [entry.strip() for entry in _object.split(" ")]
-
     return entries
 
+
 def convert_str2json(_object, exit_error=None):
-
-    if isinstance(_object, dict):
-        return _object
-
-    if isinstance(_object, list):
+    """Convert a string to a JSON object."""
+    if isinstance(_object, (dict, list)):
         return _object
 
     try:
-        _object = json.loads(_object)
-        status = True
-    except:
-        status = False
-
-    if not status:
+        return json.loads(_object)
+    except Exception:
         try:
-            _object = eval(_object)
-        except:
+            return eval(_object)
+        except Exception:
             if exit_error:
                 exit(13)
-
             return False
 
-    return _object
 
 def to_list(_object, split_char=None, exit_error=None):
+    """Convert an object to a list."""
+    return convert_str2list(_object, split_char=split_char)
 
-    return convert_str2list(_object,
-                            split_char=split_char,
-                            exit_error=exit_error)
 
 def to_json(_object, exit_error=None):
+    """Convert an object to JSON."""
+    return convert_str2json(_object, exit_error=exit_error)
 
-    return convert_str2json(_object,
-                            exit_error=exit_error)
 
 def get_hash(data):
     """
-    Determines a consistent hash of a data object across platforms and environments
+    Determine a consistent hash of a data object across platforms and environments.
     
     Args:
         data: The data to hash (can be str, bytes, or other Python objects)
@@ -83,189 +78,185 @@ def get_hash(data):
     Returns:
         String hash or False on error
     """
-    import hashlib
-    import json
-    import logging
-    
-    # Setup logger (assuming Config0Logger is a custom logger class)
-    logger = logging.getLogger("get_hash")  # Replace with your logger if needed
-    
-    # Convert data to bytes with consistent serialization
     try:
+        # Convert data to bytes with consistent serialization
         if isinstance(data, bytes):
-            # Already in bytes format
             data_bytes = data
         elif isinstance(data, str):
-            # Convert string to UTF-8 bytes
             data_bytes = data.encode('utf-8')
         elif isinstance(data, (dict, list, tuple, set)):
-            # Handle collections with consistent ordering
             if isinstance(data, dict):
-                # Sort dictionary keys for consistent serialization
                 data_bytes = json.dumps(data, sort_keys=True).encode('utf-8')
             elif isinstance(data, set):
-                # Sort set elements for consistent serialization
                 data_bytes = json.dumps(sorted(list(data))).encode('utf-8')
             else:
-                # Lists and tuples maintain their order in JSON
                 data_bytes = json.dumps(data).encode('utf-8')
         elif isinstance(data, (int, float, bool, type(None))):
-            # Handle primitive types
             data_bytes = str(data).encode('utf-8')
         else:
-            # For other object types, convert to string representation
-            # Note: This may not be consistent for all object types
-            logger.warning(f"Hashing non-primitive type {type(data)}. Results may be inconsistent.")
             data_bytes = str(data).encode('utf-8')
     except Exception as e:
-        logger.error(f"Failed to prepare data for hashing: {str(e)}")
         return False
     
-    # Calculate hash using hashlib only (no shell fallback)
+    # Calculate hash
     try:
         calculated_hash = hashlib.md5(data_bytes).hexdigest()
         return calculated_hash
-    except Exception as e:
-        logger.error(f"Could not calculate hash: {str(e)}")
+    except Exception:
         return False
 
-def id_generator2(size=6, lowercase=True):
 
+def id_generator2(size=6, lowercase=True):
+    """Generate an ID with option for lowercase."""
     if lowercase:
         return id_generator(size=size, chars=ascii_lowercase)
-
     return id_generator(size=size)
 
-# dup 4523452346
+
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    """Generate a random ID."""
+    return ''.join(random.choice(chars) for _ in range(size))
 
-    """generates id randomly"""
-
-    return ''.join(random.choice(chars) for x in range(size))
 
 def get_dict_frm_file(file_path):
-
     """
-    looks at the file_path in the format
-    key=value
-
-    and parses it and returns a dictionary
+    Parse a file with key=value format and return a dictionary.
     """
-
     sparams = {}
-
-    rfile = open(file_path, "r")
-
-    non_blank_lines = (line.strip() for line in rfile.readlines() if line.strip())
-
-    for bline in non_blank_lines:
-        key, value = bline.split("=")
-        sparams[key] = value
-
+    try:
+        with open(file_path, "r") as rfile:
+            non_blank_lines = (line.strip() for line in rfile.readlines() if line.strip())
+            for bline in non_blank_lines:
+                try:
+                    key, value = bline.split("=", 1)  # Split on first occurrence only
+                    sparams[key] = value
+                except ValueError:
+                    pass  # Skip lines that don't have the expected format
+    except (IOError, OSError) as e:
+        # Handle file reading errors
+        pass
+    
     return sparams
 
+
 class OnDiskTmpDir(object):
+    """Manage temporary directories on disk."""
 
     def __init__(self, **kwargs):
-
-        self.tmpdir = kwargs.get("tmpdir")
-
-        if not self.tmpdir:
-            self.tmpdir = "/tmp"
-
+        """Initialize the temporary directory manager."""
+        self.tmpdir = kwargs.get("tmpdir", "/tmp")
         self.subdir = kwargs.get("subdir", "ondisktmp")
-
+        
         if self.subdir:
             self.basedir = f"{self.tmpdir}/{self.subdir}"
         else:
             self.basedir = self.tmpdir
-
+        
         self.classname = "OnDiskTmpDir"
-
-        mkdir("/tmp/ondisktmpdir/log")
-
+        self.fqn_dir = None
+        self.dir = None
+        
+        try:
+            mkdir("/tmp/ondisktmpdir/log")
+        except Exception:
+            pass  # Don't fail if directory creation fails
+            
         self.logger = Config0Logger(self.classname)
-
+        
         if kwargs.get("init", True):
             self.set_dir(**kwargs)
 
     def set_dir(self, **kwargs):
-
+        """Set up and create the temporary directory."""
         createdir = kwargs.get("createdir", True)
-
-        self.fqn_dir, self.dir = generate_random_path(self.basedir,
-                                                     folder_depth=1,
-                                                     folder_length=16,
-                                                     createdir=createdir,
-                                                     string_only=True)
-
+        
+        try:
+            self.fqn_dir, self.dir = generate_random_path(
+                self.basedir,
+                folder_depth=1,
+                folder_length=16,
+                createdir=createdir,
+                string_only=True
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to create directory: {str(e)}")
+            
         return self.fqn_dir
 
-    # TODO remove kwargs
-    def get(self, **kwargs):
-
+    def get(self):
+        """Get the fully qualified directory path."""
         if not self.fqn_dir:
-            msg = "fqn_dir has not be set"
+            msg = "fqn_dir has not been set"
             raise Exception(msg)
-
+            
         self.logger.debug(f'Returning fqn_dir "{self.fqn_dir}"')
-
         return self.fqn_dir
 
-    # TODO remove kwargs
-    def delete(self, **kwargs):
-
+    def delete(self):
+        """Delete the temporary directory."""
+        if not self.fqn_dir:
+            self.logger.warning("No directory to delete")
+            return False
+            
         self.logger.debug(f'Deleting fqn_dir "{self.fqn_dir}"')
+        try:
+            return rm_rf(self.fqn_dir)
+        except Exception as e:
+            self.logger.error(f"Failed to delete directory: {str(e)}")
+            return False
 
-        return rm_rf(self.fqn_dir)
 
 def generate_random_path(basedir, folder_depth=1, folder_length=16, createdir=False, string_only=None):
-
     """
-    returns random folder path with specified parameters
+    Generate a random folder path with specified parameters.
     """
-
     cwd = basedir
-
-    for _ in range(folder_depth):
-
-        if string_only:
-            random_dir = id_generator(folder_length,
-                                      chars=string.ascii_lowercase)
-        else:
-            random_dir = id_generator(folder_length)
-
-        cwd = cwd + "/" + random_dir
-
-    if createdir:
-        mkdir(cwd)
-
+    random_dir = None
+    
+    try:
+        for _ in range(folder_depth):
+            if string_only:
+                random_dir = id_generator(folder_length, chars=string.ascii_lowercase)
+            else:
+                random_dir = id_generator(folder_length)
+                
+            cwd = f"{cwd}/{random_dir}"
+            
+        if createdir:
+            mkdir(cwd)
+    except Exception:
+        # Log error or handle gracefully
+        pass
+        
     return cwd, random_dir
 
-# dup 34523532452t33t
+
 def get_values_frm_json(json_file=None):
-
+    """Get values from a JSON file."""
     if not json_file:
-        return
-
+        return None
+        
     if not os.path.exists(json_file):
-        print(f"WARN: json {json_file} does not exists")
-        return
-
+        print(f"WARN: json {json_file} does not exist")
+        return None
+        
     try:
-        with open(json_file) as json_file:
-            values = json.load(json_file)
+        with open(json_file, 'r') as file:
+            values = json.load(file)
         print(f"Successfully retrieved values from {json_file}")
-    except:
-        values = None
-        print(f"ERROR: could not retrieved from json file {json_file}")
+        return values
+    except Exception:
+        print(f"ERROR: could not retrieve from json file {json_file}")
+        return None
 
-    return values
 
 def eval_str_to_join(str_obj):
-    for j in "\n".join(str_obj):
-        if len(j) in [0, 1]:
-            continue
-        return True
-    return
-
+    """Evaluate if string object needs to be joined."""
+    try:
+        for j in "\n".join(str_obj):
+            if len(j) in [0, 1]:
+                continue
+            return True
+    except Exception:
+        pass
+    return False
