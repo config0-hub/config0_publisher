@@ -2,42 +2,42 @@
 
 import json
 from ast import literal_eval
-from typing import Any, Dict, List, Optional, Tuple, Union
 
-def tf_iter_to_str(obj: Any) -> str:
-    """
-    Convert iterables (lists/dicts) or other objects to properly formatted JSON strings.
-    """
-    if isinstance(obj, (list, dict)):
+def tf_iter_to_str(obj):
+
+    if isinstance(obj,list) or isinstance(obj,dict):
         try:
             new_obj = json.dumps(literal_eval(json.dumps(obj)))
-        except (ValueError, SyntaxError, TypeError):
-            new_obj = json.dumps(obj).replace("'", '"')
+        except:
+            new_obj = json.dumps(obj).replace("'",'"')
+
         return new_obj
 
     try:
         new_obj = json.dumps(literal_eval(obj))
-    except (ValueError, SyntaxError, TypeError):
+    except:
         new_obj = obj
 
     return new_obj
 
+def get_tf_bool(value):
 
-def get_tf_bool(value: Any) -> Union[str, Any]:
-    """
-    Convert various boolean and None-like values to Terraform-compatible strings.
-    """
-    bool_none = [
-        "None", "none", "null", "NONE", "None", None
-    ]
+    bool_none = [ "None",
+                  "none",
+                  "null",
+                  "NONE",
+                  "None",
+                  None ]
 
-    bool_false = [
-        "false", "False", "FALSE", False
-    ]
+    bool_false = [ "false",
+                   "False",
+                   "FALSE",
+                   False ]
 
-    bool_true = [
-        "TRUE", "true", "True", True
-    ]
+    bool_true = [ "TRUE",
+                  "true",
+                  "True",
+                  True ]
 
     if value in bool_none:
         return 'null'
@@ -50,75 +50,74 @@ def get_tf_bool(value: Any) -> Union[str, Any]:
 
     return value
 
+def tf_map_list_fix_value(_value):
 
-def tf_map_list_fix_value(value: Any) -> Tuple[Any, Optional[bool]]:
-    """
-    Fix and validate list or map values for Terraform compatibility.
-    Returns the fixed value and a status flag.
-    """
-    # Check object type and convert to string
-    if isinstance(value, (dict, list)):
-        value = json.dumps(value)
+    # check object type
+    # convert to string
+    if isinstance(_value,dict):
+        _value = json.dumps(_value)
 
-    # Check if string object is a list or dict
-    map_list_prefixes = ["[", "{"]
-    map_list_suffixes = ["]", "}"]
-    status = None
+    if isinstance(_value,list):
+        _value = json.dumps(_value)
+
+    # check if string object is a list or dict
+    _map_list_prefixes = ["[","{"]
+    _map_list_suffixes = ["]","}"]
+
+    _status = None
 
     try:
-        first_char = value[0]
-    except (IndexError, TypeError):
-        msg = f"Cannot determine first character for value {value} of type {type(value)}"
-        raise ValueError(msg)
+        _first_char = _value[0]
+    except:
+        _first_char = None
 
-    if not first_char:
-        msg = f"Empty string or None value passed: {value} of type {type(value)}"
-        raise ValueError(msg)
+    if not _first_char:
+        msg = f"cannot determine first character for _value {_value} type {type(_value)}"
 
-    if first_char not in map_list_prefixes:
-        return value, status
+        raise Exception(msg)
 
-    # Map or list detected
-    status = True
-    value = value.replace("'", '"')
+    if _value[0] not in _map_list_prefixes:
+        return _value,_status
 
-    if value[0] not in map_list_prefixes and value[0] in ["'", '"']:
-        msg = f"The first character should be one of {map_list_prefixes}"
-        raise ValueError(msg)
+    # map or list?
+    _status = True
+    _value = _value.replace("'",'"')
 
-    if value[-1] not in map_list_suffixes and value[-1] in ["'", '"']:
-        msg = f"The last character should be one of {map_list_suffixes}"
-        raise ValueError(msg)
+    if _value[0] not in _map_list_prefixes and _value[0] in ["'",'"']:
+        msg = f"the first character should be {_map_list_prefixes}"
+        raise Exception(msg)
 
-    return value, status
+    if _value[-1] not in _map_list_suffixes and _value[-1] in ["'",'"']:
+        msg = f"the last character should be {_map_list_suffixes}"
+        raise Exception(msg)
 
+    return _value,_status
 
-def tf_number_value(value: Any) -> Tuple[Union[int, float, Any], Optional[str]]:
-    """
-    Convert and identify numeric values for Terraform.
-    Returns the converted value and its type ('int', 'float', or None).
-    """
+def tf_number_value(value):
+
     try:
         value0 = value[0]
-    except (IndexError, TypeError):
+    except:
         value0 = None
 
-    if value0 and value0 in ["0", 0]:
-        return 0, False
+    if value0 and value0 in [ "0", 0 ]:
+        return 0,False
 
     if "." in str(value):
+
         try:
             eval_value = float(value)
             value_type = "float"
-        except (ValueError, TypeError):
+        except:
             eval_value = value
             value_type = None
     else:
+
         try:
             eval_value = int(value)
             value_type = "int"
-        except (ValueError, TypeError):
+        except:
             eval_value = value
             value_type = None
 
-    return eval_value, value_type
+    return eval_value,value_type

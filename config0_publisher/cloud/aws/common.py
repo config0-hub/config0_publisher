@@ -2,13 +2,26 @@
 
 """
 Base class for AWS connectivity and resource management.
-Provides core AWS functionality including session management and resource access.
+Provides core AWS functionality including:
+
+Attributes:
+    classname (str): Name of the AWS connection class
+    session (boto3.Session): AWS session object
+    s3 (boto3.resource): AWS S3 resource
+    lambda_client (boto3.client): AWS Lambda client
+    build_timeout (int): Maximum build time in seconds
+    build_expire_at (int): Build expiration timestamp
+
+Environment Variables:
+    AWS_DEFAULT_REGION: AWS region for operations
+    AWS_ACCESS_KEY_ID: AWS access key
+    AWS_SECRET_ACCESS_KEY: AWS secret key
+    AWS_SESSION_TOKEN: AWS session token (optional)
 """
 
 import traceback
 import logging
 import botocore.session
-import botocore.config
 import os
 import boto3
 from time import time
@@ -19,14 +32,12 @@ from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import id_generator2
 from config0_publisher.shellouts import execute3
 
-
 class AWSCommonConn(SetClassVarsHelper):
-    """Base class for AWS connectivity and resource management."""
 
     def __init__(self, **kwargs):
         """
         Initialize AWS connection and resources.
-        
+
         Args:
             kwargs: Keyword arguments including:
                 results (dict): Existing results to continue from
@@ -35,10 +46,11 @@ class AWSCommonConn(SetClassVarsHelper):
                 method (str): Execution method (create/destroy)
                 set_env_vars (dict): Environment variables to set
         """
+
         self.classname = "AWSCommonConn"
         self.logger = Config0Logger(self.classname)
 
-        # Configure logging levels
+        # Set the logging level for Boto3 to a higher level than DEBUG
         logging.getLogger().setLevel(logging.WARNING)
         logging.getLogger('boto3').setLevel(logging.WARNING)
         logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -47,20 +59,20 @@ class AWSCommonConn(SetClassVarsHelper):
         logging.getLogger('s3transfer.tasks').setLevel(logging.WARNING)
         logging.getLogger('s3transfer.futures').setLevel(logging.WARNING)
 
-        # Initialize attributes
         self.share_dir = None
         self.run_share_dir = None
         self.stateful_id = None
         self.remote_stateful_bucket = None
         self.output = None
         self.cwd = os.getcwd()
+
         self.results = kwargs.get("results")
         self.zipfile = None
 
-        self.s3_output_key = os.environ.get("EXEC_INST_ID")
+        self.s3_output_key = os.environ.get("EXEC_INST_ID", None)
         if not self.s3_output_key:
-            self.s3_output_key = kwargs.get("s3_output_key", 
-                                           f'{id_generator2()}/{str(int(time()))}')
+            self.s3_output_key = kwargs.get("s3_output_key",
+                                            f'{id_generator2()}/{str(int(time()))}')
 
         if not self.results:
             self.results = {
@@ -76,44 +88,41 @@ class AWSCommonConn(SetClassVarsHelper):
         else:
             self.set_class_vars_frm_results()
 
-        try:
-            self.s3 = boto3.resource('s3')
-            self.session = boto3.Session(region_name=self.aws_region)
+        self.s3 = boto3.resource('s3')
+        self.session = boto3.Session(region_name=self.aws_region)
 
-            cfg = botocore.config.Config(retries={'max_attempts': 0},
-                                        read_timeout=900,
-                                        connect_timeout=900,
-                                        region_name=self.aws_region)
+        cfg = botocore.config.Config(retries={'max_attempts': 0},
+                                     read_timeout=900,
+                                     connect_timeout=900,
+                                     region_name=self.aws_region)
 
-            self.lambda_client = boto3.client('lambda',
-                                             config=cfg,
-                                             region_name=self.aws_region)
-        except Exception as e:
-            self.logger.error(f"Failed to initialize AWS resources: {str(e)}")
-            raise
+        self.lambda_client = boto3.client('lambda',
+                                          config=cfg,
+                                          region_name=self.aws_region)
 
     @staticmethod
     def new_phase(name):
-        """Create a new phase structure with the given name."""
-        return {
-            "name": name,
-            "status": None,
-            "executed": [],
-            "output": None,
-            "logs": []
-        }
+
+        return {"name": name,
+                "status": None,
+                "executed": [],
+                "output": None,
+                "logs": []
+                }
 
     def set_class_vars_frm_results(self):
-        """Set class variables from stored results."""
+
         for k, v in self.results["inputargs"].items():
             if v is None:
-                exec(f'self.{k}=None')
+                exp = f'self.{k}=None'
             else:
-                exec(f'self.{k}="{v}"')
+                exp = f'self.{k}="{v}"'
+
+            exec(exp)
 
     @staticmethod
     def get_default_env_vars():
-        """Get the default environment variables."""
+
         return {
             "tmp_bucket": True,
             "log_bucket": True,
@@ -125,33 +134,32 @@ class AWSCommonConn(SetClassVarsHelper):
         }
 
     def _set_buildparams(self, **kwargs):
-        """Set build parameters from provided arguments."""
+
         self.method = kwargs.get("method")
         self.build_env_vars = kwargs.get("build_env_vars")
 
         try:
             self.build_timeout = int(kwargs.get("build_timeout", 600))
-        except (ValueError, TypeError):
+        except:
             self.build_timeout = 600
 
-        self.build_expire_at = int(time()) + self.build_timeout
+        self.build_expire_at = int(time()) + int(self.build_timeout)
 
         if "set_env_vars" in kwargs:
             set_env_vars = kwargs.get("set_env_vars")
         else:
             set_env_vars = self.get_default_env_vars()
 
-        SetClassVarsHelper.__init__(
-            self,
-            set_env_vars=set_env_vars,
-            kwargs=kwargs,
-            env_vars=self.build_env_vars,
-            default_values=kwargs.get("default_values"),
-            set_default_null=True
-        )
+        SetClassVarsHelper.__init__(self,
+                                    set_env_vars=set_env_vars,
+                                    kwargs=kwargs,
+                                    env_vars=self.build_env_vars,
+                                    default_values=kwargs.get("default_values"),
+                                    set_default_null=True)
 
         self.set_class_vars_srcs()
 
+        # if not self.upload_bucket:
         if self.remote_stateful_bucket:
             self.upload_bucket = self.remote_stateful_bucket
         else:
@@ -164,15 +172,18 @@ class AWSCommonConn(SetClassVarsHelper):
             return
 
         if not self.run_share_dir:
-            self.run_share_dir = os.path.join(self.share_dir, self.stateful_id)
+            self.run_share_dir = os.path.join(self.share_dir,
+                                              self.stateful_id)
 
-        self.zipfile = os.path.join("/tmp", f'{self.stateful_id}.zip')
+        self.zipfile = os.path.join("/tmp",
+                                    f'{self.stateful_id}.zip')
 
         # TODO have option to install executors in different region
-        # Hard-wired to us-east-1 since executors should only be in this region for now
+        # we hard wire to us-east-1 to since the executors should only be in this region for now
+        # this can change in the future
         self.aws_region = "us-east-1"
 
-        # Record variables
+        # record these variables
         self.results["inputargs"].update(self._vars_set)
         self.results["inputargs"]["method"] = self.method
         self.results["inputargs"]["aws_region"] = self.aws_region
@@ -185,72 +196,64 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results["inputargs"]["zipfile"] = self.zipfile
 
     def _reset_share_dir(self):
-        """Reset (clean and recreate) the share directory."""
-        try:
-            if not os.path.exists(self.run_share_dir):
-                return
+        if not os.path.exists(self.run_share_dir):
+            return
 
-            os.chdir(self.cwd)
-            rm_rf(self.run_share_dir)
+        os.chdir(self.cwd)
+        rm_rf(self.run_share_dir)
 
-            os.makedirs(f"{self.run_share_dir}/{self.app_dir}", exist_ok=True)
-        except Exception as e:
-            self.logger.error(f"Failed to reset share directory: {str(e)}")
-            raise
+        cmd = f"mkdir -p {self.run_share_dir}/{self.app_dir}"
+        os.system(cmd)
 
     def _rm_zipfile(self):
-        """Remove the zipfile if it exists."""
-        try:
-            if not self.zipfile or not os.path.exists(self.zipfile):
-                return
 
-            os.chdir(self.cwd)
-            rm_rf(self.zipfile)
-        except Exception as e:
-            self.logger.warn(f"Failed to remove zipfile: {str(e)}")
+        if not self.zipfile:
+            return
+
+        if not os.path.exists(self.zipfile):
+            return
+
+        os.chdir(self.cwd)
+        rm_rf(self.zipfile)
 
     def download_log_from_s3(self, bucket_name=None):
-        """Download log file from S3 bucket."""
+
         if not bucket_name:
             bucket_name = self.tmp_bucket
 
         local_file = f'/tmp/{id_generator2()}'
 
-        try:
-            self.s3.Bucket(bucket_name).download_file(self.s3_output_key, local_file)
+        self.s3.Bucket(bucket_name).download_file(self.s3_output_key,
+                                                  local_file)
 
-            with open(local_file, 'r', encoding='utf-8') as file:
-                file_content = file.read()
+        with open(local_file, 'r', encoding='utf-8') as file:
+            file_content = file.read()
 
-            rm_rf(local_file)
-            return file_content
-        except Exception as e:
-            self.logger.error(f"Failed to download log from S3: {str(e)}")
-            if os.path.exists(local_file):
-                rm_rf(local_file)
-            raise
+        rm_rf(local_file)
+
+        return file_content
 
     def _download_s3_stateful(self):
-        """Download stateful files from S3."""
+
+        # ref 542352
         bucket_keys = [
             self.stateful_id,
             f"{self.stateful_id}/state/src.{self.stateful_id}.zip"
         ]
 
         failed_message = None
-        status = False
 
         for bucket_key in bucket_keys:
-            self.logger.debug(f"Attempting to get stateful s3 from {self.upload_bucket}/{bucket_key}")
 
+            self.logger.debug(f"attempting to get stateful s3 from {self.upload_bucket}/{bucket_key}")
+
+            # ref 4353253452354
             try:
-                self.s3.Bucket(self.upload_bucket).download_file(
-                    f"{self.stateful_id}/{bucket_key}",
-                    self.zipfile
-                )
+                self.s3.Bucket(self.upload_bucket).download_file(f"{self.stateful_id}/{bucket_key}",
+                                                                 self.zipfile)
                 status = True
                 break
-            except Exception:
+            except:
                 failed_message = traceback.format_exc()
                 status = False
 
@@ -258,12 +261,12 @@ class AWSCommonConn(SetClassVarsHelper):
             self.logger.warn(failed_message)
 
         if not status:
-            self.logger.debug_highlight(f"Could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
+            self.logger.debug_highlight(f"could not get stateful s3 from {self.upload_bucket}/{bucket_key}")
 
         return status
 
     def s3_stateful_to_share_dir(self):
-        """Transfer S3 stateful content to local share directory."""
+
         if not self.stateful_id:
             return
 
@@ -274,72 +277,75 @@ class AWSCommonConn(SetClassVarsHelper):
 
         self._reset_share_dir()
 
-        try:
-            cmd = f"unzip -o {self.zipfile} -d {self.run_share_dir}"
-            self.execute(cmd, output_to_json=False, exit_error=True)
-        except Exception as e:
-            self.logger.error(f"Failed to extract stateful archive: {str(e)}")
-            raise
+        # ref 452345235
+        cmd = f"unzip -o {self.zipfile} -d {self.run_share_dir}"
+
+        self.execute(cmd,
+                     output_to_json=False,
+                     exit_error=True)
 
     def upload_to_s3_stateful(self):
-        """Upload local content to S3 as stateful archive."""
+
         if not self.stateful_id:
             return
 
         self._rm_zipfile()
 
+        # ref 452345235
+        # we keep the app_dir
+        cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile} ."
+
+        self.execute(cmd,
+                     output_to_json=False,
+                     exit_error=True)
+
+        # ref 542352
+        s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}.zip'
+
+        if not s3_dst.endswith(".zip"):
+            s3_dst = f'{s3_dst}.zip'
+
         try:
-            cmd = f"cd {self.run_share_dir} && zip -r {self.zipfile} ."
-            self.execute(cmd, output_to_json=False, exit_error=True)
-
-            s3_dst = f'{self.stateful_id}/state/src.{self.stateful_id}.zip'
-            if not s3_dst.endswith(".zip"):
-                s3_dst = f'{s3_dst}.zip'
-
-            self.s3.Bucket(self.upload_bucket).upload_file(self.zipfile, s3_dst)
+            self.s3.Bucket(self.upload_bucket).upload_file(f"{self.zipfile}",
+                                                           s3_dst)
             status = True
-            
-            _log = f"Zip file uploaded to {s3_dst}"
-            self.logger.debug_highlight(_log)
-            if hasattr(self, 'phase_result'):
-                self.phase_result["logs"].append(_log)
-        except Exception as e:
+        except:
             status = False
-            _log = f"Zip file failed to upload to {s3_dst}: {str(e)}"
+
+        if os.environ.get("DEBUG_STATEFUL"):
+            self.logger.debug(f"zipfile file {self.zipfile}")
+        else:
+            self._rm_zipfile()
+
+        if status is False:
+            _log = f"zip file failed to upload to {s3_dst}"
             self.logger.error(_log)
             raise Exception(_log)
-        finally:
-            if os.environ.get("DEBUG_STATEFUL"):
-                self.logger.debug(f"Zipfile file {self.zipfile}")
-            else:
-                self._rm_zipfile()
+        else:
+            _log = f"zip file uploaded to {s3_dst}"
+            self.logger.debug_highlight(_log)
+            self.phase_result["logs"].append(_log)
 
         return status
 
     def clean_output(self):
-        """Clean and decode output data."""
+
         clean_lines = []
 
-        try:
-            if isinstance(self.output, list):
-                for line in self.output:
-                    try:
-                        clean_lines.append(line.decode("utf-8"))
-                    except (UnicodeDecodeError, AttributeError):
-                        clean_lines.append(line)
-            else:
+        if isinstance(self.output, list):
+            for line in self.output:
                 try:
-                    clean_lines.append(self.output.decode("utf-8"))
-                except (UnicodeDecodeError, AttributeError):
-                    clean_lines.append(self.output)
+                    clean_lines.append(line.decode("utf-8"))
+                except:
+                    clean_lines.append(line)
+        else:
+            try:
+                clean_lines.append((self.output.decode("utf-8")))
+            except:
+                clean_lines.append(self.output)
 
-            self.output = clean_lines
-        except Exception as e:
-            self.logger.warn(f"Error cleaning output: {str(e)}")
-            # Keep original output if cleaning fails
-            pass
+        self.output = clean_lines
 
     @staticmethod
     def execute(cmd, **kwargs):
-        """Execute a shell command with the provided arguments."""
         return execute3(cmd, **kwargs)

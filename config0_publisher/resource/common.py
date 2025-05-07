@@ -4,67 +4,69 @@ import os
 from time import time
 from config0_publisher.loggerly import Config0Logger
 
-
 class TFAppHelper:
-    """Helper class for Terraform application management"""
 
-    def __init__(self, **kwargs):
-        """Initialize the TFAppHelper with configuration parameters"""
+    def __init__(self,**kwargs):
+
         self.classname = "TFAppHelper"
-        self.logger = Config0Logger(self.classname, logcategory="cloudprovider")
 
-        # Required parameters
+        self.logger = Config0Logger(self.classname,
+                                    logcategory="cloudprovider")
+
+        # required
         self.binary = kwargs['binary']
         self.version = kwargs['version']
 
-        # Optional parameters used except on terraform binary
+        # used except on terraform binary
         self.bucket = kwargs.get("bucket")
         self.installer_format = kwargs.get("installer_format")
         self.src_remote_path = kwargs.get("src_remote_path")
         self.start_time = str(time())
 
-        # Runtime environment setting
-        self.runtime_env = kwargs.get("runtime_env", 'codebuild')  # codebuild or lambda
+        # advisable
+        self.runtime_env = kwargs.get("runtime_env",'codebuild')  # codebuild or lambda
 
-        if not hasattr(self, "app_name"):
-            self.app_name = kwargs.get("app_name", self.binary)
+        if not hasattr(self,"app_name"):
+            self.app_name = kwargs.get("app_name",self.binary)
 
-        # Directory structure configuration
+        # pretty fixed
         self.stateful_dir = '$TMPDIR/config0/$STATEFUL_ID'
-        self.app_dir = kwargs.get("app_dir", "var/tmp/terraform")
-        self.arch = kwargs.get("arch", 'linux_amd64')
 
-        # Set binary directory based on runtime environment
-        self.bin_dir = "/tmp/config0/bin" if self.runtime_env == "lambda" else "/usr/local/bin"
+        self.app_dir = kwargs.get("app_dir","var/tmp/terraform")
+        self.arch = kwargs.get("arch",'linux_amd64')
 
-        try:
-            os.makedirs(self.bin_dir, exist_ok=True)
-        except OSError as e:
-            self.logger.error(f"Failed to create binary directory {self.bin_dir}: {str(e)}")
+        if self.runtime_env == "lambda":
+            self.bin_dir = f"/tmp/config0/bin"
+        else:
+            self.bin_dir = f"/usr/local/bin"
 
-        # Set execution and file paths
-        self.exec_dir = f'{self.stateful_dir}/run/{self.app_dir}'
+        os.makedirs(self.bin_dir, exist_ok=True)
+
+        self.exec_dir = f'{self.stateful_dir}/run/{self.app_dir}'  # notice the execution directory is in "run" subdir
+
         self.base_cmd = f'cd {self.exec_dir} && {self.bin_dir}/{self.binary} '
+
         self.base_file_path = f'{self.binary}_{self.version}_{self.arch}'
         self.bucket_path = f"s3://{self.bucket}/downloads/{self.app_name}/{self.base_file_path}"
         self.dl_file_path = f'$TMPDIR/{self.base_file_path}'
+
         self.tmp_base_output_file = f'/tmp/{self.app_name}.$STATEFUL_ID'
         self.base_output_file = f'{self.stateful_dir}/output/{self.app_name}.$STATEFUL_ID'
 
     def _get_initial_preinstall_cmds(self):
-        """Get initial commands needed before installation"""
+
         if self.runtime_env == "codebuild":
             cmds = [
                 {"apt-get update": 'which zip || apt-get update'},
                 {"install zip": 'which zip || apt-get install -y unzip zip'}
             ]
         else:
-            cmds = [{"download f\"{self.binary}:{self.version}\"": f'echo "downloading {self.base_file_path}"'}]
+            cmds = [ { f'download "{self.binary}:{self.version}"': f'echo "downloading {self.base_file_path}"' }]
 
         return cmds
 
     def reset_dirs(self):
-        """Reset and prepare directories for execution"""
+
         cmds = [
             {"reset_dirs - clean local config0 dir": f'rm -rf $TMPDIR/config0 > /dev/null 2>&1 || echo "config0 already removed"'},
             {"reset_dirs - mkdir local run": f'mkdir -p {self.stateful_dir}/run'},
@@ -74,10 +76,11 @@ class TFAppHelper:
         ]
 
         cmds.extend(self._get_initial_preinstall_cmds())
+
         return cmds
 
     def download_cmds(self):
-        """Generate commands to download and prepare the binary"""
+
         if self.installer_format == "zip":
             _suffix = "zip"
         elif self.installer_format == "targz":
@@ -96,11 +99,10 @@ class TFAppHelper:
             bucket_path = f'{self.bucket_path}.{_suffix}'
             src_remote_path = f'{self.src_remote_path}.{_suffix}'
 
-        # Prepare installation commands
         _bucket_install_1 = f'aws s3 cp {bucket_path} {dl_file_path} --quiet'
         _bucket_install_2 = f'echo "# GOT {base_file_path} from s3/cache"'
         _src_install_1 = f'echo "# Getting {base_file_path} from source"'
-        _src_install_2 = f'curl -L -s {src_remote_path} -o {dl_file_path}'
+        _src_install_2= f'curl -L -s {src_remote_path} -o {dl_file_path}'
         _src_install_3 = f'aws s3 cp {dl_file_path} {bucket_path} --quiet'
 
         _bucket_install = f'{_bucket_install_1} && {_bucket_install_2}'
@@ -109,59 +111,49 @@ class TFAppHelper:
         install_cmd = f'({_bucket_install}) || ({_src_install})'
 
         cmds = [
-            {f'install cmd for {self.binary}': install_cmd},
+            {f'install cmd for {self.binary}': install_cmd },
             {'mkdir bin dir': f'mkdir -p {self.bin_dir} || echo "trouble making self.bin_dir {self.bin_dir}"'}
         ]
 
-        # Handle extraction based on installer format
         if self.installer_format == "zip":
-            cmds.append({f'unzip downloaded "{self.binary}:{self.version}"': 
-                        f'(cd $TMPDIR && unzip {base_file_path} > /dev/null) || exit 0'})
+            cmds.append({ f'unzip downloaded "{self.binary}:{self.version}"': f'(cd $TMPDIR && unzip {base_file_path} > /dev/null) || exit 0'})
         elif self.installer_format == "targz":
-            cmds.append({f'untar downloaded "{self.binary}:{self.version}"': 
-                        f'(cd $TMPDIR && tar xfz {base_file_path} > /dev/null) || exit 0'})
+            cmds.append({ f'untar downloaded "{self.binary}:{self.version}"': f'(cd $TMPDIR && tar xfz {base_file_path} > /dev/null) || exit 0'})
 
         return cmds
 
-    def local_output_to_s3(self, srcfile=None, suffix=None, last_apply=None):
-        """Copy local output files to S3 bucket"""
-        try:
-            if not srcfile and suffix:
-                srcfile = f'{self.tmp_base_output_file}.{suffix}'
+    def local_output_to_s3(self,srcfile=None,suffix=None,last_apply=None):
 
-            if not srcfile:
-                raise ValueError("srcfile needs to be determined to upload to s3")
+        if not srcfile and suffix:
+            srcfile = f'{self.tmp_base_output_file}.{suffix}'
 
-            _filename = os.path.basename(srcfile)
-            base_cmd = f'aws s3 cp {srcfile} s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID'
+        if not srcfile:
+            raise Exception("srcfile needs to be determined to upload to s3")
 
-            if last_apply:
-                cmd = f'{base_cmd}/applied/{_filename} || echo "trouble uploading output file"'
-            else:
-                cmd = f'{base_cmd}/cur/{_filename} || echo "trouble uploading output file"'
+        _filename = os.path.basename(srcfile)
 
-            return [{f'last_output_to_s3 "{_filename}"': cmd}]
-        except Exception as e:
-            self.logger.error(f"Error in local_output_to_s3: {str(e)}")
-            return [{f'last_output_to_s3 error': f'echo "Error: {str(e)}"'}]
+        base_cmd = f'aws s3 cp {srcfile} s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID'
 
-    def s3_file_to_local(self, dstfile=None, suffix=None, last_apply=None):
-        """Copy S3 files to local filesystem"""
-        try:
-            if not dstfile and suffix:
-                dstfile = f'{self.base_output_file}.{suffix}'
+        if last_apply:
+            cmd = f'{base_cmd}/applied/{_filename} || echo "trouble uploading output file"'
+        else:
+            cmd = f'{base_cmd}/cur/{_filename} || echo "trouble uploading output file"'
 
-            if not dstfile:
-                raise ValueError("dstfile needs to be determined to upload to s3")
+        return [{f'last_output_to_s3 "{_filename}"':cmd}]
 
-            _filename = os.path.basename(dstfile)
+    def s3_file_to_local(self,dstfile=None,suffix=None,last_apply=None):
 
-            if last_apply:
-                cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/applied/{_filename} {dstfile}'
-            else:
-                cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/cur/{_filename} {dstfile}'
+        if not dstfile and suffix:
+            dstfile = f'{self.base_output_file}.{suffix}'
 
-            return [{f's3_file_to_local "{_filename}"': cmd}]
-        except Exception as e:
-            self.logger.error(f"Error in s3_file_to_local: {str(e)}")
-            return [{f's3_file_to_local error': f'echo "Error: {str(e)}"'}]
+        if not dstfile:
+            raise Exception("dstfile needs to be determined to upload to s3")
+
+        _filename = os.path.basename(dstfile)
+
+        if last_apply:
+            cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/applied/{_filename} {dstfile}'
+        else:
+            cmd = f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/cur/{_filename} {dstfile}'
+
+        return [ {f's3_file_to_local "{_filename}"':cmd }]
