@@ -132,6 +132,12 @@ def get_special_tags(var_name):
     return special_vars.get(var_name, "tfvar,db")
 
 def generate_stack(execgroup, resource_type, resource_name, provider, timeout, tf_runtime, variables):
+
+    if not resource_name:
+        resource_name = "FIX ME"
+    else:
+        resource_name = f'"{resource_name}"'
+
     """Generate the Config0 stack code from parameters and variables."""
     stack_code = """from config0_publisher.terraform import TFConstructor
 
@@ -141,42 +147,44 @@ def run(stackargs):
     # instantiate authoring stack
     stack = newStack(stackargs)
 
-    # Add default variables
 """
     
-    # Add parse statements for each variable
-    for var_name, var_info in variables.items():
-        var_type = type_to_python_type(var_info.get("type", "string"))
-        default_value = var_info.get("default")
-        tags = get_special_tags(var_name)
-        
-        # Determine if required or optional
-        if default_value is None:
-            stack_code += f"""    stack.parse.add_required(key="{var_name}",
-                             tags="{tags}",
-                             types="{var_type}")
-
+    if variables:
+        stack_code += f"""    # Add default variables
 """
-        else:
-            # Format default value according to its type
-            if var_type == "str" and not isinstance(default_value, (list, dict)):
-                if default_value is None or default_value == "":
-                    default_str = '"null"'  # Use '"null"' for None or empty string values
-                else:
-                    default_str = f'"{default_value}"'
+        # Add parse statements for each variable
+        for var_name, var_info in variables.items():
+            var_type = type_to_python_type(var_info.get("type", "string"))
+            default_value = var_info.get("default")
+            tags = get_special_tags(var_name)
+            
+            # Determine if required or optional
+            if default_value is None:
+                stack_code += f"""    stack.parse.add_required(key="{var_name}",
+                                 tags="{tags}",
+                                 types="{var_type}")
+    
+"""
             else:
-                if default_value is None or default_value == "":
-                    default_str = '"null"'
+                # Format default value according to its type
+                if var_type == "str" and not isinstance(default_value, (list, dict)):
+                    if default_value is None or default_value == "":
+                        default_str = '"null"'  # Use '"null"' for None or empty string values
+                    else:
+                        default_str = f'"{default_value}"'
                 else:
-                    default_str = str(default_value)
-                
-            stack_code += f"""    stack.parse.add_optional(key="{var_name}",
-                             default={default_str},
-                             tags="{tags}",
-                             types="{var_type}")
-
-"""
+                    if default_value is None or default_value == "":
+                        default_str = '"null"'
+                    else:
+                        default_str = str(default_value)
+                    
+                stack_code += f"""    stack.parse.add_optional(key="{var_name}",
+                                 default={default_str},
+                                 tags="{tags}",
+                                 types="{var_type}")
     
+"""
+        
     # Add execgroup and substack
     stack_code += f"""    # Add execgroup
     stack.add_execgroup("{execgroup}",
@@ -197,7 +205,7 @@ def run(stackargs):
                        execgroup_name=stack.tf_execgroup.name,
                        provider="{provider}",
                        tf_runtime="{tf_runtime}",
-                       resource_name="{resource_name}",
+                       resource_name={resource_name},
                        resource_type="{resource_type}")
 
     # finalize the tf_executor
@@ -214,31 +222,34 @@ def generate_readme(stack_name, description, resource_type, variables):
     readme_content = f"""# {stack_name}
 
 {description}
+"""
 
+    if variables:
+        readme_content += """
 ## Stack Variables
 
 | Variable | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 """
-    
-    # Add variable rows
-    for var_name, var_info in variables.items():
-        var_type = var_info.get("type", "string")
-        default_value = var_info.get("default")
-        var_description = var_info.get("description", "")
-        
-        # Format default for display
-        if default_value is None:
-            default_display = "Required"
-            required = "Yes"
-        else:
-            if isinstance(default_value, str):
-                default_display = f'"{default_value}"' if default_value else '""'
-            else:
-                default_display = str(default_value) if default_value is not None else "null"
-            required = "No"
+
+        # Add variable rows
+        for var_name, var_info in variables.items():
+            var_type = var_info.get("type", "string")
+            default_value = var_info.get("default")
+            var_description = var_info.get("description", "")
             
-        readme_content += f"| {var_name} | {var_type} | {required} | {default_display} | {var_description} |\n"
+            # Format default for display
+            if default_value is None:
+                default_display = "Required"
+                required = "Yes"
+            else:
+                if isinstance(default_value, str):
+                    default_display = f'"{default_value}"' if default_value else '""'
+                else:
+                    default_display = str(default_value) if default_value is not None else "null"
+                required = "No"
+                
+            readme_content += f"| {var_name} | {var_type} | {required} | {default_display} | {var_description} |\n"
     
     return readme_content
 
@@ -308,9 +319,9 @@ def main():
         
         # Extract values from config
         tf_variables_file = config.get('tf_variables_file')
-        if not tf_variables_file or not os.path.exists(tf_variables_file):
-            print(f"Error: Terraform variables file {tf_variables_file} does not exist or is not specified in config.")
-            sys.exit(1)
+        #if not tf_variables_file or not os.path.exists(tf_variables_file):
+        #    print(f"Error: Terraform variables file {tf_variables_file} does not exist or is not specified in config.")
+        #    sys.exit(1)
             
         execgroup = config.get('execgroup')
         resource_type = config.get('resource_type')
@@ -328,15 +339,15 @@ def main():
         stack_tags = config.get('stack_tags', 'config0,evaluate')
         
         # Validate required config fields
-        if not all([execgroup, resource_type, resource_name, stack_name]):
-            print("Error: Required configuration fields missing. Please ensure execgroup, resource_type, resource_name, and stack_name are specified.")
+        if not all([execgroup, resource_type, stack_name]):
+            print("Error: Required configuration fields missing. Please ensure execgroup, resource_type, and stack_name are specified.")
             sys.exit(1)
     else:
         # Prompt for required parameters
         tf_variables_file = prompt_with_default("Enter path to Terraform variables file")
-        if not os.path.exists(tf_variables_file):
-            print(f"Error: File {tf_variables_file} does not exist.")
-            sys.exit(1)
+        #if not os.path.exists(tf_variables_file):
+        #    print(f"Error: File {tf_variables_file} does not exist.")
+        #    sys.exit(1)
             
         execgroup = prompt_with_default("Enter execution group (e.g. config0-publish:::aws_networking::vpc_simple)")
         resource_type = prompt_with_default("Enter resource type (e.g. vpc, ssh_key_pair)")
@@ -354,12 +365,15 @@ def main():
         stack_tags = prompt_with_default("Enter stack tags (comma-separated)", "config0,evaluate")
     
     # Read and parse Terraform variables
-    parsed_content = read_tf_variables(tf_variables_file)
-    variables = extract_variables(parsed_content)
+    if tf_variables_file:
+        parsed_content = read_tf_variables(tf_variables_file)
+        variables = extract_variables(parsed_content)
+    else:
+        variables = None
     
-    if not variables:
-        print("No variables were extracted. Check the format of your Terraform variables file.")
-        sys.exit(1)
+    #if not variables:
+    #    print("No variables were extracted. Check the format of your Terraform variables file.")
+    #    sys.exit(1)
     
     # Generate the stack
     stack_code = generate_stack(execgroup, resource_type, resource_name, provider, timeout, tf_runtime, variables)
