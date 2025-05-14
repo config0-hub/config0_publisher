@@ -1,0 +1,379 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import re
+import hcl2
+import yaml
+import argparse
+from pathlib import Path
+import json
+
+def prompt_with_default(prompt, default=None):
+    """Prompt user for input with optional default value."""
+    if default:
+        user_input = input(f"{prompt} [default: {default}]: ").strip()
+        return user_input if user_input else default
+    else:
+        return input(f"{prompt}: ").strip()
+
+def read_tf_variables(file_path):
+    """Read Terraform variables from a file using hcl2 parser."""
+    try:
+        with open(file_path, 'r') as file:
+            # Parse HCL2 content from file
+            parsed = hcl2.load(file)
+            print(f"DEBUG - Parsed content type: {type(parsed)}")
+            print(f"DEBUG - Parsed content structure: {json.dumps(parsed, default=str, indent=2)[:500]}...")
+            return parsed
+    except Exception as e:
+        print(f"Error reading variables file: {e}")
+        sys.exit(1)
+
+def read_yaml_config(file_path):
+    """Read YAML configuration file."""
+    try:
+        with open(file_path, 'r') as file:
+            config = yaml.safe_load(file)
+            return config
+    except Exception as e:
+        print(f"Error reading YAML config file: {e}")
+        sys.exit(1)
+
+def extract_variables(parsed_content):
+    """Extract variables from parsed Terraform content."""
+    variables = {}
+    
+    print(f"DEBUG - Extracting variables from content of type: {type(parsed_content)}")
+    
+    # Handle list result (common with HCL2 parser)
+    if isinstance(parsed_content, list):
+        print("DEBUG - Handling list-type parsed content")
+        # For each block in the list
+        for block in parsed_content:
+            # Process each variable block
+            if isinstance(block, dict) and 'variable' in block:
+                print(f"DEBUG - Found variable block with type: {type(block['variable'])}")
+                
+                # If variable is a dict mapping variable names to definitions
+                if isinstance(block['variable'], dict):
+                    for var_name, var_config in block['variable'].items():
+                        variables[var_name] = {
+                            "type": var_config.get("type", "string"),
+                            "description": var_config.get("description", ""),
+                            "default": var_config.get("default", None)
+                        }
+                        print(f"DEBUG - Added variable: {var_name}")
+                
+                # If variable is a list of single-key dicts (another possible format)
+                elif isinstance(block['variable'], list):
+                    for var_item in block['variable']:
+                        if isinstance(var_item, dict) and len(var_item) == 1:
+                            var_name = list(var_item.keys())[0]
+                            var_config = var_item[var_name]
+                            variables[var_name] = {
+                                "type": var_config.get("type", "string"),
+                                "description": var_config.get("description", ""),
+                                "default": var_config.get("default", None)
+                            }
+                            print(f"DEBUG - Added variable from list: {var_name}")
+    
+    # Handle dict result
+    elif isinstance(parsed_content, dict):
+        print("DEBUG - Handling dict-type parsed content")
+        if 'variable' in parsed_content:
+            var_section = parsed_content['variable']
+            print(f"DEBUG - Variable section is of type: {type(var_section)}")
+            
+            # If it's a dict mapping variable names to definitions
+            if isinstance(var_section, dict):
+                for var_name, var_config in var_section.items():
+                    variables[var_name] = {
+                        "type": var_config.get("type", "string"),
+                        "description": var_config.get("description", ""),
+                        "default": var_config.get("default", None)
+                    }
+                    print(f"DEBUG - Added variable: {var_name}")
+            
+            # If it's a list of single-key dicts
+            elif isinstance(var_section, list):
+                for var_item in var_section:
+                    if isinstance(var_item, dict) and len(var_item) == 1:
+                        var_name = list(var_item.keys())[0]
+                        var_config = var_item[var_name]
+                        variables[var_name] = {
+                            "type": var_config.get("type", "string"),
+                            "description": var_config.get("description", ""),
+                            "default": var_config.get("default", None)
+                        }
+                        print(f"DEBUG - Added variable from list: {var_name}")
+    
+    print(f"DEBUG - Extracted {len(variables)} variables")
+    return variables
+
+def type_to_python_type(tf_type):
+    """Convert Terraform type to Python type."""
+    if isinstance(tf_type, str):
+        if "number" in tf_type:
+            return "str"  # Numbers are converted to strings in environment vars
+        elif "bool" in tf_type:
+            return "bool"
+        elif "list" in tf_type or "set" in tf_type:
+            return "list"
+        elif "map" in tf_type or "object" in tf_type:
+            return "dict"
+    return "str"  # Default to string
+
+def get_special_tags(var_name):
+    """Return special tags for known variables."""
+    special_vars = {
+        "aws_default_region": "tfvar,db,resource,tf_exec_env",
+    }
+    return special_vars.get(var_name, "tfvar,db")
+
+def generate_stack(execgroup, resource_type, resource_name, provider, timeout, tf_runtime, variables):
+    """Generate the Config0 stack code from parameters and variables."""
+    stack_code = """from config0_publisher.terraform import TFConstructor
+
+
+def run(stackargs):
+
+    # instantiate authoring stack
+    stack = newStack(stackargs)
+
+    # Add default variables
+"""
+    
+    # Add parse statements for each variable
+    for var_name, var_info in variables.items():
+        var_type = type_to_python_type(var_info.get("type", "string"))
+        default_value = var_info.get("default")
+        tags = get_special_tags(var_name)
+        
+        # Determine if required or optional
+        if default_value is None:
+            stack_code += f"""    stack.parse.add_required(key="{var_name}",
+                             tags="{tags}",
+                             types="{var_type}")
+
+"""
+        else:
+            # Format default value according to its type
+            if var_type == "str" and not isinstance(default_value, (list, dict)):
+                if default_value is None or default_value == "":
+                    default_str = '"null"'  # Use '"null"' for None or empty string values
+                else:
+                    default_str = f'"{default_value}"'
+            else:
+                if default_value is None or default_value == "":
+                    default_str = '"null"'
+                else:
+                    default_str = str(default_value)
+                
+            stack_code += f"""    stack.parse.add_optional(key="{var_name}",
+                             default={default_str},
+                             tags="{tags}",
+                             types="{var_type}")
+
+"""
+    
+    # Add execgroup and substack
+    stack_code += f"""    # Add execgroup
+    stack.add_execgroup("{execgroup}",
+                        "tf_execgroup")
+
+    # Add substack
+    stack.add_substack('config0-publish:::tf_executor')
+
+    # Initialize
+    stack.init_variables()
+    stack.init_execgroups()
+    stack.init_substacks()
+
+    stack.set_variable("timeout", {timeout})
+
+    # use the terraform constructor (helper)
+    tf = TFConstructor(stack=stack,
+                       execgroup_name=stack.tf_execgroup.name,
+                       provider="{provider}",
+                       tf_runtime="{tf_runtime}",
+                       resource_name="{resource_name}",
+                       resource_type="{resource_type}")
+
+    # finalize the tf_executor
+    stack.tf_executor.insert(display=True,
+                             **tf.get())
+
+    return stack.get_results()
+"""
+    return stack_code
+
+def generate_readme(stack_name, description, resource_type, variables):
+    """Generate a README.md file for the stack."""
+    # Start with description and header
+    readme_content = f"""# {stack_name}
+
+{description}
+
+## Stack Variables
+
+| Variable | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+"""
+    
+    # Add variable rows
+    for var_name, var_info in variables.items():
+        var_type = var_info.get("type", "string")
+        default_value = var_info.get("default")
+        var_description = var_info.get("description", "")
+        
+        # Format default for display
+        if default_value is None:
+            default_display = "Required"
+            required = "Yes"
+        else:
+            if isinstance(default_value, str):
+                default_display = f'"{default_value}"' if default_value else '""'
+            else:
+                default_display = str(default_value) if default_value is not None else "null"
+            required = "No"
+            
+        readme_content += f"| {var_name} | {var_type} | {required} | {default_display} | {var_description} |\n"
+    
+    return readme_content
+
+def generate_metadata(description, release, author, stack_tags):
+    """Generate metadata.yml content with a specific order."""
+    # Parse stack tags to use as categories and tags
+    tag_list = [tag.strip() for tag in stack_tags.split(',')]
+    
+    # Create the metadata with a specific order
+    metadata_lines = [
+        f"desc: {description}",
+        f"release: {release}",
+        f"author: {author}",
+        "categories:",
+    ]
+    
+    # Add categories
+    for tag in tag_list:
+        metadata_lines.append(f"  - {tag}")
+    
+    metadata_lines.append("tags:")
+    
+    # Add tags (same as categories in this case)
+    for tag in tag_list:
+        metadata_lines.append(f"  - {tag}")
+    
+    # Join lines with newlines
+    return "\n".join(metadata_lines)
+
+def create_stack_files(dest_dir, stack_name, run_py, readme_md, metadata_yml):
+    """Create stack directory structure and write files."""
+    # Create stack directories
+    main_dir = os.path.join(dest_dir, stack_name, "_main")
+    docs_dir = os.path.join(dest_dir, stack_name, "_documentation")
+    
+    os.makedirs(main_dir, exist_ok=True)
+    os.makedirs(docs_dir, exist_ok=True)
+    
+    # Write files
+    with open(os.path.join(main_dir, "run.py"), 'w') as f:
+        f.write(run_py)
+    
+    with open(os.path.join(docs_dir, "README.md"), 'w') as f:
+        f.write(readme_md)
+    
+    with open(os.path.join(dest_dir, stack_name, "metadata.yml"), 'w') as f:
+        f.write(metadata_yml)
+    
+    print(f"Stack files created at {os.path.join(dest_dir, stack_name)}")
+
+def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Config0 Stack Generator for Terraform')
+    parser.add_argument('-c', '--config', help='Path to YAML configuration file')
+    args = parser.parse_args()
+    
+    print("Config0 Stack Generator for Terraform\n")
+    
+    # Check if we're using a config file
+    if args.config:
+        if not os.path.exists(args.config):
+            print(f"Error: Config file {args.config} does not exist.")
+            sys.exit(1)
+            
+        print(f"Reading configuration from {args.config}")
+        config = read_yaml_config(args.config)
+        
+        # Extract values from config
+        tf_variables_file = config.get('tf_variables_file')
+        if not tf_variables_file or not os.path.exists(tf_variables_file):
+            print(f"Error: Terraform variables file {tf_variables_file} does not exist or is not specified in config.")
+            sys.exit(1)
+            
+        execgroup = config.get('execgroup')
+        resource_type = config.get('resource_type')
+        resource_name = config.get('resource_name')
+        provider = config.get('provider', 'aws')
+        timeout = config.get('timeout', '600')
+        tf_runtime = config.get('tf_runtime', 'tofu:1.9.1')
+        
+        # New stack parameters
+        stack_name = config.get('stack_name')
+        dest_dir = config.get('dest_dir', '.')
+        description = config.get('description', f"A stack that creates {resource_type}")
+        release = config.get('release', '0.0.1')
+        author = config.get('author', 'anonymous')
+        stack_tags = config.get('stack_tags', 'config0,evaluate')
+        
+        # Validate required config fields
+        if not all([execgroup, resource_type, resource_name, stack_name]):
+            print("Error: Required configuration fields missing. Please ensure execgroup, resource_type, resource_name, and stack_name are specified.")
+            sys.exit(1)
+    else:
+        # Prompt for required parameters
+        tf_variables_file = prompt_with_default("Enter path to Terraform variables file")
+        if not os.path.exists(tf_variables_file):
+            print(f"Error: File {tf_variables_file} does not exist.")
+            sys.exit(1)
+            
+        execgroup = prompt_with_default("Enter execution group (e.g. config0-publish:::aws_networking::vpc_simple)")
+        resource_type = prompt_with_default("Enter resource type (e.g. vpc, ssh_key_pair)")
+        resource_name = prompt_with_default("Enter resource name")
+        provider = prompt_with_default("Enter provider", "aws")
+        timeout = prompt_with_default("Enter timeout in seconds", "600")
+        tf_runtime = prompt_with_default("Enter Terraform runtime", "tofu:1.9.1")
+        
+        # Prompt for new stack parameters
+        stack_name = prompt_with_default("Enter stack name")
+        dest_dir = prompt_with_default("Enter destination directory", ".")
+        description = prompt_with_default("Enter stack description", f"A stack that creates {resource_type}")
+        release = prompt_with_default("Enter release version", "0.0.1")
+        author = prompt_with_default("Enter author name", "anonymous")
+        stack_tags = prompt_with_default("Enter stack tags (comma-separated)", "config0,evaluate")
+    
+    # Read and parse Terraform variables
+    parsed_content = read_tf_variables(tf_variables_file)
+    variables = extract_variables(parsed_content)
+    
+    if not variables:
+        print("No variables were extracted. Check the format of your Terraform variables file.")
+        sys.exit(1)
+    
+    # Generate the stack
+    stack_code = generate_stack(execgroup, resource_type, resource_name, provider, timeout, tf_runtime, variables)
+    
+    # Generate README.md
+    readme_content = generate_readme(stack_name, description, resource_type, variables)
+    
+    # Generate metadata.yml
+    metadata_content = generate_metadata(description, release, author, stack_tags)
+    
+    # Create stack files
+    create_stack_files(dest_dir, stack_name, stack_code, readme_content, metadata_content)
+    
+    print(f"\nStack successfully created at {os.path.join(dest_dir, stack_name)}")
+
+if __name__ == "__main__":
+    main()
