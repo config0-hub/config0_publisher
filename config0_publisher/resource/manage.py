@@ -1200,9 +1200,10 @@ class ResourceCmdHelper:
 
         return clean_lines
 
-    def execute(self, cmd, **kwargs):
+    def execute(self, cmd, output_to_log=True, **kwargs):
         results = self.execute3(cmd, **kwargs)
-        self.eval_log(results, local_log=True)
+        if output_to_log:
+            self.eval_log(results, local_log=True)
 
         return results
 
