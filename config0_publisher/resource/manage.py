@@ -1202,6 +1202,7 @@ class ResourceCmdHelper:
 
     def execute(self, cmd, **kwargs):
         results = self.execute3(cmd, **kwargs)
+        self.eval_log(results, local_log=True)
 
         return results
 
