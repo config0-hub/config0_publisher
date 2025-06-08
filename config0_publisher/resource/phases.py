@@ -461,9 +461,6 @@ class ResourceCmdHelper(SyncToShare):
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables
         self._set_json_files()
 
-        # phases
-        self.set_phases_json()
-
         if os.environ.get("JIFFY_ENHANCED_LOG"):
             try:
                 self._print_out_key_class_vars()
@@ -551,8 +548,7 @@ class ResourceCmdHelper(SyncToShare):
             "schedule_id",
             "run_id",
             "job_instance_id",
-            "config0_resource_json_file",
-            "config0_phases_json_file"
+            "config0_resource_json_file"
         ]
 
         default_values = {
@@ -1513,9 +1509,6 @@ class ResourceCmdHelper(SyncToShare):
             return
 
         self.eval_log(results)
-
-        # phases
-        # self.delete_phases_to_json_file()
 
         print("")
         print("-"*32)
