@@ -459,8 +459,6 @@ class ResourceCmdHelper(SyncToShare):
         if not self.build_env_vars:
             self.build_env_vars = {}
 
-        ResourcePhases.__init__(self)
-
         # set specified env variables
         self._set_env_vars(env_vars=kwargs.get("env_vars"),
                            clobber=True)
