@@ -103,7 +103,7 @@ def aws_executor(execution_type="lambda"):
             if execution_type.lower() == "lambda":
                 # Use lambda_region (us-east-1) for Lambda invocations
                 lambda_region = getattr(self, 'lambda_region', 'us-east-1')
-                function_name = getattr(self, 'lambda_function_name', 'iac-ci')
+                function_name = getattr(self, 'lambda_function_name', 'config0-iac')
                 
                 # DEBUG
                 print(f"DEBUG AWS_EXECUTOR: Invoking Lambda function: {function_name} in region {lambda_region}")
@@ -150,7 +150,7 @@ def aws_executor(execution_type="lambda"):
             elif execution_type.lower() == "codebuild":
                 # Use the infrastructure region for CodeBuild
                 codebuild_region = getattr(self, 'aws_region', 'us-east-1')
-                project_name = getattr(self, 'codebuild_project_name', 'iac-build')
+                project_name = getattr(self, 'codebuild_project_name', 'config0-iac')
                 
                 # DEBUG
                 print(f"DEBUG AWS_EXECUTOR: Starting CodeBuild project: {project_name} in region {codebuild_region}")
@@ -267,9 +267,9 @@ class AWSAsyncExecutor:
     """
     
     # Class-level defaults
-    lambda_function_name = os.environ.get("LAMBDA_FUNCTION_NAME", "iac-ci")
+    lambda_function_name = os.environ.get("LAMBDA_FUNCTION_NAME", "config0-iac")
     lambda_region = os.environ.get("LAMBDA_REGION", "us-east-1")  # Default to us-east-1 for Lambda
-    codebuild_project_name = os.environ.get("CODEBUILD_PROJECT_NAME", "iac-build")
+    codebuild_project_name = os.environ.get("CODEBUILD_PROJECT_NAME", "config0-iac")
     
     def __init__(self, resource_type, resource_id, **kwargs):
         """
