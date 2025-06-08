@@ -102,8 +102,6 @@ class ResourceCmdHelper(SyncToShare):
             stateful_id=kwargs.get("stateful_id")
         )
 
-        ResourcePhases.__init__(self)
-
         # set specified env variables
         self.env_manager.set_env_vars(env_vars=kwargs.get("env_vars"), clobber=True)
         self.env_manager.set_os_env_prefix()
