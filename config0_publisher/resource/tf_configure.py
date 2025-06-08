@@ -181,19 +181,18 @@ class ConfigureTFConfig0Db:
         try:
             tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
                                                      self.stateful_id)
-            outputs = tfstate_values["outputs"]
-        except Exception:
-            outputs = None
+        except:
+            tfstate_values = None
 
         print('s1'*32)
         print('s1'*32)
         print('s1'*32)
 
-        if not outputs:
+        if not tfstate_values:
             return
 
         # put outputs in
-        for k,v in outputs.items():
+        for k,v in tfstate_values["outputs"]:
 
             # already set and exists
             if self.db_values.get(k):
