@@ -56,7 +56,7 @@ def aws_executor(execution_type="lambda"):
             print("\n" + "*"*80)
             print(f"DEBUG AWS_EXECUTOR: Starting {execution_type} execution with {func.__name__}")
             print(f"DEBUG AWS_EXECUTOR: Self attributes:")
-            for attr in ['resource_type', 'resource_id', 'stateful_id', 'tmp_bucket']:
+            for attr in ['resource_type', 'resource_id', 'stateful_id', 'tmp_bucket', 'lambda_region', 'aws_region']:
                 if hasattr(self, attr):
                     print(f"  {attr}: {getattr(self, attr)}")
             print(f"DEBUG AWS_EXECUTOR: Input kwargs:")
@@ -101,13 +101,16 @@ def aws_executor(execution_type="lambda"):
             
             # Execute based on type
             if execution_type.lower() == "lambda":
+                # Use lambda_region (us-east-1) for Lambda invocations
+                lambda_region = getattr(self, 'lambda_region', 'us-east-1')
                 function_name = getattr(self, 'lambda_function_name', 'iac-ci')
                 
                 # DEBUG
-                print(f"DEBUG AWS_EXECUTOR: Invoking Lambda function: {function_name}")
+                print(f"DEBUG AWS_EXECUTOR: Invoking Lambda function: {function_name} in region {lambda_region}")
+                print(f"DEBUG AWS_EXECUTOR: Infrastructure region is: {getattr(self, 'aws_region', 'unknown')}")
                 
-                # Initialize Lambda client
-                lambda_client = boto3.client('lambda')
+                # Initialize Lambda client with specific region for Lambda
+                lambda_client = boto3.client('lambda', region_name=lambda_region)
                 
                 try:
                     # Invoke Lambda function asynchronously
@@ -131,7 +134,7 @@ def aws_executor(execution_type="lambda"):
                         return {
                             'status': False,
                             'error': f"Lambda invocation failed with status code: {status_code}",
-                            'output': f"Failed to invoke Lambda function {function_name}"
+                            'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
                         }
                 except Exception as e:
                     # DEBUG
@@ -141,17 +144,19 @@ def aws_executor(execution_type="lambda"):
                     return {
                         'status': False,
                         'error': f"Lambda invocation failed with exception: {str(e)}",
-                        'output': f"Exception when invoking Lambda function {function_name}: {str(e)}"
+                        'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
                     }
                     
             elif execution_type.lower() == "codebuild":
+                # Use the infrastructure region for CodeBuild
+                codebuild_region = getattr(self, 'aws_region', 'us-east-1')
                 project_name = getattr(self, 'codebuild_project_name', 'iac-build')
                 
                 # DEBUG
-                print(f"DEBUG AWS_EXECUTOR: Starting CodeBuild project: {project_name}")
+                print(f"DEBUG AWS_EXECUTOR: Starting CodeBuild project: {project_name} in region {codebuild_region}")
                 
-                # Initialize CodeBuild client
-                codebuild_client = boto3.client('codebuild')
+                # Initialize CodeBuild client with infrastructure region
+                codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
                 
                 # Prepare environment variables for the build
                 env_vars = [
@@ -192,7 +197,7 @@ def aws_executor(execution_type="lambda"):
                         return {
                             'status': False,
                             'error': "Failed to start CodeBuild project",
-                            'output': f"Failed to start CodeBuild project {project_name}"
+                            'output': f"Failed to start CodeBuild project {project_name} in region {codebuild_region}"
                         }
                     
                     # Add build ID to response
@@ -205,7 +210,7 @@ def aws_executor(execution_type="lambda"):
                     return {
                         'status': False,
                         'error': f"CodeBuild start failed with exception: {str(e)}",
-                        'output': f"Exception when starting CodeBuild project {project_name}: {str(e)}"
+                        'output': f"Exception when starting CodeBuild project {project_name} in region {codebuild_region}: {str(e)}"
                     }
                 
             else:
@@ -223,120 +228,4 @@ def aws_executor(execution_type="lambda"):
                 'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
                 'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
                 'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
-                'output': f"Initiated {execution_type} execution with ID: {execution_id}"
-            }
-            
-            # Add build ID for CodeBuild if available
-            if execution_type.lower() == "codebuild" and 'build_id' in payload:
-                result['build_id'] = payload['build_id']
-            
-            # DEBUG
-            print("DEBUG AWS_EXECUTOR: Returning result:")
-            for k, v in result.items():
-                print(f"  {k}: {v}")
-            print("*"*80 + "\n")
-            
-            return result
-            
-        return wrapper
-    return decorator
-
-
-class AWSAsyncExecutor:
-    """
-    AWS Asynchronous Execution Manager for infrastructure operations.
-    
-    This class provides methods for executing infrastructure operations through 
-    AWS Lambda or CodeBuild with consistent tracking and monitoring.
-    
-    It's designed to handle various types of infrastructure resources including
-    Terraform modules, CloudFormation templates, and other IaC components.
-    
-    Attributes:
-        resource_type (str): Type of infrastructure resource
-        resource_id (str): Identifier for the specific resource
-        lambda_function_name (str): AWS Lambda function name for lambda execution
-        codebuild_project_name (str): AWS CodeBuild project name for codebuild execution
-        tmp_bucket (str): S3 bucket for storing execution results
-    """
-    
-    # Class-level defaults
-    lambda_function_name = os.environ.get("LAMBDA_FUNCTION_NAME", "iac-ci")
-    codebuild_project_name = os.environ.get("CODEBUILD_PROJECT_NAME", "iac-build")
-    
-    def __init__(self, resource_type, resource_id, **kwargs):
-        """
-        Initialize a new AWS Async Executor.
-        
-        Args:
-            resource_type (str): Type of infrastructure resource (terraform, cloudformation, etc.)
-            resource_id (str): Identifier for the specific resource
-            **kwargs: Additional attributes to configure the execution environment
-                - tmp_bucket: S3 bucket for execution tracking
-                - stateful_id: Stateful resource identifier
-                - method: Operation method (create, destroy, etc.)
-                - aws_region: AWS region for the operation
-                - app_dir: Application directory
-                - app_name: Application name
-                - remote_stateful_bucket: S3 bucket for state storage
-                - build_timeout: Maximum execution time in seconds
-        """
-        self.resource_type = resource_type
-        self.resource_id = resource_id
-        
-        # Set additional attributes from kwargs
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-    
-    @aws_executor(execution_type="lambda")
-    def exec_lambda(self, **kwargs):
-        """
-        Execute infrastructure operation through AWS Lambda.
-        
-        Executes the operation asynchronously via AWS Lambda, which is suitable
-        for operations that complete within the Lambda execution time limit.
-        
-        Args:
-            **kwargs: Operation parameters including:
-                - method: Operation method (create, destroy, etc.)
-                - build_env_vars: Environment variables for the build
-                - ssm_name: SSM parameter name (if applicable)
-                
-        Returns:
-            dict: Execution tracking information with:
-                - status: True if execution started successfully
-                - execution_id: Unique identifier for the execution
-                - s3_bucket: S3 bucket for tracking
-                - execution_type: "lambda"
-                - status_url: URL to check execution status
-                - result_url: URL to retrieve execution results
-                - logs_url: URL to retrieve execution logs
-        """
-        pass  # Implementation handled by decorator
-    
-    @aws_executor(execution_type="codebuild")
-    def exec_codebuild(self, **kwargs):
-        """
-        Execute infrastructure operation through AWS CodeBuild.
-        
-        Executes the operation asynchronously via AWS CodeBuild, which is suitable
-        for longer-running operations that exceed Lambda execution time limits.
-        
-        Args:
-            **kwargs: Operation parameters including:
-                - method: Operation method (create, destroy, etc.)
-                - build_env_vars: Environment variables for the build
-                - ssm_name: SSM parameter name (if applicable)
-                
-        Returns:
-            dict: Execution tracking information with:
-                - status: True if execution started successfully
-                - execution_id: Unique identifier for the execution
-                - s3_bucket: S3 bucket for tracking
-                - execution_type: "codebuild"
-                - build_id: CodeBuild build ID
-                - status_url: URL to check execution status
-                - result_url: URL to retrieve execution results
-                - logs_url: URL to retrieve execution logs
-        """
-        pass  # Implementation handled by decorator
+                'output': f"Initiate
