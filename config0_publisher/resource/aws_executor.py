@@ -51,14 +51,35 @@ def aws_executor(execution_type="lambda"):
         def wrapper(self, **kwargs):
             # Initialize logger
             logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+            
+            # DEBUG START
+            print("\n" + "*"*80)
+            print(f"DEBUG AWS_EXECUTOR: Starting {execution_type} execution with {func.__name__}")
+            print(f"DEBUG AWS_EXECUTOR: Self attributes:")
+            for attr in ['resource_type', 'resource_id', 'stateful_id', 'tmp_bucket']:
+                if hasattr(self, attr):
+                    print(f"  {attr}: {getattr(self, attr)}")
+            print(f"DEBUG AWS_EXECUTOR: Input kwargs:")
+            for k, v in kwargs.items():
+                if k == "build_env_vars" and isinstance(v, dict):
+                    print(f"  {k}: <dict with {len(v)} items>")
+                else:
+                    print(f"  {k}: {v}")
+            # DEBUG END
+            
             logger.debug(f"Starting {execution_type} execution with {func.__name__}")
             
             # Generate a unique execution ID
             execution_id = str(uuid.uuid4())
             
+            # DEBUG
+            print(f"DEBUG AWS_EXECUTOR: Generated execution_id: {execution_id}")
+            
             # Get the required parameters
             s3_bucket = kwargs.get('tmp_bucket') or getattr(self, 'tmp_bucket', None)
             if not s3_bucket:
+                # DEBUG
+                print("DEBUG AWS_EXECUTOR: ERROR - tmp_bucket not provided")
                 raise ValueError("tmp_bucket must be provided as parameter or class attribute")
             
             # Prepare the payload from kwargs
@@ -75,32 +96,59 @@ def aws_executor(execution_type="lambda"):
                 if hasattr(self, attr):
                     payload[attr] = getattr(self, attr)
             
+            # DEBUG
+            print(f"DEBUG AWS_EXECUTOR: Prepared payload with {len(payload)} items")
+            
             # Execute based on type
             if execution_type.lower() == "lambda":
                 function_name = getattr(self, 'lambda_function_name', 'iac-ci')
                 
+                # DEBUG
+                print(f"DEBUG AWS_EXECUTOR: Invoking Lambda function: {function_name}")
+                
                 # Initialize Lambda client
                 lambda_client = boto3.client('lambda')
                 
-                # Invoke Lambda function asynchronously
-                response = lambda_client.invoke(
-                    FunctionName=function_name,
-                    InvocationType='Event',
-                    Payload=json.dumps(payload)
-                )
-                
-                # Check response status
-                status_code = response.get('StatusCode')
-                if status_code != 202:  # 202 Accepted is expected for async invocation
-                    logger.error(f"Lambda invocation failed with status code: {status_code}")
+                try:
+                    # Invoke Lambda function asynchronously
+                    response = lambda_client.invoke(
+                        FunctionName=function_name,
+                        InvocationType='Event',
+                        Payload=json.dumps(payload)
+                    )
+                    
+                    # DEBUG
+                    print(f"DEBUG AWS_EXECUTOR: Lambda response received:")
+                    print(f"  StatusCode: {response.get('StatusCode')}")
+                    
+                    # Check response status
+                    status_code = response.get('StatusCode')
+                    if status_code != 202:  # 202 Accepted is expected for async invocation
+                        # DEBUG
+                        print(f"DEBUG AWS_EXECUTOR: ERROR - Lambda invocation failed with status code: {status_code}")
+                        
+                        logger.error(f"Lambda invocation failed with status code: {status_code}")
+                        return {
+                            'status': False,
+                            'error': f"Lambda invocation failed with status code: {status_code}",
+                            'output': f"Failed to invoke Lambda function {function_name}"
+                        }
+                except Exception as e:
+                    # DEBUG
+                    print(f"DEBUG AWS_EXECUTOR: EXCEPTION during Lambda invocation: {str(e)}")
+                    
+                    logger.error(f"Lambda invocation failed with exception: {str(e)}")
                     return {
                         'status': False,
-                        'error': f"Lambda invocation failed with status code: {status_code}",
-                        'output': f"Failed to invoke Lambda function {function_name}"
+                        'error': f"Lambda invocation failed with exception: {str(e)}",
+                        'output': f"Exception when invoking Lambda function {function_name}: {str(e)}"
                     }
                     
             elif execution_type.lower() == "codebuild":
                 project_name = getattr(self, 'codebuild_project_name', 'iac-build')
+                
+                # DEBUG
+                print(f"DEBUG AWS_EXECUTOR: Starting CodeBuild project: {project_name}")
                 
                 # Initialize CodeBuild client
                 codebuild_client = boto3.client('codebuild')
@@ -113,38 +161,61 @@ def aws_executor(execution_type="lambda"):
                 
                 # Add build environment variables if available
                 if 'build_env_vars' in kwargs and kwargs['build_env_vars']:
+                    # DEBUG
+                    print(f"DEBUG AWS_EXECUTOR: Adding {len(kwargs['build_env_vars'])} build environment variables")
+                    
                     for key, value in kwargs['build_env_vars'].items():
                         env_vars.append({
                             'name': key,
                             'value': str(value)
                         })
                 
-                # Start the build
-                response = codebuild_client.start_build(
-                    projectName=project_name,
-                    environmentVariablesOverride=env_vars
-                )
-                
-                # Extract build information
-                build = response.get('build', {})
-                build_id = build.get('id')
-                
-                if not build_id:
-                    logger.error("Failed to start CodeBuild project")
+                try:
+                    # Start the build
+                    response = codebuild_client.start_build(
+                        projectName=project_name,
+                        environmentVariablesOverride=env_vars
+                    )
+                    
+                    # Extract build information
+                    build = response.get('build', {})
+                    build_id = build.get('id')
+                    
+                    # DEBUG
+                    print(f"DEBUG AWS_EXECUTOR: CodeBuild started with build ID: {build_id}")
+                    
+                    if not build_id:
+                        # DEBUG
+                        print("DEBUG AWS_EXECUTOR: ERROR - Failed to start CodeBuild project")
+                        
+                        logger.error("Failed to start CodeBuild project")
+                        return {
+                            'status': False,
+                            'error': "Failed to start CodeBuild project",
+                            'output': f"Failed to start CodeBuild project {project_name}"
+                        }
+                    
+                    # Add build ID to response
+                    payload['build_id'] = build_id
+                except Exception as e:
+                    # DEBUG
+                    print(f"DEBUG AWS_EXECUTOR: EXCEPTION during CodeBuild start: {str(e)}")
+                    
+                    logger.error(f"CodeBuild start failed with exception: {str(e)}")
                     return {
                         'status': False,
-                        'error': "Failed to start CodeBuild project",
-                        'output': f"Failed to start CodeBuild project {project_name}"
+                        'error': f"CodeBuild start failed with exception: {str(e)}",
+                        'output': f"Exception when starting CodeBuild project {project_name}: {str(e)}"
                     }
                 
-                # Add build ID to response
-                payload['build_id'] = build_id
-                
             else:
+                # DEBUG
+                print(f"DEBUG AWS_EXECUTOR: ERROR - Unsupported execution_type: {execution_type}")
+                
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
             
-            # Return execution tracking information with status
-            return {
+            # Prepare result with tracking information
+            result = {
                 'status': True,
                 'execution_id': execution_id,
                 's3_bucket': s3_bucket,
@@ -154,6 +225,18 @@ def aws_executor(execution_type="lambda"):
                 'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
                 'output': f"Initiated {execution_type} execution with ID: {execution_id}"
             }
+            
+            # Add build ID for CodeBuild if available
+            if execution_type.lower() == "codebuild" and 'build_id' in payload:
+                result['build_id'] = payload['build_id']
+            
+            # DEBUG
+            print("DEBUG AWS_EXECUTOR: Returning result:")
+            for k, v in result.items():
+                print(f"  {k}: {v}")
+            print("*"*80 + "\n")
+            
+            return result
             
         return wrapper
     return decorator
@@ -257,49 +340,3 @@ class AWSAsyncExecutor:
                 - logs_url: URL to retrieve execution logs
         """
         pass  # Implementation handled by decorator
-
-
-# Example of how to modify TFExecShellHelper._exec_in_aws to use AWSAsyncExecutor
-def example_exec_in_aws(self, method="create"):
-    """
-    Example of how to modify TFExecShellHelper._exec_in_aws to use AWSAsyncExecutor.
-    
-    This is provided as a reference and should be integrated into the actual class.
-    """
-    cinputargs = self._get_aws_exec_cinputargs(method=method)
-    
-    # Create AWS Async Executor with current settings
-    executor = AWSAsyncExecutor(
-        resource_type="terraform", 
-        resource_id=self.stateful_id,
-        tmp_bucket=self.tmp_bucket,
-        stateful_id=self.stateful_id,
-        method=method,
-        aws_region=self.aws_region,
-        app_dir=self.app_dir,
-        app_name=self.app_name,
-        remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None),
-        build_timeout=self.build_timeout
-    )
-    
-    # Use the appropriate execution method based on build_method
-    if self.build_method == "lambda":
-        results = executor.exec_lambda(**cinputargs)
-    elif self.build_method == "codebuild":
-        results = executor.exec_codebuild(**cinputargs)
-    else:
-        return False
-
-    if method == "destroy":
-        try:
-            os.chdir(self.cwd)
-        except (FileNotFoundError, PermissionError) as e:
-            os.chdir("/tmp")
-
-    self.eval_failure(results, method)
-    return results
-
-
-if __name__ == "__main__":
-    # Example usage
-    print("This module is intended to be imported, not run directly.")

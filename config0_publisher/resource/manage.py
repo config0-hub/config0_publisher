@@ -290,42 +290,6 @@ class ResourceCmdHelper(SyncToShare):
             self.create_aws_tf_backend()
         return self._exec_in_aws(method=method)
 
-    def _exec_in_aws(self, method="create"):
-        """Executes Terraform command in AWS"""
-
-        cinputargs = self._get_aws_exec_cinputargs(method=method)
-        
-        # Create AWS Async Executor with current settings
-        executor = AWSAsyncExecutor(
-            resource_type="terraform", 
-            resource_id=self.stateful_id,
-            tmp_bucket=self.tmp_bucket,
-            stateful_id=self.stateful_id,
-            method=method,
-            aws_region=self.aws_region,
-            app_dir=self.app_dir,
-            app_name=self.app_name,
-            remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None),
-            build_timeout=self.build_timeout
-        )
-        
-        # Use the appropriate execution method based on build_method
-        if self.build_method == "lambda":
-            results = executor.exec_lambda(**cinputargs)
-        elif self.build_method == "codebuild":
-            results = executor.exec_codebuild(**cinputargs)
-        else:
-            return False
-
-        if method == "destroy":
-            try:
-                os.chdir(self.cwd)
-            except (FileNotFoundError, PermissionError) as e:
-                os.chdir("/tmp")
-
-        self.eval_failure(results, method)
-        return results
-
     def create(self):
         """Creates Terraform resources"""
 
@@ -382,13 +346,49 @@ class ResourceCmdHelper(SyncToShare):
             tf_results = self._setup_and_exec_in_aws("validate")
         elif self.method == "check":
             tf_results = self._setup_and_exec_in_aws("check")
-        else:
-            usage()
-            print(f'Method "{self.method}" not supported!')
-            exit(4)
+        #else:
+        #    usage()
+        #    print(f'Method "{self.method}" not supported!')
+        #    exit(4)
 
         # Evaluation of log should be at the end
         # outside of _exec_in_aws
         self.eval_log(tf_results, local_log=True)
 
     #############################################
+
+    def _exec_in_aws(self, method="create"):
+        """Executes Terraform command in AWS"""
+
+        cinputargs = self._get_aws_exec_cinputargs(method=method)
+        
+        # Create AWS Async Executor with current settings
+        executor = AWSAsyncExecutor(
+            resource_type="terraform", 
+            resource_id=self.stateful_id,
+            tmp_bucket=self.tmp_bucket,
+            stateful_id=self.stateful_id,
+            method=method,
+            aws_region=self.aws_region,
+            app_dir=self.app_dir,
+            app_name=self.app_name,
+            remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None),
+            build_timeout=self.build_timeout
+        )
+        
+        # Use the appropriate execution method based on build_method
+        if self.build_method == "lambda":
+            results = executor.exec_lambda(**cinputargs)
+        elif self.build_method == "codebuild":
+            results = executor.exec_codebuild(**cinputargs)
+        else:
+            return False
+
+        if method == "destroy":
+            try:
+                os.chdir(self.cwd)
+            except (FileNotFoundError, PermissionError) as e:
+                os.chdir("/tmp")
+
+        self.eval_failure(results, method)
+        return results
