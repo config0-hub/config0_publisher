@@ -1609,6 +1609,10 @@ class ResourceCmdHelper(SyncToShare):
             print(f'Method "{self.method}" not supported!')
             exit(4)
 
+        # testtest456
+        print_json(tf_results)
+        raise Exception('t')
+
         # Evaluation of log should be at the end
         # outside of _exec_in_aws
         self.eval_log(tf_results, local_log=True)
