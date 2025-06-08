@@ -173,12 +173,10 @@ class ConfigureTFConfig0Db:
 
     def _insert_outputs(self):
 
+        # testtest456
         print('s0'*32)
         print('s0'*32)
         print('s0'*32)
-        print('s1'*32)
-        print('s1'*32)
-        print('s1'*32)
 
         try:
             tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
@@ -186,6 +184,10 @@ class ConfigureTFConfig0Db:
             outputs = tfstate_values["outputs"]
         except Exception:
             outputs = None
+
+        print('s1'*32)
+        print('s1'*32)
+        print('s1'*32)
 
         if not outputs:
             return
