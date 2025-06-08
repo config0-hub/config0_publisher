@@ -1610,8 +1610,10 @@ class ResourceCmdHelper(SyncToShare):
             exit(4)
 
         # testtest456
+        print('t0'*32)
         print_json(tf_results)
-        raise Exception('t')
+        print('t1'*32)
+        raise Exception('t3'*32)
 
         # Evaluation of log should be at the end
         # outside of _exec_in_aws
