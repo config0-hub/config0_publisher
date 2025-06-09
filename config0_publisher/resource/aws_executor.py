@@ -61,26 +61,84 @@ def aws_executor(execution_type="lambda"):
         def wrapper(self, **kwargs):
             # Initialize logger
             logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+            
+            logger.debug(f"Starting {execution_type} execution with {func.__name__}")
 
             # Get resource identifiers
             resource_type = getattr(self, 'resource_type', 'unknown')
             resource_id = getattr(self, 'resource_id', 'unknown')
             method = kwargs.get('method') or getattr(self, 'method', 'unknown')
+            
+            # Get timeout settings from build environment variables or environment
+            build_env_vars = kwargs.get('build_env_vars') or getattr(self, 'build_env_vars', {})
+            max_execution_time = None
+            
+            # Try to get timeout from build_env_vars
+            if isinstance(build_env_vars, dict):
+                if build_env_vars.get('BUILD_TIMEOUT'):
+                    try:
+                        max_execution_time = int(build_env_vars.get('BUILD_TIMEOUT'))
+                        logger.debug(f"Using timeout from build_env_vars BUILD_TIMEOUT: {max_execution_time}s")
+                    except (ValueError, TypeError):
+                        pass
+                
+                if not max_execution_time and build_env_vars.get('TIMEOUT'):
+                    try:
+                        max_execution_time = int(build_env_vars.get('TIMEOUT'))
+                        logger.debug(f"Using timeout from build_env_vars TIMEOUT: {max_execution_time}s")
+                    except (ValueError, TypeError):
+                        pass
+            
+            # If not found in build_env_vars, try environment variables
+            if not max_execution_time:
+                if os.environ.get('BUILD_TIMEOUT'):
+                    try:
+                        max_execution_time = int(os.environ.get('BUILD_TIMEOUT'))
+                        logger.debug(f"Using timeout from env BUILD_TIMEOUT: {max_execution_time}s")
+                    except (ValueError, TypeError):
+                        pass
+                
+                if not max_execution_time and os.environ.get('TIMEOUT'):
+                    try:
+                        max_execution_time = int(os.environ.get('TIMEOUT'))
+                        logger.debug(f"Using timeout from env TIMEOUT: {max_execution_time}s")
+                    except (ValueError, TypeError):
+                        pass
+            
+            # Finally, allow explicit override
+            if kwargs.get('max_execution_time'):
+                max_execution_time = kwargs.get('max_execution_time')
+                logger.debug(f"Using explicitly provided timeout: {max_execution_time}s")
+            
+            # If still no timeout, use defaults based on execution_type
+            if not max_execution_time:
+                if execution_type.lower() == "lambda":
+                    max_execution_time = 900  # 15 minutes default for Lambda
+                    logger.debug(f"Using default Lambda timeout: {max_execution_time}s")
+                else:  # codebuild or anything else
+                    max_execution_time = 3600  # 1 hour default for CodeBuild
+                    logger.debug(f"Using default CodeBuild timeout: {max_execution_time}s")
+            
+            # Add buffer time for execution tracking (to account for overheads)
+            tracking_max_time = max_execution_time + 300  # Add 5 minutes buffer
 
             # Generate a deterministic execution ID based on resource identifiers
             # This allows checking for existing executions
             if kwargs.get('execution_id'):
                 # Use provided execution_id if available
                 execution_id = kwargs.get('execution_id')
+                logger.debug(f"Using provided execution_id: {execution_id}")
             else:
                 # Create a deterministic execution ID based on resource identifiers and timestamp
                 base_string = f"{resource_type}:{resource_id}:{method}"
 
-                if kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False):
+                if kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False) or os.environ.get('FORCE_NEW_EXECUTION'):
                     # Add timestamp to force a new execution
                     base_string = f"{base_string}:{time.time()}"
+                    logger.debug(f"Forcing new execution with unique base string: {base_string}")
 
                 execution_id = hashlib.md5(base_string.encode()).hexdigest()
+                logger.debug(f"Generated deterministic execution_id: {execution_id} from {base_string}")
 
             # Get the required parameters
             s3_bucket = kwargs.get('tmp_bucket') or getattr(self, 'tmp_bucket', None)
@@ -88,7 +146,7 @@ def aws_executor(execution_type="lambda"):
                 raise ValueError("tmp_bucket must be provided as parameter or class attribute")
 
             # Check if execution is already in progress
-            if not kwargs.get('force_new_execution') and not getattr(self, 'force_new_execution', False):
+            if not kwargs.get('force_new_execution') and not getattr(self, 'force_new_execution', False) and not os.environ.get('FORCE_NEW_EXECUTION'):
                 try:
                     # Check if status file exists in S3
                     s3_client = boto3.client('s3')
@@ -98,20 +156,76 @@ def aws_executor(execution_type="lambda"):
                         status_obj = s3_client.get_object(Bucket=s3_bucket, Key=status_key)
                         status_data = json.loads(status_obj['Body'].read().decode('utf-8'))
 
-                        # If status indicates execution is in progress, return info
+                        # If status indicates execution is in progress, check if it might have timed out
                         if status_data.get('status') == 'in_progress':
-                            logger.info(f"Execution already in progress for {resource_type}:{resource_id} with ID {execution_id}")
-                            return {
-                                'status': True,
-                                'execution_id': execution_id,
-                                's3_bucket': s3_bucket,
-                                'execution_type': execution_type,
-                                'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
-                                'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
-                                'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
-                                'output': f"Execution already in progress with ID: {execution_id}",
-                                'already_running': True
-                            }
+                            # Check if execution has been running too long (timed out)
+                            if 'start_time' in status_data:
+                                elapsed_time = time.time() - status_data['start_time']
+                                if elapsed_time > tracking_max_time:
+                                    logger.warning(f"Execution {execution_id} appears to have timed out after {elapsed_time:.2f} seconds")
+                                    
+                                    # Update status to timed_out
+                                    status_data['status'] = 'timed_out'
+                                    status_data['end_time'] = time.time()
+                                    status_data['error'] = f"Execution timed out after {elapsed_time:.2f} seconds"
+                                    
+                                    try:
+                                        s3_client.put_object(
+                                            Bucket=s3_bucket,
+                                            Key=status_key,
+                                            Body=json.dumps(status_data),
+                                            ContentType='application/json'
+                                        )
+                                        logger.info(f"Updated status of timed out execution {execution_id}")
+                                    except Exception as e:
+                                        logger.warning(f"Failed to update timed out status: {str(e)}")
+                                        
+                                    # If we detected a timeout, continue with new execution
+                                    if not kwargs.get('abort_on_timeout', False):
+                                        logger.info(f"Starting new execution after timeout")
+                                    else:
+                                        # Return the timed out status if abort_on_timeout is set
+                                        return {
+                                            'status': False,
+                                            'execution_id': execution_id,
+                                            's3_bucket': s3_bucket,
+                                            'execution_type': execution_type,
+                                            'error': f"Previous execution timed out after {elapsed_time:.2f} seconds",
+                                            'output': f"Execution {execution_id} timed out and abort_on_timeout is set"
+                                        }
+                                else:
+                                    # Execution is still within timeout window
+                                    remaining_time = tracking_max_time - elapsed_time
+                                    logger.info(f"Execution already in progress for {resource_type}:{resource_id} with ID {execution_id}")
+                                    logger.info(f"Elapsed time: {elapsed_time:.2f}s, Estimated remaining time: {remaining_time:.2f}s")
+                                    
+                                    return {
+                                        'status': True,
+                                        'execution_id': execution_id,
+                                        's3_bucket': s3_bucket,
+                                        'execution_type': execution_type,
+                                        'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
+                                        'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
+                                        'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
+                                        'output': f"Execution already in progress with ID: {execution_id}",
+                                        'already_running': True,
+                                        'elapsed_time': elapsed_time,
+                                        'remaining_time': remaining_time
+                                    }
+                            else:
+                                # No start_time in status data
+                                logger.info(f"Execution already in progress for {resource_type}:{resource_id} with ID {execution_id}")
+                                return {
+                                    'status': True,
+                                    'execution_id': execution_id,
+                                    's3_bucket': s3_bucket,
+                                    'execution_type': execution_type,
+                                    'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
+                                    'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
+                                    'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
+                                    'output': f"Execution already in progress with ID: {execution_id}",
+                                    'already_running': True
+                                }
                     except s3_client.exceptions.NoSuchKey:
                         # Status file doesn't exist, proceed with new execution
                         pass
@@ -145,7 +259,9 @@ def aws_executor(execution_type="lambda"):
                     'resource_type': resource_type,
                     'resource_id': resource_id,
                     'method': method,
-                    'execution_type': execution_type
+                    'execution_type': execution_type,
+                    'max_execution_time': max_execution_time,
+                    'tracking_max_time': tracking_max_time
                 }
                 s3_client.put_object(
                     Bucket=s3_bucket,
@@ -402,6 +518,7 @@ class AWSAsyncExecutor:
                 - app_name: Application name
                 - remote_stateful_bucket: S3 bucket for state storage
                 - build_timeout: Maximum execution time in seconds
+                - force_new_execution: Force a new execution regardless of existing ones
         """
         self.resource_type = resource_type
         self.resource_id = resource_id
@@ -427,6 +544,7 @@ class AWSAsyncExecutor:
                 - method: Operation method (create, destroy, etc.)
                 - build_env_vars: Environment variables for the build
                 - ssm_name: SSM parameter name (if applicable)
+                - force_new_execution: Force a new execution regardless of existing ones
                 
         Returns:
             dict: Execution tracking information with:
@@ -453,6 +571,7 @@ class AWSAsyncExecutor:
                 - method: Operation method (create, destroy, etc.)
                 - build_env_vars: Environment variables for the build
                 - ssm_name: SSM parameter name (if applicable)
+                - force_new_execution: Force a new execution regardless of existing ones
                 
         Returns:
             dict: Execution tracking information with:
@@ -466,3 +585,213 @@ class AWSAsyncExecutor:
                 - logs_url: URL to retrieve execution logs
         """
         pass  # Implementation handled by decorator
+    
+    def get_execution_status(self, execution_id=None, s3_bucket=None):
+        """
+        Get the status of an execution.
+        
+        Args:
+            execution_id (str, optional): Execution ID to check. If not provided,
+                                         a deterministic ID will be generated.
+            s3_bucket (str, optional): S3 bucket where execution data is stored.
+                                      Defaults to self.tmp_bucket.
+                                      
+        Returns:
+            dict: Status information for the execution, or None if not found
+        """
+        if not execution_id:
+            # Generate deterministic execution ID based on resource identifiers
+            base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
+            execution_id = hashlib.md5(base_string.encode()).hexdigest()
+        
+        s3_bucket = s3_bucket or getattr(self, 'tmp_bucket', None)
+        if not s3_bucket:
+            raise ValueError("s3_bucket must be provided as parameter or class attribute")
+        
+        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+        
+        try:
+            s3_client = boto3.client('s3')
+            status_key = f"executions/{execution_id}/status"
+            
+            try:
+                status_obj = s3_client.get_object(Bucket=s3_bucket, Key=status_key)
+                status_data = json.loads(status_obj['Body'].read().decode('utf-8'))
+                return status_data
+            except s3_client.exceptions.NoSuchKey:
+                logger.debug(f"No status found for execution {execution_id}")
+                return None
+        except Exception as e:
+            logger.error(f"Error retrieving execution status: {str(e)}")
+            return None
+    
+    def check_execution_timeout(self, execution_id=None, s3_bucket=None, max_execution_time=None):
+        """
+        Check if an execution has timed out.
+        
+        Args:
+            execution_id (str, optional): Execution ID to check.
+            s3_bucket (str, optional): S3 bucket for tracking.
+            max_execution_time (int, optional): Maximum allowed execution time in seconds.
+            
+        Returns:
+            dict: Result with timed_out flag and elapsed_time if available
+        """
+        if not execution_id:
+            # Generate deterministic execution ID based on resource identifiers
+            base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
+            execution_id = hashlib.md5(base_string.encode()).hexdigest()
+        
+        s3_bucket = s3_bucket or getattr(self, 'tmp_bucket', None)
+        if not s3_bucket:
+            raise ValueError("s3_bucket must be provided as parameter or class attribute")
+        
+        max_execution_time = max_execution_time or getattr(self, 'max_execution_time', None)
+        if not max_execution_time:
+            # Try to get from build_env_vars
+            build_env_vars = getattr(self, 'build_env_vars', {})
+            if isinstance(build_env_vars, dict):
+                if build_env_vars.get('BUILD_TIMEOUT'):
+                    try:
+                        max_execution_time = int(build_env_vars.get('BUILD_TIMEOUT'))
+                    except (ValueError, TypeError):
+                        pass
+                
+                if not max_execution_time and build_env_vars.get('TIMEOUT'):
+                    try:
+                        max_execution_time = int(build_env_vars.get('TIMEOUT'))
+                    except (ValueError, TypeError):
+                        pass
+            
+            # If still not found, try environment variables
+            if not max_execution_time:
+                if os.environ.get('BUILD_TIMEOUT'):
+                    try:
+                        max_execution_time = int(os.environ.get('BUILD_TIMEOUT'))
+                    except (ValueError, TypeError):
+                        pass
+                
+                if not max_execution_time and os.environ.get('TIMEOUT'):
+                    try:
+                        max_execution_time = int(os.environ.get('TIMEOUT'))
+                    except (ValueError, TypeError):
+                        pass
+            
+            # If still no timeout, use default based on resource type
+            if not max_execution_time:
+                resource_type = getattr(self, 'resource_type', '').lower()
+                if resource_type == 'lambda':
+                    max_execution_time = 900  # 15 minutes default for Lambda
+                else:
+                    max_execution_time = 3600  # 1 hour default for others
+        
+        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+        
+        # Check status in S3
+        status_data = self.get_execution_status(execution_id, s3_bucket)
+        if not status_data:
+            return {"timed_out": False, "reason": "No execution found"}
+        
+        # If status is already set to something other than in_progress, it's not running
+        if status_data.get('status') != 'in_progress':
+            return {
+                "timed_out": False, 
+                "reason": f"Execution is not in progress (status: {status_data.get('status')})"
+            }
+        
+        # Check if execution has been running too long
+        if 'start_time' in status_data:
+            elapsed_time = time.time() - status_data['start_time']
+            if elapsed_time > max_execution_time:
+                # Update status to timed_out
+                try:
+                    status_data['status'] = 'timed_out'
+                    status_data['end_time'] = time.time()
+                    status_data['error'] = f"Execution timed out after {elapsed_time:.2f} seconds"
+                    
+                    s3_client = boto3.client('s3')
+                    s3_client.put_object(
+                        Bucket=s3_bucket,
+                        Key=f"executions/{execution_id}/status",
+                        Body=json.dumps(status_data),
+                        ContentType='application/json'
+                    )
+                    logger.info(f"Updated status of timed out execution {execution_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to update timed out status: {str(e)}")
+                
+                return {
+                    "timed_out": True,
+                    "elapsed_time": elapsed_time,
+                    "execution_id": execution_id
+                }
+            else:
+                return {
+                    "timed_out": False,
+                    "elapsed_time": elapsed_time,
+                    "reason": "Execution is still within time limit"
+                }
+        
+        return {"timed_out": False, "reason": "No start_time available in status"}
+    
+    def force_execution(self, method=None, **kwargs):
+        """
+        Force a new execution regardless of any existing executions.
+        
+        This is useful for retrying failed or stuck executions.
+        
+        Args:
+            method (str, optional): Method to execute (create, destroy, etc.)
+            **kwargs: Additional parameters to pass to the execution
+            
+        Returns:
+            dict: Execution tracking information
+        """
+        if method:
+            kwargs['method'] = method
+        
+        kwargs['force_new_execution'] = True
+        
+        # Determine whether to use Lambda or CodeBuild based on timeout
+        build_timeout = kwargs.get('build_timeout') or getattr(self, 'build_timeout', None)
+        
+        try:
+            build_timeout = int(build_timeout) if build_timeout else None
+        except (ValueError, TypeError):
+            build_timeout = None
+        
+        if not build_timeout:
+            # Try to get timeout from build_env_vars
+            build_env_vars = kwargs.get('build_env_vars') or getattr(self, 'build_env_vars', {})
+            if isinstance(build_env_vars, dict):
+                if build_env_vars.get('BUILD_TIMEOUT'):
+                    try:
+                        build_timeout = int(build_env_vars.get('BUILD_TIMEOUT'))
+                    except (ValueError, TypeError):
+                        pass
+                
+                if not build_timeout and build_env_vars.get('TIMEOUT'):
+                    try:
+                        build_timeout = int(build_env_vars.get('TIMEOUT'))
+                    except (ValueError, TypeError):
+                        pass
+        
+        # If still not found, try environment variables
+        if not build_timeout:
+            if os.environ.get('BUILD_TIMEOUT'):
+                try:
+                    build_timeout = int(os.environ.get('BUILD_TIMEOUT'))
+                except (ValueError, TypeError):
+                    pass
+            
+            if not build_timeout and os.environ.get('TIMEOUT'):
+                try:
+                    build_timeout = int(os.environ.get('TIMEOUT'))
+                except (ValueError, TypeError):
+                    pass
+        
+        # Use CodeBuild for longer operations
+        if build_timeout and build_timeout > 800:
+            return self.exec_codebuild(**kwargs)
+        else:
+            return self.exec_lambda(**kwargs)

@@ -17,6 +17,7 @@ Environment Variables:
     JIFFY_ENHANCED_LOG: Enable enhanced logging
     DEBUG_STATEFUL: Enable debug mode for stateful operations
     CONFIG0_INITIAL_APPLY: Flag for initial application
+    FORCE_NEW_EXECUTION: Force a new execution regardless of existing ones
 """
 
 
@@ -243,6 +244,12 @@ class ResourceCmdHelper(SyncToShare):
 
         # ref 34532453245
         self.final_output = None
+        
+        # Set force_new_execution from environment variable if present
+        if os.environ.get("FORCE_NEW_EXECUTION"):
+            self.force_new_execution = True
+        else:
+            self.force_new_execution = kwargs.get("force_new_execution", False)
 
     def _set_build_timeout(self):
         if hasattr(self, "build_timeout") and self.build_timeout:
@@ -1455,6 +1462,10 @@ class ResourceCmdHelper(SyncToShare):
             "tf_runtime": self.tf_runtime
         }
 
+        # Pass force_new_execution if set
+        if hasattr(self, "force_new_execution") and self.force_new_execution:
+            cinputargs["force_new_execution"] = True
+        
         # Usually associated with create
         if method in ["apply", "create", "pre-create"]:
             if self.build_env_vars:
@@ -1515,15 +1526,19 @@ class ResourceCmdHelper(SyncToShare):
         return self._exec_in_aws(method=method)
 
     def _exec_in_aws(self, method="create"):
-        """Executes Terraform command in AWS"""
+        """Executes Terraform command in AWS with execution tracking"""
 
+        # Generate a deterministic execution ID based on resource identifiers
+        base_string = f"terraform:{self.stateful_id}:{method}"
+        execution_id = hashlib.md5(base_string.encode()).hexdigest()
+        
+        # Get execution input arguments
         cinputargs = self._get_aws_exec_cinputargs(method=method)
-
-        # testtest456
-        self.logger.debug("o1"*32)
-        self.logger.json(cinputargs)
-        self.logger.debug("o2"*32)
-        #raise
+        
+        # Add execution tracking parameters
+        if hasattr(self, "force_new_execution") and self.force_new_execution:
+            cinputargs["force_new_execution"] = True
+            self.logger.info(f"Forcing new execution for {self.stateful_id} with method {method}")
 
         # Create AWS Async Executor with current settings
         executor = AWSAsyncExecutor(
@@ -1546,6 +1561,19 @@ class ResourceCmdHelper(SyncToShare):
             results = executor.exec_codebuild(**cinputargs)
         else:
             return False
+        
+        # If the execution is already running, provide additional information
+        if results.get("already_running"):
+            self.logger.info(f"Execution for {self.stateful_id} with method {method} is already in progress")
+            self.logger.info(f"Execution ID: {results.get('execution_id')}")
+            
+            if "elapsed_time" in results:
+                self.logger.info(f"Elapsed time: {results['elapsed_time']:.2f} seconds")
+            
+            if "remaining_time" in results:
+                self.logger.info(f"Estimated remaining time: {results['remaining_time']:.2f} seconds")
+                
+            self.logger.info("To force a new execution, set FORCE_NEW_EXECUTION=True environment variable")
 
         if method == "destroy":
             try:
