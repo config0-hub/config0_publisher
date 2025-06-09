@@ -1523,7 +1523,7 @@ class ResourceCmdHelper(SyncToShare):
         self.logger.debug("o1"*32)
         self.logger.json(cinputargs)
         self.logger.debug("o2"*32)
-        raise
+        #raise
 
         # Create AWS Async Executor with current settings
         executor = AWSAsyncExecutor(
