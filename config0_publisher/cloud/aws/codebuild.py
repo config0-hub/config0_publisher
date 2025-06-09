@@ -380,57 +380,11 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return sorted(results, key=lambda x: results[x])
 
-    def _get_codebuild_projects(self, sleep_int=10):
-        for retry in range(3):
-            try:
-                empty_queue_projects = self.get_available_projects()
-            except:
-                empty_queue_projects = False
-
-            if empty_queue_projects:
-                return empty_queue_projects
-
-            sleep(sleep_int)
-
-        return False
-
     def trigger_build(self, sparse_env_vars=True):
-        projects = self.get_available_projects()
-        self.project_name = None
 
-        if not projects:
-            self.logger.warn(f"cannot find matching project - using codebuild_basename {self.codebuild_basename}")
-            projects = [self.codebuild_basename]
-
-        timeout = max(1, int(self.build_timeout/60))
-
-        for project_name in projects:
-            self.logger.debug_highlight(f"running job on codebuild project {project_name}")
-
-            env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
-
-            inputargs = {"projectName": project_name,
-                         "environmentVariablesOverride": env_vars_codebuild_format,
-                         "timeoutInMinutesOverride": timeout,
-                         "imageOverride": self.build_image,
-                         "computeTypeOverride": self.compute_type,
-                         "environmentTypeOverride": self.image_type}
-
-            if self.buildspec:
-                inputargs["buildspecOverride"] = self.buildspec
-
-            try:
-                new_build = self.codebuild_client.start_build(**inputargs)
-            except:
-                msg = traceback.format_exc()
-                self.logger.warn(f"could not start build on codebuild {project_name}\n\n{msg}")
-                continue
-
-            self.project_name = project_name
-            break
-
-        if not self.project_name:
-            raise Exception("could not trigger codebuild execution")
+        inputargs = self.get_trigger_inputargs(sparse_env_vars=sparse_env_vars)
+        project_name = inputargs["projectName"]
+        new_build = self.codebuild_client.start_build(**inputargs)
 
         self.build_id = new_build['build']['id']
         self.results["inputargs"]["build_id"] = self.build_id
@@ -442,7 +396,8 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return new_build
 
-    def _submit(self, sparse_env_vars=True):
+    def pre_trigger(self, sparse_env_vars=True):
+
         self.phase_result = self.new_phase("submit")
 
         # we don't want to clobber the intact
@@ -451,7 +406,34 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.upload_to_s3_stateful()
             self.phase_result["executed"].append("upload_to_s3")
 
-        self.trigger_build(sparse_env_vars=sparse_env_vars)
+        return self.get_trigger_inputargs(sparse_env_vars=sparse_env_vars)
+
+    def get_trigger_inputargs(self, sparse_env_vars=True):
+
+        projects = self.get_available_projects()
+        self.project_name = None
+
+        if not projects:
+            self.logger.warn(f"cannot find matching project - using codebuild_basename {self.codebuild_basename}")
+            projects = [self.codebuild_basename]
+
+        timeout = max(1, int(self.build_timeout/60))
+
+        for project_name in projects:
+            self.logger.debug_highlight(f"running job on codebuild project {project_name}")
+            env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
+            inputargs = {"projectName": project_name,
+                         "environmentVariablesOverride": env_vars_codebuild_format,
+                         "timeoutInMinutesOverride": timeout,
+                         "imageOverride": self.build_image,
+                         "computeTypeOverride": self.compute_type,
+                         "environmentTypeOverride": self.image_type}
+            if self.buildspec:
+                inputargs["buildspecOverride"] = self.buildspec
+            return inputargs
+        return None
+
+    def _submit(self, sparse_env_vars=True):
 
         self.phase_result["executed"].append("trigger_codebuild")
         self.phase_result["status"] = True

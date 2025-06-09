@@ -140,10 +140,50 @@ def aws_executor(execution_type="lambda"):
                 execution_id = hashlib.md5(base_string.encode()).hexdigest()
                 logger.debug(f"Generated deterministic execution_id: {execution_id} from {base_string}")
 
-            # Get the required parameters
-            s3_bucket = kwargs.get('tmp_bucket') or getattr(self, 'tmp_bucket', None)
-            if not s3_bucket:
-                raise ValueError("tmp_bucket must be provided as parameter or class attribute")
+            # Determine output bucket with correct priority order
+            output_bucket = None
+            
+            # 1. First check for OUTPUT_BUCKET in kwargs
+            if kwargs.get('OUTPUT_BUCKET'):
+                output_bucket = kwargs.get('OUTPUT_BUCKET')
+                logger.debug(f"Using OUTPUT_BUCKET from kwargs: {output_bucket}")
+            
+            # 2. Then check build_env_vars for OUTPUT_BUCKET
+            elif isinstance(build_env_vars, dict) and build_env_vars.get('OUTPUT_BUCKET'):
+                output_bucket = build_env_vars.get('OUTPUT_BUCKET')
+                logger.debug(f"Using OUTPUT_BUCKET from build_env_vars: {output_bucket}")
+            
+            # 3. Then check build_env_vars for TMP_BUCKET
+            elif isinstance(build_env_vars, dict) and build_env_vars.get('TMP_BUCKET'):
+                output_bucket = build_env_vars.get('TMP_BUCKET')
+                logger.debug(f"Using TMP_BUCKET from build_env_vars: {output_bucket}")
+            
+            # 4. Then check for tmp_bucket in kwargs
+            elif kwargs.get('tmp_bucket'):
+                output_bucket = kwargs.get('tmp_bucket')
+                logger.debug(f"Using tmp_bucket from kwargs: {output_bucket}")
+            
+            # 5. Then check for tmp_bucket as class attribute
+            elif hasattr(self, 'tmp_bucket') and getattr(self, 'tmp_bucket'):
+                output_bucket = getattr(self, 'tmp_bucket')
+                logger.debug(f"Using tmp_bucket from class attribute: {output_bucket}")
+            
+            # 6. Then check environment variables
+            elif os.environ.get('OUTPUT_BUCKET'):
+                output_bucket = os.environ.get('OUTPUT_BUCKET')
+                logger.debug(f"Using OUTPUT_BUCKET from environment: {output_bucket}")
+            elif os.environ.get('TMP_BUCKET'):
+                output_bucket = os.environ.get('TMP_BUCKET')
+                logger.debug(f"Using TMP_BUCKET from environment: {output_bucket}")
+            
+            # If no bucket found, raise error
+            if not output_bucket:
+                error_msg = "No S3 bucket specified for execution tracking. Please provide OUTPUT_BUCKET or TMP_BUCKET."
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # Use output_bucket for all S3 operations
+            s3_bucket = output_bucket
 
             # Check if execution is already in progress
             if not kwargs.get('force_new_execution') and not getattr(self, 'force_new_execution', False) and not os.environ.get('FORCE_NEW_EXECUTION'):
@@ -188,7 +228,7 @@ def aws_executor(execution_type="lambda"):
                                         return {
                                             'status': False,
                                             'execution_id': execution_id,
-                                            's3_bucket': s3_bucket,
+                                            'output_bucket': s3_bucket,
                                             'execution_type': execution_type,
                                             'error': f"Previous execution timed out after {elapsed_time:.2f} seconds",
                                             'output': f"Execution {execution_id} timed out and abort_on_timeout is set"
@@ -202,7 +242,7 @@ def aws_executor(execution_type="lambda"):
                                     return {
                                         'status': True,
                                         'execution_id': execution_id,
-                                        's3_bucket': s3_bucket,
+                                        'output_bucket': s3_bucket,
                                         'execution_type': execution_type,
                                         'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
                                         'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
@@ -218,7 +258,7 @@ def aws_executor(execution_type="lambda"):
                                 return {
                                     'status': True,
                                     'execution_id': execution_id,
-                                    's3_bucket': s3_bucket,
+                                    'output_bucket': s3_bucket,
                                     'execution_type': execution_type,
                                     'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
                                     'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
@@ -239,7 +279,7 @@ def aws_executor(execution_type="lambda"):
             # Prepare the payload from kwargs
             payload = {
                 'execution_id': execution_id,
-                's3_bucket': s3_bucket,
+                'output_bucket': s3_bucket,
                 'params': kwargs
             }
             
@@ -275,24 +315,55 @@ def aws_executor(execution_type="lambda"):
             
             # Execute based on type
             if execution_type.lower() == "lambda":
-                # Use lambda_region (us-east-1) for Lambda invocations
+                # Get Lambda function details - only use FunctionName from invocation_config
+                function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
                 lambda_region = getattr(self, 'lambda_region', 'us-east-1')
-                function_name = getattr(self, 'lambda_function_name', 'config0-iac')
                 
                 # Initialize Lambda client with specific region for Lambda
                 lambda_client = boto3.client('lambda', region_name=lambda_region)
                 
                 try:
-                    # Invoke Lambda function asynchronously
-                    response = lambda_client.invoke(
-                        FunctionName=function_name,
-                        InvocationType='Event',
-                        Payload=json.dumps(payload)
-                    )
+                    # Check if this is a pre-configured payload from Lambdabuild
+                    if kwargs.get('Payload'):
+                        # If it's a string, assume it's already JSON formatted
+                        if isinstance(kwargs['Payload'], str):
+                            try:
+                                payload_obj = json.loads(kwargs['Payload'])
+                                # Ensure payload is a dict
+                                if not isinstance(payload_obj, dict):
+                                    payload_obj = {}
+                            except:
+                                payload_obj = {}
+                        else:
+                            # If it's already a dict, use it directly
+                            payload_obj = kwargs['Payload']
+                            
+                        # Add tracking info if not already present
+                        payload_obj['execution_id'] = execution_id
+                        payload_obj['output_bucket'] = s3_bucket
+                            
+                        lambda_payload = json.dumps(payload_obj)
+                    else:
+                        # Use our standard payload format
+                        lambda_payload = json.dumps(payload)
+                    
+                    # Prepare Lambda invocation parameters - always use Event mode
+                    lambda_params = {
+                        'FunctionName': function_name,
+                        'InvocationType': 'Event',  # Always async
+                        'Payload': lambda_payload
+                    }
+                    
+                    # LogType is omitted as it's not needed for Event invocations
+                    
+                    # Invoke Lambda function
+                    response = lambda_client.invoke(**lambda_params)
                     
                     # Check response status
                     status_code = response.get('StatusCode')
-                    if status_code != 202:  # 202 Accepted is expected for async invocation
+                    
+                    # For Event invocation type, 202 Accepted is expected
+                    if status_code != 202:
                         logger.error(f"Lambda invocation failed with status code: {status_code}")
                         
                         # Update status in S3
@@ -312,10 +383,11 @@ def aws_executor(execution_type="lambda"):
                         return {
                             'status': False,
                             'execution_id': execution_id,
-                            's3_bucket': s3_bucket,
+                            'output_bucket': s3_bucket,
                             'error': f"Lambda invocation failed with status code: {status_code}",
                             'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
                         }
+                    
                 except Exception as e:
                     logger.error(f"Lambda invocation failed with exception: {str(e)}")
                     
@@ -336,39 +408,69 @@ def aws_executor(execution_type="lambda"):
                     return {
                         'status': False,
                         'execution_id': execution_id,
-                        's3_bucket': s3_bucket,
+                        'output_bucket': s3_bucket,
                         'error': f"Lambda invocation failed with exception: {str(e)}",
                         'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
                     }
                     
             elif execution_type.lower() == "codebuild":
+                # Start with all the original parameters from the Codebuild class
+                build_params = dict(kwargs)
+                
+                # Get the project name
+                project_name = build_params.get('projectName') or getattr(self, 'codebuild_project_name', 'config0-iac')
+                build_params['projectName'] = project_name
+                
+                # Handle environment variables - ensure tracking vars are included
+                if 'environmentVariablesOverride' in build_params:
+                    env_vars = build_params['environmentVariablesOverride']
+                else:
+                    env_vars = []
+                    build_params['environmentVariablesOverride'] = env_vars
+                
+                # Check for and add execution tracking variables if needed
+                execution_id_found = False
+                output_bucket_found = False
+                
+                for env_var in env_vars:
+                    if env_var.get('name') == 'EXECUTION_ID':
+                        execution_id_found = True
+                    elif env_var.get('name') == 'OUTPUT_BUCKET':
+                        output_bucket_found = True
+                
+                # Add execution_id if not present
+                if not execution_id_found:
+                    env_vars.append({
+                        'name': 'EXECUTION_ID',
+                        'value': execution_id
+                    })
+                
+                # Add output_bucket if not present
+                if not output_bucket_found:
+                    env_vars.append({
+                        'name': 'OUTPUT_BUCKET',
+                        'value': s3_bucket
+                    })
+                
+                # Remove any parameters that aren't valid for CodeBuild API
+                for key in list(build_params.keys()):
+                    if key not in [
+                        'projectName', 'environmentVariablesOverride', 
+                        'timeoutInMinutesOverride', 'imageOverride', 
+                        'computeTypeOverride', 'environmentTypeOverride',
+                        'buildspecOverride'
+                    ]:
+                        del build_params[key]
+                
                 # Use the infrastructure region for CodeBuild
                 codebuild_region = getattr(self, 'aws_region', 'us-east-1')
-                project_name = getattr(self, 'codebuild_project_name', 'config0-iac')
                 
                 # Initialize CodeBuild client with infrastructure region
                 codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
                 
-                # Prepare environment variables for the build
-                env_vars = [
-                    {'name': 'EXECUTION_ID', 'value': execution_id},
-                    {'name': 'S3_BUCKET', 'value': s3_bucket}
-                ]
-                
-                # Add build environment variables if available
-                if 'build_env_vars' in kwargs and kwargs['build_env_vars']:
-                    for key, value in kwargs['build_env_vars'].items():
-                        env_vars.append({
-                            'name': key,
-                            'value': str(value)
-                        })
-                
                 try:
                     # Start the build
-                    response = codebuild_client.start_build(
-                        projectName=project_name,
-                        environmentVariablesOverride=env_vars
-                    )
+                    response = codebuild_client.start_build(**build_params)
                     
                     # Extract build information
                     build = response.get('build', {})
@@ -394,7 +496,7 @@ def aws_executor(execution_type="lambda"):
                         return {
                             'status': False,
                             'execution_id': execution_id,
-                            's3_bucket': s3_bucket,
+                            'output_bucket': s3_bucket,
                             'error': "Failed to start CodeBuild project",
                             'output': f"Failed to start CodeBuild project {project_name} in region {codebuild_region}"
                         }
@@ -434,7 +536,7 @@ def aws_executor(execution_type="lambda"):
                     return {
                         'status': False,
                         'execution_id': execution_id,
-                        's3_bucket': s3_bucket,
+                        'output_bucket': s3_bucket,
                         'error': f"CodeBuild start failed with exception: {str(e)}",
                         'output': f"Exception when starting CodeBuild project {project_name} in region {codebuild_region}: {str(e)}"
                     }
@@ -460,7 +562,7 @@ def aws_executor(execution_type="lambda"):
             result = {
                 'status': True,
                 'execution_id': execution_id,
-                's3_bucket': s3_bucket,
+                'output_bucket': s3_bucket,
                 'execution_type': execution_type,
                 'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
                 'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
@@ -469,8 +571,8 @@ def aws_executor(execution_type="lambda"):
             }
             
             # Add build ID for CodeBuild if available
-            if execution_type.lower() == "codebuild" and 'build_id' in payload:
-                result['build_id'] = payload['build_id']
+            if execution_type.lower() == "codebuild" and 'build_id' in locals():
+                result['build_id'] = build_id
             
             return result
         return wrapper
@@ -539,6 +641,9 @@ class AWSAsyncExecutor:
         Executes the operation asynchronously via AWS Lambda, which is suitable
         for operations that complete within the Lambda execution time limit.
         
+        This method can handle both direct parameters and a pre-configured invocation
+        configuration from Lambdabuild.
+        
         Args:
             **kwargs: Operation parameters including:
                 - method: Operation method (create, destroy, etc.)
@@ -546,11 +651,15 @@ class AWSAsyncExecutor:
                 - ssm_name: SSM parameter name (if applicable)
                 - force_new_execution: Force a new execution regardless of existing ones
                 
+                Or Lambdabuild invocation configuration:
+                - FunctionName: Lambda function name
+                - Payload: JSON payload or string with commands and environment variables
+                
         Returns:
             dict: Execution tracking information with:
                 - status: True if execution started successfully
                 - execution_id: Unique identifier for the execution
-                - s3_bucket: S3 bucket for tracking
+                - output_bucket: S3 bucket for tracking
                 - execution_type: "lambda"
                 - status_url: URL to check execution status
                 - result_url: URL to retrieve execution results
@@ -566,6 +675,9 @@ class AWSAsyncExecutor:
         Executes the operation asynchronously via AWS CodeBuild, which is suitable
         for longer-running operations that exceed Lambda execution time limits.
         
+        This method can handle both direct parameters and a pre-configured build
+        specification from Codebuild.
+        
         Args:
             **kwargs: Operation parameters including:
                 - method: Operation method (create, destroy, etc.)
@@ -573,11 +685,20 @@ class AWSAsyncExecutor:
                 - ssm_name: SSM parameter name (if applicable)
                 - force_new_execution: Force a new execution regardless of existing ones
                 
+                Or Codebuild build configuration:
+                - projectName: CodeBuild project name
+                - environmentVariablesOverride: Environment variables in CodeBuild format
+                - timeoutInMinutesOverride: Build timeout in minutes
+                - imageOverride: Docker image to use
+                - computeTypeOverride: Compute resources to use
+                - environmentTypeOverride: Environment type
+                - buildspecOverride: Alternative buildspec file
+                
         Returns:
             dict: Execution tracking information with:
                 - status: True if execution started successfully
                 - execution_id: Unique identifier for the execution
-                - s3_bucket: S3 bucket for tracking
+                - output_bucket: S3 bucket for tracking
                 - execution_type: "codebuild"
                 - build_id: CodeBuild build ID
                 - status_url: URL to check execution status
@@ -586,14 +707,14 @@ class AWSAsyncExecutor:
         """
         pass  # Implementation handled by decorator
     
-    def get_execution_status(self, execution_id=None, s3_bucket=None):
+    def get_execution_status(self, execution_id=None, output_bucket=None):
         """
         Get the status of an execution.
         
         Args:
             execution_id (str, optional): Execution ID to check. If not provided,
                                          a deterministic ID will be generated.
-            s3_bucket (str, optional): S3 bucket where execution data is stored.
+            output_bucket (str, optional): S3 bucket where execution data is stored.
                                       Defaults to self.tmp_bucket.
                                       
         Returns:
@@ -604,9 +725,18 @@ class AWSAsyncExecutor:
             base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
             execution_id = hashlib.md5(base_string.encode()).hexdigest()
         
-        s3_bucket = s3_bucket or getattr(self, 'tmp_bucket', None)
-        if not s3_bucket:
-            raise ValueError("s3_bucket must be provided as parameter or class attribute")
+        # Determine output bucket using same priority order
+        if not output_bucket:
+            if hasattr(self, 'output_bucket') and self.output_bucket:
+                output_bucket = self.output_bucket
+            elif hasattr(self, 'tmp_bucket') and self.tmp_bucket:
+                output_bucket = self.tmp_bucket
+            elif os.environ.get('OUTPUT_BUCKET'):
+                output_bucket = os.environ.get('OUTPUT_BUCKET')
+            elif os.environ.get('TMP_BUCKET'):
+                output_bucket = os.environ.get('TMP_BUCKET')
+            else:
+                raise ValueError("output_bucket must be provided as parameter or class attribute")
         
         logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
         
@@ -615,7 +745,7 @@ class AWSAsyncExecutor:
             status_key = f"executions/{execution_id}/status"
             
             try:
-                status_obj = s3_client.get_object(Bucket=s3_bucket, Key=status_key)
+                status_obj = s3_client.get_object(Bucket=output_bucket, Key=status_key)
                 status_data = json.loads(status_obj['Body'].read().decode('utf-8'))
                 return status_data
             except s3_client.exceptions.NoSuchKey:
@@ -625,13 +755,13 @@ class AWSAsyncExecutor:
             logger.error(f"Error retrieving execution status: {str(e)}")
             return None
     
-    def check_execution_timeout(self, execution_id=None, s3_bucket=None, max_execution_time=None):
+    def check_execution_timeout(self, execution_id=None, output_bucket=None, max_execution_time=None):
         """
         Check if an execution has timed out.
         
         Args:
             execution_id (str, optional): Execution ID to check.
-            s3_bucket (str, optional): S3 bucket for tracking.
+            output_bucket (str, optional): S3 bucket for tracking.
             max_execution_time (int, optional): Maximum allowed execution time in seconds.
             
         Returns:
@@ -642,9 +772,18 @@ class AWSAsyncExecutor:
             base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
             execution_id = hashlib.md5(base_string.encode()).hexdigest()
         
-        s3_bucket = s3_bucket or getattr(self, 'tmp_bucket', None)
-        if not s3_bucket:
-            raise ValueError("s3_bucket must be provided as parameter or class attribute")
+        # Determine output bucket using same priority order
+        if not output_bucket:
+            if hasattr(self, 'output_bucket') and self.output_bucket:
+                output_bucket = self.output_bucket
+            elif hasattr(self, 'tmp_bucket') and self.tmp_bucket:
+                output_bucket = self.tmp_bucket
+            elif os.environ.get('OUTPUT_BUCKET'):
+                output_bucket = os.environ.get('OUTPUT_BUCKET')
+            elif os.environ.get('TMP_BUCKET'):
+                output_bucket = os.environ.get('TMP_BUCKET')
+            else:
+                raise ValueError("output_bucket must be provided as parameter or class attribute")
         
         max_execution_time = max_execution_time or getattr(self, 'max_execution_time', None)
         if not max_execution_time:
@@ -688,7 +827,7 @@ class AWSAsyncExecutor:
         logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
         
         # Check status in S3
-        status_data = self.get_execution_status(execution_id, s3_bucket)
+        status_data = self.get_execution_status(execution_id, output_bucket)
         if not status_data:
             return {"timed_out": False, "reason": "No execution found"}
         
@@ -711,7 +850,7 @@ class AWSAsyncExecutor:
                     
                     s3_client = boto3.client('s3')
                     s3_client.put_object(
-                        Bucket=s3_bucket,
+                        Bucket=output_bucket,
                         Key=f"executions/{execution_id}/status",
                         Body=json.dumps(status_data),
                         ContentType='application/json'

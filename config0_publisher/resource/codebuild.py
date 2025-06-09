@@ -70,6 +70,10 @@ phases:
         self.codebuild_helper = CodebuildResourceHelper(s3_output_key=self.s3_output_key,
                                                         **self.buildparams)
 
+    def pre_trigger(self,**inputargs):
+        self._init_codebuild_helper()
+        return self.codebuild_helper.pre_trigger(**inputargs)
+
     def submit(self,**inputargs):
 
         self._init_codebuild_helper()

@@ -126,7 +126,14 @@ class LambdaResourceHelper(AWSCommonConn):
 
         return timeout
 
-    def _trigger_build(self):
+    def pre_trigger(self):
+
+        self.phase_result = self.new_phase("submit")
+
+        # we don't want to clobber the intact
+        # stateful files from creation
+        if self.method in ["create", "pre-create"]:
+            self.upload_to_s3_stateful()
 
         self.build_timeout = self._get_timeout()
         self.build_expire_at = time() + self._get_timeout()
@@ -150,17 +157,9 @@ class LambdaResourceHelper(AWSCommonConn):
                 })
         }
 
-        # TODO: add stop function in the future here
-        return self.lambda_client.invoke(**invocation_config)
+        return invocation_config
 
     def _submit(self):
-
-        self.phase_result = self.new_phase("submit")
-
-        # we don't want to clobber the intact
-        # stateful files from creation
-        if self.method in ["create", "pre-create"]:
-            self.upload_to_s3_stateful()
 
         """
         options:
@@ -171,7 +170,8 @@ class LambdaResourceHelper(AWSCommonConn):
           - Payload
         """
 
-        self.response = self._trigger_build()
+        invocation_config = self.pre_trigger()
+        self.response = self.lambda_client.invoke(**invocation_config)
         lambda_status = int(self.response["StatusCode"])
         self.results["lambda_status"] = lambda_status
 

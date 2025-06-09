@@ -391,7 +391,8 @@ class ResourceCmdHelper(SyncToShare):
             "schedule_id",
             "run_id",
             "job_instance_id",
-            "config0_resource_json_file"
+            "config0_resource_json_file",
+            "output_bucket"
         ]
 
         default_values = {
@@ -399,6 +400,7 @@ class ResourceCmdHelper(SyncToShare):
             "run_share_dir": None,
             "tmp_bucket": None,
             "log_bucket": None,
+            "output_bucket": None,
             "stateful_id": None,
             "destroy_env_vars": None,
             "validate_env_vars": None,
@@ -1396,7 +1398,14 @@ class ResourceCmdHelper(SyncToShare):
         self.build_env_vars["SHARE_DIR"] = self.share_dir
         self.build_env_vars["RUN_SHARE_DIR"] = self.run_share_dir
         self.build_env_vars["LOG_BUCKET"] = self.log_bucket
-        self.build_env_vars["TMP_BUCKET"] = self.tmp_bucket
+        
+        # Set OUTPUT_BUCKET with priority
+        if self.output_bucket:
+            self.build_env_vars["OUTPUT_BUCKET"] = self.output_bucket
+        elif self.tmp_bucket:
+            self.build_env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
+            self.build_env_vars["TMP_BUCKET"] = self.tmp_bucket
+        
         self.build_env_vars["STATEFUL_ID"] = self.stateful_id
         self.build_env_vars["APP_DIR"] = self.app_dir
         self.build_env_vars["APP_NAME"] = self.app_name
@@ -1461,6 +1470,12 @@ class ResourceCmdHelper(SyncToShare):
             "binary": self.binary,
             "tf_runtime": self.tf_runtime
         }
+        
+        # Set OUTPUT_BUCKET with priority
+        if hasattr(self, "output_bucket") and self.output_bucket:
+            cinputargs["OUTPUT_BUCKET"] = self.output_bucket
+        elif hasattr(self, "tmp_bucket") and self.tmp_bucket:
+            cinputargs["tmp_bucket"] = self.tmp_bucket
 
         # Pass force_new_execution if set
         if hasattr(self, "force_new_execution") and self.force_new_execution:
@@ -1544,7 +1559,8 @@ class ResourceCmdHelper(SyncToShare):
         executor = AWSAsyncExecutor(
             resource_type="terraform", 
             resource_id=self.stateful_id,
-            tmp_bucket=self.tmp_bucket,
+            tmp_bucket=getattr(self, 'tmp_bucket', None),
+            output_bucket=getattr(self, 'output_bucket', None),
             stateful_id=self.stateful_id,
             method=method,
             aws_region=self.aws_region,
@@ -1554,107 +1570,17 @@ class ResourceCmdHelper(SyncToShare):
             build_timeout=self.build_timeout
         )
         
-        # Use the appropriate execution method based on build_method
+        # Use the appropriate build method and prepare invocation configuration
         if self.build_method == "lambda":
-            results = executor.exec_lambda(
-                force_new_execution=True,
-                **cinputargs)
-        elif self.build_method == "codebuild":
-            results = executor.exec_codebuild(**cinputargs)
-        else:
-            return False
-        
-        # If the execution is already running, provide additional information
-        if results.get("already_running"):
-            self.logger.info(f"Execution for {self.stateful_id} with method {method} is already in progress")
-            self.logger.info(f"Execution ID: {results.get('execution_id')}")
+            _awsbuild = Lambdabuild(**cinputargs)
+            invocation_config = _awsbuild.pre_trigger()
             
-            if "elapsed_time" in results:
-                self.logger.info(f"Elapsed time: {results['elapsed_time']:.2f} seconds")
-            
-            if "remaining_time" in results:
-                self.logger.info(f"Estimated remaining time: {results['remaining_time']:.2f} seconds")
+            # Pass the execution force flag if needed
+            if hasattr(self, "force_new_execution") and self.force_new_execution:
+                invocation_config["force_new_execution"] = True
                 
-            self.logger.info("To force a new execution, set FORCE_NEW_EXECUTION=True environment variable")
-
-        if method == "destroy":
-            try:
-                os.chdir(self.cwd)
-            except (FileNotFoundError, PermissionError) as e:
-                os.chdir("/tmp")
-
-        self.eval_failure(results, method)
-        return results
-
-    def create(self):
-        """Creates Terraform resources"""
-
-        if not self.stateful_id:
-            self.logger.error("STATEFUL_ID needs to be set")
-
-        # If we render template files, we don't create tfvars file
-        if not self.templify(app_template_vars="TF_EXEC_TEMPLATE_VARS", **self.inputargs):
-            self.exclude_tfvars = self._create_terraform_tfvars()
-
-        if not os.path.exists(self.exec_dir):
-            raise Exception(f"terraform directory must exist at {self.exec_dir} when creating tf")
-
-        self._set_runtime_env_vars(method="create")
-        self.create_aws_tf_backend()
-
-        # Submit and run required env file
-        self.create_build_envfile()
-
-        if self.build_method == "codebuild":
-            self.build_method = "lambda"  # we run pre-create in lambda first
-            _use_codebuild = True
-        else:
-            _use_codebuild = None
-
-        pre_creation = self._exec_in_aws(method="pre-create")
-        if not pre_creation.get("status"):
-            self.logger.error("pre-create failed")
-            return pre_creation
-
-        if _use_codebuild:
-            self.build_method = "codebuild"
-
-        tf_results = self._exec_in_aws(method="create")
-
-        # Should never get this far if execution failed
-        # because eval_failure should exit out
-        if not tf_results.get("status"):
-            return tf_results
-
-        self.post_create()
-        return tf_results
-
-    def run(self):
-        """Main execution method"""
-
-        self._set_build_method()
-
-        if self.method == "create":
-            tf_results = self.create()
-        elif self.method == "destroy":
-            tf_results = self._setup_and_exec_in_aws("destroy")
-        elif self.method == "validate":
-            tf_results = self._setup_and_exec_in_aws("validate")
-        elif self.method == "check":
-            tf_results = self._setup_and_exec_in_aws("check")
-        else:
-            usage()
-            print(f'Method "{self.method}" not supported!')
-            exit(4)
-
-        # testtest456
-        print('t0'*32)
-        print_json(tf_results)
-        print('t1'*32)
-        raise Exception('t3'*32)
-
-        # Evaluation of log should be at the end
-        # outside of _exec_in_aws
-        self.eval_log(tf_results, local_log=True)
-
-    #############################################
+            results = executor.exec_lambda(**invocation_config)
+            
+        elif self.build_method == "codebuild":
+            _awsbuild = Codebuild(**cinputargs)
+            inputargs = _awsbuild.pre_trigger
