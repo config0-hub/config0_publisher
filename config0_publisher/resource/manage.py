@@ -1556,7 +1556,9 @@ class ResourceCmdHelper(SyncToShare):
         
         # Use the appropriate execution method based on build_method
         if self.build_method == "lambda":
-            results = executor.exec_lambda(**cinputargs)
+            results = executor.exec_lambda(
+                force_new_execution=True,
+                **cinputargs)
         elif self.build_method == "codebuild":
             results = executor.exec_codebuild(**cinputargs)
         else:
