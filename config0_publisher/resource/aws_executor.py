@@ -31,6 +31,8 @@ import json
 import os
 import boto3
 import logging
+import time
+import hashlib
 
 # Configure logging to suppress boto3/botocore debug messages
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -55,19 +57,70 @@ def aws_executor(execution_type="lambda"):
     """
     def decorator(func):
         @functools.wraps(func)
+       
         def wrapper(self, **kwargs):
             # Initialize logger
             logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-            
-            logger.debug(f"Starting {execution_type} execution with {func.__name__}")
-            
-            # Generate a unique execution ID
-            execution_id = str(uuid.uuid4())
-            
+
+            # Get resource identifiers
+            resource_type = getattr(self, 'resource_type', 'unknown')
+            resource_id = getattr(self, 'resource_id', 'unknown')
+            method = kwargs.get('method') or getattr(self, 'method', 'unknown')
+
+            # Generate a deterministic execution ID based on resource identifiers
+            # This allows checking for existing executions
+            if kwargs.get('execution_id'):
+                # Use provided execution_id if available
+                execution_id = kwargs.get('execution_id')
+            else:
+                # Create a deterministic execution ID based on resource identifiers and timestamp
+                base_string = f"{resource_type}:{resource_id}:{method}"
+
+                if kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False):
+                    # Add timestamp to force a new execution
+                    base_string = f"{base_string}:{time.time()}"
+
+                execution_id = hashlib.md5(base_string.encode()).hexdigest()
+
             # Get the required parameters
             s3_bucket = kwargs.get('tmp_bucket') or getattr(self, 'tmp_bucket', None)
             if not s3_bucket:
                 raise ValueError("tmp_bucket must be provided as parameter or class attribute")
+
+            # Check if execution is already in progress
+            if not kwargs.get('force_new_execution') and not getattr(self, 'force_new_execution', False):
+                try:
+                    # Check if status file exists in S3
+                    s3_client = boto3.client('s3')
+                    status_key = f"executions/{execution_id}/status"
+
+                    try:
+                        status_obj = s3_client.get_object(Bucket=s3_bucket, Key=status_key)
+                        status_data = json.loads(status_obj['Body'].read().decode('utf-8'))
+
+                        # If status indicates execution is in progress, return info
+                        if status_data.get('status') == 'in_progress':
+                            logger.info(f"Execution already in progress for {resource_type}:{resource_id} with ID {execution_id}")
+                            return {
+                                'status': True,
+                                'execution_id': execution_id,
+                                's3_bucket': s3_bucket,
+                                'execution_type': execution_type,
+                                'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
+                                'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
+                                'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
+                                'output': f"Execution already in progress with ID: {execution_id}",
+                                'already_running': True
+                            }
+                    except s3_client.exceptions.NoSuchKey:
+                        # Status file doesn't exist, proceed with new execution
+                        pass
+                    except Exception as e:
+                        logger.warning(f"Error checking execution status: {str(e)}")
+                        # Continue with execution if status check fails
+                except Exception as e:
+                    logger.warning(f"Error connecting to S3: {str(e)}")
+                    # Continue with execution if S3 check fails
             
             # Prepare the payload from kwargs
             payload = {
@@ -82,6 +135,27 @@ def aws_executor(execution_type="lambda"):
                          'app_dir', 'app_name', 'remote_stateful_bucket']:
                 if hasattr(self, attr):
                     payload[attr] = getattr(self, attr)
+            
+            # Write initial status to S3
+            try:
+                s3_client = boto3.client('s3')
+                status_data = {
+                    'status': 'in_progress',
+                    'start_time': time.time(),
+                    'resource_type': resource_type,
+                    'resource_id': resource_id,
+                    'method': method,
+                    'execution_type': execution_type
+                }
+                s3_client.put_object(
+                    Bucket=s3_bucket,
+                    Key=f"executions/{execution_id}/status",
+                    Body=json.dumps(status_data),
+                    ContentType='application/json'
+                )
+            except Exception as e:
+                logger.warning(f"Failed to write initial status to S3: {str(e)}")
+                # Continue even if status write fails
             
             # Execute based on type
             if execution_type.lower() == "lambda":
@@ -104,15 +178,49 @@ def aws_executor(execution_type="lambda"):
                     status_code = response.get('StatusCode')
                     if status_code != 202:  # 202 Accepted is expected for async invocation
                         logger.error(f"Lambda invocation failed with status code: {status_code}")
+                        
+                        # Update status in S3
+                        try:
+                            status_data['status'] = 'failed'
+                            status_data['end_time'] = time.time()
+                            status_data['error'] = f"Lambda invocation failed with status code: {status_code}"
+                            s3_client.put_object(
+                                Bucket=s3_bucket,
+                                Key=f"executions/{execution_id}/status",
+                                Body=json.dumps(status_data),
+                                ContentType='application/json'
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to update status in S3: {str(e)}")
+                        
                         return {
                             'status': False,
+                            'execution_id': execution_id,
+                            's3_bucket': s3_bucket,
                             'error': f"Lambda invocation failed with status code: {status_code}",
                             'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
                         }
                 except Exception as e:
                     logger.error(f"Lambda invocation failed with exception: {str(e)}")
+                    
+                    # Update status in S3
+                    try:
+                        status_data['status'] = 'failed'
+                        status_data['end_time'] = time.time()
+                        status_data['error'] = f"Lambda invocation failed with exception: {str(e)}"
+                        s3_client.put_object(
+                            Bucket=s3_bucket,
+                            Key=f"executions/{execution_id}/status",
+                            Body=json.dumps(status_data),
+                            ContentType='application/json'
+                        )
+                    except Exception as se:
+                        logger.warning(f"Failed to update status in S3: {str(se)}")
+                    
                     return {
                         'status': False,
+                        'execution_id': execution_id,
+                        's3_bucket': s3_bucket,
                         'error': f"Lambda invocation failed with exception: {str(e)}",
                         'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
                     }
@@ -152,23 +260,84 @@ def aws_executor(execution_type="lambda"):
                     
                     if not build_id:
                         logger.error("Failed to start CodeBuild project")
+                        
+                        # Update status in S3
+                        try:
+                            status_data['status'] = 'failed'
+                            status_data['end_time'] = time.time()
+                            status_data['error'] = "Failed to start CodeBuild project"
+                            s3_client.put_object(
+                                Bucket=s3_bucket,
+                                Key=f"executions/{execution_id}/status",
+                                Body=json.dumps(status_data),
+                                ContentType='application/json'
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to update status in S3: {str(e)}")
+                        
                         return {
                             'status': False,
+                            'execution_id': execution_id,
+                            's3_bucket': s3_bucket,
                             'error': "Failed to start CodeBuild project",
                             'output': f"Failed to start CodeBuild project {project_name} in region {codebuild_region}"
                         }
                     
                     # Add build ID to response
                     payload['build_id'] = build_id
+                    status_data['build_id'] = build_id
+                    
+                    # Update status with build ID
+                    try:
+                        s3_client.put_object(
+                            Bucket=s3_bucket,
+                            Key=f"executions/{execution_id}/status",
+                            Body=json.dumps(status_data),
+                            ContentType='application/json'
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to update status with build ID in S3: {str(e)}")
+                        
                 except Exception as e:
                     logger.error(f"CodeBuild start failed with exception: {str(e)}")
+                    
+                    # Update status in S3
+                    try:
+                        status_data['status'] = 'failed'
+                        status_data['end_time'] = time.time()
+                        status_data['error'] = f"CodeBuild start failed with exception: {str(e)}"
+                        s3_client.put_object(
+                            Bucket=s3_bucket,
+                            Key=f"executions/{execution_id}/status",
+                            Body=json.dumps(status_data),
+                            ContentType='application/json'
+                        )
+                    except Exception as se:
+                        logger.warning(f"Failed to update status in S3: {str(se)}")
+                    
                     return {
                         'status': False,
+                        'execution_id': execution_id,
+                        's3_bucket': s3_bucket,
                         'error': f"CodeBuild start failed with exception: {str(e)}",
                         'output': f"Exception when starting CodeBuild project {project_name} in region {codebuild_region}: {str(e)}"
                     }
                 
             else:
+                # Update status in S3
+                try:
+                    status_data['status'] = 'failed'
+                    status_data['end_time'] = time.time()
+                    status_data['error'] = f"Unsupported execution_type: {execution_type}"
+                    s3_client.put_object(
+                        Bucket=s3_bucket,
+                        Key=f"executions/{execution_id}/status",
+                        Body=json.dumps(status_data),
+                        ContentType='application/json'
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to update status in S3: {str(e)}")
+                
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
             
             # Prepare result with tracking information
@@ -188,7 +357,6 @@ def aws_executor(execution_type="lambda"):
                 result['build_id'] = payload['build_id']
             
             return result
-            
         return wrapper
     return decorator
 
