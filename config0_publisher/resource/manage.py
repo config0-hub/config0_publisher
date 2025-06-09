@@ -1516,7 +1516,13 @@ class ResourceCmdHelper(SyncToShare):
         """Executes Terraform command in AWS"""
 
         cinputargs = self._get_aws_exec_cinputargs(method=method)
-        
+
+        # testtest456
+        self.logger.debug("o1"*32)
+        self.logger.json(cinputargs)
+        self.logger.debug("o2"*32)
+        raise
+
         # Create AWS Async Executor with current settings
         executor = AWSAsyncExecutor(
             resource_type="terraform", 
