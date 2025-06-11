@@ -64,6 +64,7 @@ class LambdaResourceHelper(AWSCommonConn):
         env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
         env_vars["OUTPUT_BUCKET_KEY"] = self.execution_id_path
         env_vars["EXECUTION_ID"] = self.execution_id
+        env_vars["EXECUTION_ID_PATH"] = self.execution_id
         env_vars["BUILD_EXPIRE_AT"] = str(int(self.build_expire_at))
         env_vars["BUILD_TIMEOUT"] = str(int(self.build_timeout))
 

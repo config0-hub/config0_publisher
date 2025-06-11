@@ -1502,7 +1502,7 @@ class ResourceCmdHelper:
         if self.build_method == "lambda":
             _awsbuild = Lambdabuild(**cinputargs)
             invocation_config = _awsbuild.pre_trigger()
-            
+
             # Pass the execution force flag if needed
             if hasattr(self, "force_new_execution") and self.force_new_execution:
                 invocation_config["force_new_execution"] = True
@@ -1513,9 +1513,13 @@ class ResourceCmdHelper:
             print('h1'*32)
             self.logger.json(invocation_config)
             print('h2'*32)
-            raise Exception('ho'*32)
+            #raise Exception('ho'*32)
 
-            results = executor.exec_lambda(**invocation_config)
+            results = executor.exec_lambda(
+                execution_id=self.execution_id,
+                execution_id_path=self.execution_id_path,
+                output_bucket=self.tmp_bucket,
+                **invocation_config)
             
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
