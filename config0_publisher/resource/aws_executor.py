@@ -152,6 +152,9 @@ def aws_executor(execution_type="lambda"):
             elif isinstance(build_env_vars, dict) and build_env_vars.get('TMP_BUCKET'):
                 output_bucket = build_env_vars.get('TMP_BUCKET')
                 logger.debug(f"Using TMP_BUCKET from build_env_vars: {output_bucket}")
+            # 3. Check kwargs
+            elif kwargs.get('output_bucket'):
+                output_bucket = kwargs.get('output_bucket')
 
             # If no bucket found, raise error
             if not output_bucket:
