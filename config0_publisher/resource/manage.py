@@ -132,7 +132,8 @@ class ResourceCmdHelper:
         self.logger = Config0Logger(self.classname)
         self.logger.debug(f"Instantiating {self.classname}")
 
-        SyncToShare.__init__(self)
+        # testtest456
+        #SyncToShare.__init__(self)
 
         self.cwd = os.getcwd()
 
