@@ -146,6 +146,23 @@ class TFCmdOnAWS(TFAppHelper):
 
         return cmds
 
+    def get_tf_create(self,destroy_on_failure=None):
+        cmds = self._get_tf_init()
+        cmds.extend(self._get_tf_validate())
+        cmds.extend(self._get_tf_plan())
+
+        base_tf_apply = f'{self.base_cmd} apply {self.base_output_file}.tfplan'
+
+        cmds.extend(self.s3_file_to_local(suffix="tfplan",
+                                          last_apply=None))
+
+        if destroy_on_failure:
+            cmds.append( { "get_tf_create" : f'({base_tf_apply}) || ({self.base_cmd} destroy -auto-approve && exit 9)' } )
+        else:
+            cmds.append( { "get_tf_create" : base_tf_apply } )
+
+        return cmds
+
     def get_tfplan_and_apply(self,destroy_on_failure=None):
 
         if self.initial_apply:
