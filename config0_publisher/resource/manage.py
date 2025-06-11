@@ -1581,15 +1581,21 @@ class ResourceCmdHelper:
         else:
             _use_codebuild = None
 
+        # testtest456
+        self.logger.debug("f0"*32)
         pre_creation = self._exec_in_aws(method="pre-create")
+        self.logger.debug("f1"*32)
         if not pre_creation.get("status"):
+            self.logger.debug("f1a" * 32)
             self.logger.error("pre-create failed")
             return pre_creation
 
+        self.logger.debug("f2"*32)
         if _use_codebuild:
             self.build_method = "codebuild"
 
         tf_results = self._exec_in_aws(method="create")
+        self.logger.debug("f3"*32)
 
         # Should never get this far if execution failed
         # because eval_failure should exit out
