@@ -1582,17 +1582,17 @@ class ResourceCmdHelper:
             _use_codebuild = None
 
         # testtest456
-        self.logger.debug("f0"*32)
-        pre_creation = self._exec_in_aws(method="pre-create")
-        self.logger.debug("f1"*32)
-        if not pre_creation.get("status"):
-            self.logger.debug("f1a" * 32)
-            self.logger.error("pre-create failed")
-            return pre_creation
+        #self.logger.debug("f0"*32)
+        #pre_creation = self._exec_in_aws(method="pre-create")
+        #self.logger.debug("f1"*32)
+        #if not pre_creation.get("status"):
+        #    self.logger.debug("f1a" * 32)
+        #    self.logger.error("pre-create failed")
+        #    return pre_creation
 
-        # testtest456
-        from time import sleep
-        sleep(300)
+        ## testtest456
+        #from time import sleep
+        #sleep(300)
 
         self.logger.debug("f2"*32)
         if _use_codebuild:
