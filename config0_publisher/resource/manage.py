@@ -1507,9 +1507,14 @@ class ResourceCmdHelper:
             if hasattr(self, "force_new_execution") and self.force_new_execution:
                 invocation_config["force_new_execution"] = True
 
+            # testtest456
+            print('h0'*32)
             self.logger.json(cinputargs)
+            print('h1'*32)
+            self.logger.json(invocation_config)
+            print('h2'*32)
             raise Exception('ho'*32)
-                
+
             results = executor.exec_lambda(**invocation_config)
             
         elif self.build_method == "codebuild":
