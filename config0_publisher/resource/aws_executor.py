@@ -143,48 +143,22 @@ def aws_executor(execution_type="lambda"):
             # Determine output bucket with correct priority order
             output_bucket = None
             
-            # 1. First check for OUTPUT_BUCKET in kwargs
-            if kwargs.get('OUTPUT_BUCKET'):
-                output_bucket = kwargs.get('OUTPUT_BUCKET')
-                logger.debug(f"Using OUTPUT_BUCKET from kwargs: {output_bucket}")
-            
-            # 2. Then check build_env_vars for OUTPUT_BUCKET
-            elif isinstance(build_env_vars, dict) and build_env_vars.get('OUTPUT_BUCKET'):
+            # 1. First check build_env_vars for OUTPUT_BUCKET
+            if isinstance(build_env_vars, dict) and build_env_vars.get('OUTPUT_BUCKET'):
                 output_bucket = build_env_vars.get('OUTPUT_BUCKET')
                 logger.debug(f"Using OUTPUT_BUCKET from build_env_vars: {output_bucket}")
             
-            # 3. Then check build_env_vars for TMP_BUCKET
+            # 2. Then check build_env_vars for TMP_BUCKET
             elif isinstance(build_env_vars, dict) and build_env_vars.get('TMP_BUCKET'):
                 output_bucket = build_env_vars.get('TMP_BUCKET')
                 logger.debug(f"Using TMP_BUCKET from build_env_vars: {output_bucket}")
-            
-            # 4. Then check for tmp_bucket in kwargs
-            elif kwargs.get('tmp_bucket'):
-                output_bucket = kwargs.get('tmp_bucket')
-                logger.debug(f"Using tmp_bucket from kwargs: {output_bucket}")
-            
-            # 5. Then check for tmp_bucket as class attribute
-            elif hasattr(self, 'tmp_bucket') and getattr(self, 'tmp_bucket'):
-                output_bucket = getattr(self, 'tmp_bucket')
-                logger.debug(f"Using tmp_bucket from class attribute: {output_bucket}")
-            
-            # 6. Then check environment variables
-            elif os.environ.get('OUTPUT_BUCKET'):
-                output_bucket = os.environ.get('OUTPUT_BUCKET')
-                logger.debug(f"Using OUTPUT_BUCKET from environment: {output_bucket}")
-            elif os.environ.get('TMP_BUCKET'):
-                output_bucket = os.environ.get('TMP_BUCKET')
-                logger.debug(f"Using TMP_BUCKET from environment: {output_bucket}")
-            
+
             # If no bucket found, raise error
             if not output_bucket:
                 error_msg = "No S3 bucket specified for execution tracking. Please provide OUTPUT_BUCKET or TMP_BUCKET."
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             
-            # Use output_bucket for all S3 operations
-            s3_bucket = output_bucket
-
             # Check if execution is already in progress
             if not kwargs.get('force_new_execution') and not getattr(self, 'force_new_execution', False) and not os.environ.get('FORCE_NEW_EXECUTION'):
                 try:
@@ -193,7 +167,7 @@ def aws_executor(execution_type="lambda"):
                     status_key = f"executions/{execution_id}/status"
 
                     try:
-                        status_obj = s3_client.get_object(Bucket=s3_bucket, Key=status_key)
+                        status_obj = s3_client.get_object(Bucket=output_bucket, Key=status_key)
                         status_data = json.loads(status_obj['Body'].read().decode('utf-8'))
 
                         # If status indicates execution is in progress, check if it might have timed out
@@ -211,7 +185,7 @@ def aws_executor(execution_type="lambda"):
                                     
                                     try:
                                         s3_client.put_object(
-                                            Bucket=s3_bucket,
+                                            Bucket=output_bucket,
                                             Key=status_key,
                                             Body=json.dumps(status_data),
                                             ContentType='application/json'
@@ -228,7 +202,7 @@ def aws_executor(execution_type="lambda"):
                                         return {
                                             'status': False,
                                             'execution_id': execution_id,
-                                            'output_bucket': s3_bucket,
+                                            'output_bucket': output_bucket,
                                             'execution_type': execution_type,
                                             'error': f"Previous execution timed out after {elapsed_time:.2f} seconds",
                                             'output': f"Execution {execution_id} timed out and abort_on_timeout is set"
@@ -242,11 +216,11 @@ def aws_executor(execution_type="lambda"):
                                     return {
                                         'status': True,
                                         'execution_id': execution_id,
-                                        'output_bucket': s3_bucket,
+                                        'output_bucket': output_bucket,
                                         'execution_type': execution_type,
-                                        'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
-                                        'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
-                                        'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
+                                        'status_url': f"s3://{output_bucket}/executions/{execution_id}/status",
+                                        'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
+                                        'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                         'output': f"Execution already in progress with ID: {execution_id}",
                                         'already_running': True,
                                         'elapsed_time': elapsed_time,
@@ -258,11 +232,11 @@ def aws_executor(execution_type="lambda"):
                                 return {
                                     'status': True,
                                     'execution_id': execution_id,
-                                    'output_bucket': s3_bucket,
+                                    'output_bucket': output_bucket,
                                     'execution_type': execution_type,
-                                    'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
-                                    'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
-                                    'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
+                                    'status_url': f"s3://{output_bucket}/executions/{execution_id}/status",
+                                    'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
+                                    'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                     'output': f"Execution already in progress with ID: {execution_id}",
                                     'already_running': True
                                 }
@@ -279,7 +253,7 @@ def aws_executor(execution_type="lambda"):
             # Prepare the payload from kwargs
             payload = {
                 'execution_id': execution_id,
-                'output_bucket': s3_bucket,
+                'output_bucket': output_bucket,
                 'params': kwargs
             }
             
@@ -304,7 +278,7 @@ def aws_executor(execution_type="lambda"):
                     'tracking_max_time': tracking_max_time
                 }
                 s3_client.put_object(
-                    Bucket=s3_bucket,
+                    Bucket=output_bucket,
                     Key=f"executions/{execution_id}/status",
                     Body=json.dumps(status_data),
                     ContentType='application/json'
@@ -340,7 +314,7 @@ def aws_executor(execution_type="lambda"):
                             
                         # Add tracking info if not already present
                         payload_obj['execution_id'] = execution_id
-                        payload_obj['output_bucket'] = s3_bucket
+                        payload_obj['output_bucket'] = output_bucket
                             
                         lambda_payload = json.dumps(payload_obj)
                     else:
@@ -372,7 +346,7 @@ def aws_executor(execution_type="lambda"):
                             status_data['end_time'] = time.time()
                             status_data['error'] = f"Lambda invocation failed with status code: {status_code}"
                             s3_client.put_object(
-                                Bucket=s3_bucket,
+                                Bucket=output_bucket,
                                 Key=f"executions/{execution_id}/status",
                                 Body=json.dumps(status_data),
                                 ContentType='application/json'
@@ -383,7 +357,7 @@ def aws_executor(execution_type="lambda"):
                         return {
                             'status': False,
                             'execution_id': execution_id,
-                            'output_bucket': s3_bucket,
+                            'output_bucket': output_bucket,
                             'error': f"Lambda invocation failed with status code: {status_code}",
                             'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
                         }
@@ -397,7 +371,7 @@ def aws_executor(execution_type="lambda"):
                         status_data['end_time'] = time.time()
                         status_data['error'] = f"Lambda invocation failed with exception: {str(e)}"
                         s3_client.put_object(
-                            Bucket=s3_bucket,
+                            Bucket=output_bucket,
                             Key=f"executions/{execution_id}/status",
                             Body=json.dumps(status_data),
                             ContentType='application/json'
@@ -408,7 +382,7 @@ def aws_executor(execution_type="lambda"):
                     return {
                         'status': False,
                         'execution_id': execution_id,
-                        'output_bucket': s3_bucket,
+                        'output_bucket': output_bucket,
                         'error': f"Lambda invocation failed with exception: {str(e)}",
                         'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
                     }
@@ -449,7 +423,7 @@ def aws_executor(execution_type="lambda"):
                 if not output_bucket_found:
                     env_vars.append({
                         'name': 'OUTPUT_BUCKET',
-                        'value': s3_bucket
+                        'value': output_bucket
                     })
                 
                 # Remove any parameters that aren't valid for CodeBuild API
@@ -485,7 +459,7 @@ def aws_executor(execution_type="lambda"):
                             status_data['end_time'] = time.time()
                             status_data['error'] = "Failed to start CodeBuild project"
                             s3_client.put_object(
-                                Bucket=s3_bucket,
+                                Bucket=output_bucket,
                                 Key=f"executions/{execution_id}/status",
                                 Body=json.dumps(status_data),
                                 ContentType='application/json'
@@ -496,7 +470,7 @@ def aws_executor(execution_type="lambda"):
                         return {
                             'status': False,
                             'execution_id': execution_id,
-                            'output_bucket': s3_bucket,
+                            'output_bucket': output_bucket,
                             'error': "Failed to start CodeBuild project",
                             'output': f"Failed to start CodeBuild project {project_name} in region {codebuild_region}"
                         }
@@ -508,7 +482,7 @@ def aws_executor(execution_type="lambda"):
                     # Update status with build ID
                     try:
                         s3_client.put_object(
-                            Bucket=s3_bucket,
+                            Bucket=output_bucket,
                             Key=f"executions/{execution_id}/status",
                             Body=json.dumps(status_data),
                             ContentType='application/json'
@@ -525,7 +499,7 @@ def aws_executor(execution_type="lambda"):
                         status_data['end_time'] = time.time()
                         status_data['error'] = f"CodeBuild start failed with exception: {str(e)}"
                         s3_client.put_object(
-                            Bucket=s3_bucket,
+                            Bucket=output_bucket,
                             Key=f"executions/{execution_id}/status",
                             Body=json.dumps(status_data),
                             ContentType='application/json'
@@ -536,7 +510,7 @@ def aws_executor(execution_type="lambda"):
                     return {
                         'status': False,
                         'execution_id': execution_id,
-                        'output_bucket': s3_bucket,
+                        'output_bucket': output_bucket,
                         'error': f"CodeBuild start failed with exception: {str(e)}",
                         'output': f"Exception when starting CodeBuild project {project_name} in region {codebuild_region}: {str(e)}"
                     }
@@ -548,7 +522,7 @@ def aws_executor(execution_type="lambda"):
                     status_data['end_time'] = time.time()
                     status_data['error'] = f"Unsupported execution_type: {execution_type}"
                     s3_client.put_object(
-                        Bucket=s3_bucket,
+                        Bucket=output_bucket,
                         Key=f"executions/{execution_id}/status",
                         Body=json.dumps(status_data),
                         ContentType='application/json'
@@ -562,11 +536,11 @@ def aws_executor(execution_type="lambda"):
             result = {
                 'status': True,
                 'execution_id': execution_id,
-                'output_bucket': s3_bucket,
+                'output_bucket': output_bucket,
                 'execution_type': execution_type,
-                'status_url': f"s3://{s3_bucket}/executions/{execution_id}/status",
-                'result_url': f"s3://{s3_bucket}/executions/{execution_id}/result.json",
-                'logs_url': f"s3://{s3_bucket}/executions/{execution_id}/logs.txt",
+                'status_url': f"s3://{output_bucket}/executions/{execution_id}/status",
+                'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
+                'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                 'output': f"Initiated {execution_type} execution with ID: {execution_id}"
             }
             

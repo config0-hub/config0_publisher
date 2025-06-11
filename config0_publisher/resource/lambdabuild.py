@@ -19,15 +19,14 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         self.classname = "LambdaParams"
 
+        self.execution_id_path = kwargs.get("execution_id_path",
+                                            f'{id_generator2()}/{str(int(time()))}')
+
         self.lambda_basename = kwargs.get("lambda_basename",
                                           "config0-iac")
 
         self.lambda_role = kwargs.get("lambda_role",
                                       "config0-assume-poweruser")
-
-        # to centralized the logs
-        self.s3_output_key = os.environ.get("EXEC_INST_ID",
-                                            f'{id_generator2()}/{str(int(time()))}')
 
     def _set_inputargs(self):
 
@@ -61,7 +60,7 @@ class LambdaParams(TFAwsBaseBuildParams):
     def _init_lambda_helper(self):
 
         self._set_inputargs()
-        self.lambda_helper = LambdaResourceHelper(s3_output_key=self.s3_output_key,
+        self.lambda_helper = LambdaResourceHelper(execution_id_path=self.execution_id_path,
                                                   **self.buildparams)
 
     def submit(self,**inputargs):
@@ -74,7 +73,7 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         # get results from phase json file
         # which should be set
-        self.lambda_helper = LambdaResourceHelper(s3_output_key=self.s3_output_key,
+        self.lambda_helper = LambdaResourceHelper(execution_id_path=self.execution_id_path,
                                                   **self.phases_info)
         self.lambda_helper.retrieve(**inputargs)
         return self.lambda_helper.results

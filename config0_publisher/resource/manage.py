@@ -20,37 +20,28 @@ Environment Variables:
     FORCE_NEW_EXECUTION: Force a new execution regardless of existing ones
 """
 
-
-import base64
-import subprocess
 import os
 import jinja2
 import glob
 import json
 import shutil
-import functools
-import uuid
-import time
 import hashlib
 from pathlib import Path
-from time import sleep
 from copy import deepcopy
+from time import time
 
+from config0_publisher.utilities import id_generator2
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 from config0_publisher.utilities import to_json
-from config0_publisher.utilities import get_values_frm_json
 from config0_publisher.utilities import get_hash
 from config0_publisher.utilities import eval_str_to_join
 from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
-from config0_publisher.serialization import b64_decode
-from config0_publisher.serialization import b64_encode
 from config0_publisher.templating import list_template_files
-from config0_publisher.output import convert_config0_output_to_values
-from config0_publisher.shellouts import rm_rf
 from config0_publisher.variables import EnvVarsToClassVars
+#from config0_publisher.resources.sync import SyncToShare
 
 #############################################
 # insert back to 3531543
@@ -123,76 +114,10 @@ def _to_json(output):
 
     return output
 
-class SyncToShare:
-    """
-    Main class for handling resource synchronization to shared location.
-    Inherits functionality from ResourceCmdHelper.
-    """
 
-    def __init__(self):
-        self.classname = 'SyncToShare'
-
-    def rsync_to_share(self, rsync_args=None, exclude_existing=None):
-        if not self.run_share_dir: 
-            self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
-            return
-            
-        # Create destination directory if needed
-        _dirname = os.path.dirname(self.run_share_dir)
-        Path(_dirname).mkdir(parents=True, exist_ok=True)
-
-        if not rsync_args:
-            rsync_args = "-avug"
-
-        if exclude_existing:
-            rsync_args = f'{rsync_args} --ignore-existing '
-
-        #rsync -h -v -r -P -t source target
-        cmd = f"rsync {rsync_args} {self.exec_dir}/ {self.run_share_dir}"
-        self.logger.debug(cmd)
-        
-        # Using subprocess to run rsync
-        try:
-            subprocess.run(["rsync"] + rsync_args.split() + [f"{self.exec_dir}/", f"{self.run_share_dir}"], 
-                           check=True, capture_output=True, text=True)
-            self.logger.debug(f"Sync-ed to run share dir {self.run_share_dir}")
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Failed to sync to {self.run_share_dir}: {e.stderr}")
-            exit(1)
-
-    def sync_to_share(self, exclude_existing=None):
-        if not self.run_share_dir:
-            self.logger.debug("run_share_dir not defined - skipping sync-ing ...")
-            return
-
-        # Create destination directory if needed
-        _dirname = os.path.dirname(self.run_share_dir)
-        self._mkdir(_dirname)
-
-        # Copy directory contents
-        source_dir = Path(self.exec_dir)
-        target_dir = Path(self.run_share_dir)
-
-        for item in source_dir.glob('**/*'):
-            if item.is_file():
-                # Get the relative path
-                relative_path = item.relative_to(source_dir)
-                destination = target_dir / relative_path
-
-                # Create parent directories if they don't exist
-                destination.parent.mkdir(parents=True, exist_ok=True)
-
-                # Skip existing files if exclude_existing is True
-                if exclude_existing and destination.exists():
-                    continue
-
-                # Copy with metadata (timestamps, permissions)
-                shutil.copy2(item, destination)
-
-        self.logger.debug(f"Sync-ed to run share dir {self.run_share_dir}")
-
-
-class ResourceCmdHelper(SyncToShare):
+# testtest456
+#class ResourceCmdHelper(SyncToShare):
+class ResourceCmdHelper:
 
     def __init__(self, **kwargs):
         """
@@ -250,6 +175,19 @@ class ResourceCmdHelper(SyncToShare):
             self.force_new_execution = True
         else:
             self.force_new_execution = kwargs.get("force_new_execution", False)
+
+    def _set_execution_id(self,**kwargs):
+
+        self.execution_id = os.environ.get("EXECUTION_ID", None)
+
+        if not self.execution_id:
+            self.execution_id = kwargs.get("execution_id",
+                                           f'{id_generator2()}/{str(int(time()))}')
+
+        if not self.stateful_id:
+            self.execution_id_path = f'logs/unknown/{self.execution_id}'
+        else:
+            self.execution_id_path = f'logs/{self.stateful_id}/{self.execution_id}'
 
     def _set_build_timeout(self):
         if hasattr(self, "build_timeout") and self.build_timeout:
@@ -1398,11 +1336,8 @@ class ResourceCmdHelper(SyncToShare):
         self.build_env_vars["SHARE_DIR"] = self.share_dir
         self.build_env_vars["RUN_SHARE_DIR"] = self.run_share_dir
         self.build_env_vars["LOG_BUCKET"] = self.log_bucket
-        
-        # Set OUTPUT_BUCKET with priority
-        if self.output_bucket:
-            self.build_env_vars["OUTPUT_BUCKET"] = self.output_bucket
-        elif self.tmp_bucket:
+
+        if hasattr(self, "tmp_bucket") and self.tmp_bucket:
             self.build_env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
             self.build_env_vars["TMP_BUCKET"] = self.tmp_bucket
         
@@ -1468,15 +1403,11 @@ class ResourceCmdHelper(SyncToShare):
             "aws_region": self.aws_region,
             "version": self.version,
             "binary": self.binary,
-            "tf_runtime": self.tf_runtime
+            "tf_runtime": self.tf_runtime,
+            "execution_id": self.execution_id,
+            "execution_id_path": self.execution_id_path
         }
         
-        # Set OUTPUT_BUCKET with priority
-        if hasattr(self, "output_bucket") and self.output_bucket:
-            cinputargs["OUTPUT_BUCKET"] = self.output_bucket
-        elif hasattr(self, "tmp_bucket") and self.tmp_bucket:
-            cinputargs["tmp_bucket"] = self.tmp_bucket
-
         # Pass force_new_execution if set
         if hasattr(self, "force_new_execution") and self.force_new_execution:
             cinputargs["force_new_execution"] = True
@@ -1543,10 +1474,8 @@ class ResourceCmdHelper(SyncToShare):
     def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
 
-        # Generate a deterministic execution ID based on resource identifiers
-        base_string = f"terraform:{self.stateful_id}:{method}"
-        execution_id = hashlib.md5(base_string.encode()).hexdigest()
-        
+        self._set_execution_id()
+
         # Get execution input arguments
         cinputargs = self._get_aws_exec_cinputargs(method=method)
         
@@ -1559,8 +1488,6 @@ class ResourceCmdHelper(SyncToShare):
         executor = AWSAsyncExecutor(
             resource_type="terraform", 
             resource_id=self.stateful_id,
-            tmp_bucket=getattr(self, 'tmp_bucket', None),
-            output_bucket=getattr(self, 'output_bucket', None),
             stateful_id=self.stateful_id,
             method=method,
             aws_region=self.aws_region,
@@ -1583,4 +1510,104 @@ class ResourceCmdHelper(SyncToShare):
             
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
-            inputargs = _awsbuild.pre_trigger
+            inputargs = _awsbuild.pre_trigger()
+            
+            # Pass the execution force flag if needed
+            if hasattr(self, "force_new_execution") and self.force_new_execution:
+                inputargs["force_new_execution"] = True
+                
+            results = executor.exec_codebuild(**inputargs)
+            
+        else:
+            return False
+        
+        # If the execution is already running, provide additional information
+        if results.get("already_running"):
+            self.logger.info(f"Execution for {self.stateful_id} with method {method} is already in progress")
+            self.logger.info(f"Execution ID: {results.get('execution_id')}")
+            
+            if "elapsed_time" in results:
+                self.logger.info(f"Elapsed time: {results['elapsed_time']:.2f} seconds")
+            
+            if "remaining_time" in results:
+                self.logger.info(f"Estimated remaining time: {results['remaining_time']:.2f} seconds")
+                
+            self.logger.info("To force a new execution, set FORCE_NEW_EXECUTION=True environment variable")
+
+        if method == "destroy":
+            try:
+                os.chdir(self.cwd)
+            except (FileNotFoundError, PermissionError) as e:
+                os.chdir("/tmp")
+
+        self.eval_failure(results, method)
+        return results
+
+    def create(self):
+        """Creates Terraform resources"""
+
+        if not self.stateful_id:
+            self.logger.error("STATEFUL_ID needs to be set")
+
+        # If we render template files, we don't create tfvars file
+        if not self.templify(app_template_vars="TF_EXEC_TEMPLATE_VARS", **self.inputargs):
+            self.exclude_tfvars = self._create_terraform_tfvars()
+
+        if not os.path.exists(self.exec_dir):
+            raise Exception(f"terraform directory must exist at {self.exec_dir} when creating tf")
+
+        self._set_runtime_env_vars(method="create")
+        self.create_aws_tf_backend()
+
+        # Submit and run required env file
+        self.create_build_envfile()
+
+        if self.build_method == "codebuild":
+            self.build_method = "lambda"  # we run pre-create in lambda first
+            _use_codebuild = True
+        else:
+            _use_codebuild = None
+
+        pre_creation = self._exec_in_aws(method="pre-create")
+        if not pre_creation.get("status"):
+            self.logger.error("pre-create failed")
+            return pre_creation
+
+        if _use_codebuild:
+            self.build_method = "codebuild"
+
+        tf_results = self._exec_in_aws(method="create")
+
+        # Should never get this far if execution failed
+        # because eval_failure should exit out
+        if not tf_results.get("status"):
+            return tf_results
+
+        if hasattr(self, "post_create") and callable(self.post_create):
+            self.post_create()
+            
+        return tf_results
+
+    def run(self):
+        """Main execution method"""
+
+        self._set_build_method()
+
+        if self.method == "create":
+            tf_results = self.create()
+        elif self.method == "destroy":
+            tf_results = self._setup_and_exec_in_aws("destroy")
+        elif self.method == "validate":
+            tf_results = self._setup_and_exec_in_aws("validate")
+        elif self.method == "check":
+            tf_results = self._setup_and_exec_in_aws("check")
+        else:
+            usage()
+            print(f'Method "{self.method}" not supported!')
+            exit(4)
+
+        # Evaluation of log should be at the end
+        # outside of _exec_in_aws
+        self.eval_log(tf_results, local_log=True)
+
+    #############################################

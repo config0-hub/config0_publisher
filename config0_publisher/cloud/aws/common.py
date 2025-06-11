@@ -62,6 +62,7 @@ class AWSCommonConn(SetClassVarsHelper):
         self.share_dir = None
         self.run_share_dir = None
         self.stateful_id = None
+        self.execution_id_path = None
         self.remote_stateful_bucket = None
         self.output = None
         self.cwd = os.getcwd()
@@ -69,10 +70,11 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results = kwargs.get("results")
         self.zipfile = None
 
-        self.s3_output_key = os.environ.get("EXEC_INST_ID", None)
-        if not self.s3_output_key:
-            self.s3_output_key = kwargs.get("s3_output_key",
-                                            f'{id_generator2()}/{str(int(time()))}')
+        self.execution_id = os.environ.get("EXECUTION_ID", None)
+
+        if not self.execution_id:
+            self.execution_id = kwargs.get("execution_id",
+                                           f'{id_generator2()}/{str(int(time()))}')
 
         if not self.results:
             self.results = {
@@ -169,7 +171,10 @@ class AWSCommonConn(SetClassVarsHelper):
             self.share_dir = "/var/tmp/share"
 
         if not self.stateful_id:
+            self.execution_id_path = f'logs/unknown/{self.execution_id}'
             return
+
+        self.execution_id_path = f'logs/{self.stateful_id}/{self.execution_id}'
 
         if not self.run_share_dir:
             self.run_share_dir = os.path.join(self.share_dir,
@@ -223,7 +228,7 @@ class AWSCommonConn(SetClassVarsHelper):
 
         local_file = f'/tmp/{id_generator2()}'
 
-        self.s3.Bucket(bucket_name).download_file(self.s3_output_key,
+        self.s3.Bucket(bucket_name).download_file(self.execution_id_path,
                                                   local_file)
 
         with open(local_file, 'r', encoding='utf-8') as file:

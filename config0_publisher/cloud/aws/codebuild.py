@@ -329,8 +329,14 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         env_vars.append(_env_var)
 
+        _env_var = {'name': "EXECUTION_ID",
+                    'value': self.execution_id,
+                    'type': 'PLAINTEXT'}
+
+        env_vars.append(_env_var)
+
         _env_var = {'name': "OUTPUT_BUCKET_KEY",
-                    'value': self.s3_output_key,
+                    'value': self.execution_id_path,
                     'type': 'PLAINTEXT'}
 
         env_vars.append(_env_var)

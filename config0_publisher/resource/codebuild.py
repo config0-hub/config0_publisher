@@ -2,7 +2,6 @@
 
 import os
 from time import time
-
 from config0_publisher.utilities import id_generator2
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
 from config0_publisher.resource.aws import TFAwsBaseBuildParams
@@ -21,8 +20,7 @@ class CodebuildParams(TFAwsBaseBuildParams):
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
 
-        # to centralized the logs
-        self.s3_output_key = os.environ.get("EXEC_INST_ID",
+        self.execution_id_path = kwargs.get("execution_id_path",
                                             f'{id_generator2()}/{str(int(time()))}')
 
     def _set_inputargs(self):
@@ -67,7 +65,7 @@ phases:
     def _init_codebuild_helper(self):
 
         self._set_inputargs()
-        self.codebuild_helper = CodebuildResourceHelper(s3_output_key=self.s3_output_key,
+        self.codebuild_helper = CodebuildResourceHelper(execution_id_path=self.execution_id_path,
                                                         **self.buildparams)
 
     def pre_trigger(self,**inputargs):
@@ -85,7 +83,7 @@ phases:
 
         # get results from phase json file
         # which should be set
-        self.codebuild_helper = CodebuildResourceHelper(s3_output_key=self.s3_output_key,
+        self.codebuild_helper = CodebuildResourceHelper(execution_id_path=self.execution_id_path,
                                                         **self.phases_info)
         self.codebuild_helper.retrieve(**inputargs)
 
