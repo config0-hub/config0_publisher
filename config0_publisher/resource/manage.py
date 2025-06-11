@@ -177,6 +177,9 @@ class ResourceCmdHelper:
         else:
             self.force_new_execution = kwargs.get("force_new_execution", False)
 
+        # testtest456 - remove
+        self.force_new_execution = True
+
     def _set_execution_id(self,**kwargs):
 
         self.execution_id = os.environ.get("EXECUTION_ID", None)
