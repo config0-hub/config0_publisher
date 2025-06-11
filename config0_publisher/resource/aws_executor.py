@@ -128,6 +128,12 @@ def aws_executor(execution_type="lambda"):
                 # Use provided execution_id if available
                 execution_id = kwargs.get('execution_id')
                 logger.debug(f"Using provided execution_id: {execution_id}")
+                
+                # If forcing new execution, modify the execution_id to make it unique
+                if kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False) or os.environ.get('FORCE_NEW_EXECUTION'):
+                    original_id = execution_id
+                    execution_id = f"{execution_id}:{int(time.time())}"
+                    logger.debug(f"Forcing new execution - modified execution_id from {original_id} to {execution_id}")
             else:
                 # Create a deterministic execution ID based on resource identifiers and timestamp
                 base_string = f"{resource_type}:{resource_id}:{method}"
@@ -162,8 +168,43 @@ def aws_executor(execution_type="lambda"):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             
-            # Check if execution is already in progress
-            if not kwargs.get('force_new_execution') and not getattr(self, 'force_new_execution', False) and not os.environ.get('FORCE_NEW_EXECUTION'):
+            # Check if force_new_execution is set - if so, delete any existing execution files
+            force_execution = kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False) or os.environ.get('FORCE_NEW_EXECUTION')
+            
+            if force_execution:
+                try:
+                    # Delete entire execution directory from S3
+                    s3_client = boto3.client('s3')
+                    execution_prefix = f"executions/{execution_id}/"
+                    
+                    logger.info(f"Forcing new execution - deleting execution directory for {execution_id}")
+                    
+                    # List all objects with the execution prefix
+                    paginator = s3_client.get_paginator('list_objects_v2')
+                    objects_to_delete = []
+                    
+                    # Collect all objects with the execution prefix
+                    for page in paginator.paginate(Bucket=output_bucket, Prefix=execution_prefix):
+                        if 'Contents' in page:
+                            for obj in page['Contents']:
+                                objects_to_delete.append({'Key': obj['Key']})
+                    
+                    # Delete all objects if any were found
+                    if objects_to_delete:
+                        s3_client.delete_objects(
+                            Bucket=output_bucket,
+                            Delete={'Objects': objects_to_delete}
+                        )
+                        logger.debug(f"Deleted {len(objects_to_delete)} objects from execution directory")
+                    else:
+                        logger.debug(f"No existing objects found for execution {execution_id}")
+                        
+                except Exception as e:
+                    logger.warning(f"Failed to delete execution directory: {str(e)}")
+                    # Continue with execution even if deletion fails
+            
+            # Check if execution is already in progress (only if not forcing new execution)
+            if not force_execution:
                 try:
                     # Check if status file exists in S3
                     s3_client = boto3.client('s3')
@@ -850,6 +891,71 @@ class AWSAsyncExecutor:
         
         return {"timed_out": False, "reason": "No start_time available in status"}
     
+    def clear_execution(self, execution_id=None, output_bucket=None):
+        """
+        Clear all S3 objects related to a specific execution.
+        
+        Args:
+            execution_id (str, optional): Execution ID to clear. If not provided,
+                                         a deterministic ID will be generated.
+            output_bucket (str, optional): S3 bucket where execution data is stored.
+                                     
+        Returns:
+            int: Number of objects deleted, or -1 if an error occurred
+        """
+        if not execution_id:
+            # Generate deterministic execution ID based on resource identifiers
+            base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
+            execution_id = hashlib.md5(base_string.encode()).hexdigest()
+        
+        # Determine output bucket using same priority order as in the decorator
+        if not output_bucket:
+            if hasattr(self, 'output_bucket') and self.output_bucket:
+                output_bucket = self.output_bucket
+            elif hasattr(self, 'tmp_bucket') and self.tmp_bucket:
+                output_bucket = self.tmp_bucket
+            elif os.environ.get('OUTPUT_BUCKET'):
+                output_bucket = os.environ.get('OUTPUT_BUCKET')
+            elif os.environ.get('TMP_BUCKET'):
+                output_bucket = os.environ.get('TMP_BUCKET')
+            else:
+                raise ValueError("output_bucket must be provided as parameter or class attribute")
+        
+        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+        
+        try:
+            # Delete entire execution directory from S3
+            s3_client = boto3.client('s3')
+            execution_prefix = f"executions/{execution_id}/"
+            
+            logger.info(f"Deleting execution directory for {execution_id}")
+            
+            # List all objects with the execution prefix
+            paginator = s3_client.get_paginator('list_objects_v2')
+            objects_to_delete = []
+            
+            # Collect all objects with the execution prefix
+            for page in paginator.paginate(Bucket=output_bucket, Prefix=execution_prefix):
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+                        objects_to_delete.append({'Key': obj['Key']})
+            
+            # Delete all objects if any were found
+            if objects_to_delete:
+                s3_client.delete_objects(
+                    Bucket=output_bucket,
+                    Delete={'Objects': objects_to_delete}
+                )
+                logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
+                return len(objects_to_delete)
+            else:
+                logger.info(f"No existing objects found for execution {execution_id}")
+                return 0
+                
+        except Exception as e:
+            logger.error(f"Failed to delete execution directory: {str(e)}")
+            return -1
+    
     def force_execution(self, method=None, **kwargs):
         """
         Force a new execution regardless of any existing executions.
@@ -865,9 +971,10 @@ class AWSAsyncExecutor:
         """
         if method:
             kwargs['method'] = method
-        
+            
+        # Always set force_new_execution to True
         kwargs['force_new_execution'] = True
-        
+
         # Determine whether to use Lambda or CodeBuild based on timeout
         build_timeout = kwargs.get('build_timeout') or getattr(self, 'build_timeout', None)
         
