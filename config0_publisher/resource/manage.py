@@ -1506,6 +1506,9 @@ class ResourceCmdHelper:
             # Pass the execution force flag if needed
             if hasattr(self, "force_new_execution") and self.force_new_execution:
                 invocation_config["force_new_execution"] = True
+
+            self.logger.json(cinputargs)
+            raise Exception('ho'*32)
                 
             results = executor.exec_lambda(**invocation_config)
             
