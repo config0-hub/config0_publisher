@@ -1621,6 +1621,11 @@ class ResourceCmdHelper:
             print(f'Method "{self.method}" not supported!')
             exit(4)
 
+        # testtest456
+        self.logger.debug("t0"*32)
+        self.logger.json(tf_results)
+        self.logger.debug("t0"*32)
+
         # Evaluation of log should be at the end
         # outside of _exec_in_aws
         self.eval_log(tf_results, local_log=True)
