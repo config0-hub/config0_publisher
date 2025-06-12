@@ -128,21 +128,9 @@ def aws_executor(execution_type="lambda"):
                 # Use provided execution_id if available
                 execution_id = kwargs.get('execution_id')
                 logger.debug(f"Using provided execution_id: {execution_id}")
-                
-                # If forcing new execution, modify the execution_id to make it unique
-                if kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False) or os.environ.get('FORCE_NEW_EXECUTION'):
-                    original_id = execution_id
-                    execution_id = f"{execution_id}:{int(time.time())}"
-                    logger.debug(f"Forcing new execution - modified execution_id from {original_id} to {execution_id}")
             else:
                 # Create a deterministic execution ID based on resource identifiers and timestamp
-                base_string = f"{resource_type}:{resource_id}:{method}"
-
-                if kwargs.get('force_new_execution') or getattr(self, 'force_new_execution', False) or os.environ.get('FORCE_NEW_EXECUTION'):
-                    # Add timestamp to force a new execution
-                    base_string = f"{base_string}:{time.time()}"
-                    logger.debug(f"Forcing new execution with unique base string: {base_string}")
-
+                base_string = f"{resource_type}:{resource_id}"
                 execution_id = hashlib.md5(base_string.encode()).hexdigest()
                 logger.debug(f"Generated deterministic execution_id: {execution_id} from {base_string}")
 
@@ -740,7 +728,7 @@ class AWSAsyncExecutor:
         """
         if not execution_id:
             # Generate deterministic execution ID based on resource identifiers
-            base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
+            base_string = f"{self.resource_type}:{self.resource_id}"
             execution_id = hashlib.md5(base_string.encode()).hexdigest()
         
         # Determine output bucket using same priority order
@@ -787,7 +775,7 @@ class AWSAsyncExecutor:
         """
         if not execution_id:
             # Generate deterministic execution ID based on resource identifiers
-            base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
+            base_string = f"{self.resource_type}:{self.resource_id}"
             execution_id = hashlib.md5(base_string.encode()).hexdigest()
         
         # Determine output bucket using same priority order
@@ -905,7 +893,7 @@ class AWSAsyncExecutor:
         """
         if not execution_id:
             # Generate deterministic execution ID based on resource identifiers
-            base_string = f"{self.resource_type}:{self.resource_id}:{getattr(self, 'method', 'unknown')}"
+            base_string = f"{self.resource_type}:{self.resource_id}"
             execution_id = hashlib.md5(base_string.encode()).hexdigest()
         
         # Determine output bucket using same priority order as in the decorator
