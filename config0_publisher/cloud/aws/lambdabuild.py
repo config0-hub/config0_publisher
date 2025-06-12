@@ -154,6 +154,10 @@ class LambdaResourceHelper(AWSCommonConn):
             'LogType': 'Tail',
             'Payload': json.dumps(
                 {
+                    "execution_id":self.execution_id,
+                    "execution_id_path":self.execution_id_path,
+                    "output_bucket": self.tmp_bucket,
+                    "output_bucket_key": self.execution_id_path,
                     "cmds_b64": self.cmds_b64,
                     "env_vars_b64": b64_encode(env_vars),
                 })
