@@ -18,10 +18,7 @@ class LambdaParams(TFAwsBaseBuildParams):
         TFAwsBaseBuildParams.__init__(self,**kwargs)
 
         self.classname = "LambdaParams"
-
-        self.execution_id_path = kwargs.get("execution_id_path",
-                                            f'{id_generator2()}/{str(int(time()))}')
-
+        self.execution_id_path = kwargs.get("execution_id_path",id_generator2())
         self.lambda_basename = kwargs.get("lambda_basename",
                                           "config0-iac")
 

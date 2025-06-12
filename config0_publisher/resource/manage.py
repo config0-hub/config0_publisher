@@ -185,8 +185,7 @@ class ResourceCmdHelper:
         self.execution_id = os.environ.get("EXECUTION_ID", None)
 
         if not self.execution_id:
-            self.execution_id = kwargs.get("execution_id",
-                                           f'{id_generator2()}/{str(int(time()))}')
+            self.execution_id = kwargs.get("execution_id",id_generator2())
 
         if not self.stateful_id:
             self.execution_id_path = f'logs/unknown/{self.execution_id}'

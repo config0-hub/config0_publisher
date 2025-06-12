@@ -20,8 +20,7 @@ class CodebuildParams(TFAwsBaseBuildParams):
         self.codebuild_role = kwargs.get("codebuild_role",
                                          "config0-assume-poweruser")
 
-        self.execution_id_path = kwargs.get("execution_id_path",
-                                            f'{id_generator2()}/{str(int(time()))}')
+        self.execution_id_path = kwargs.get("execution_id_path",id_generator2())
 
     def _set_inputargs(self):
 
