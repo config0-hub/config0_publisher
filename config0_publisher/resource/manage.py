@@ -1521,7 +1521,11 @@ class ResourceCmdHelper:
                 execution_id_path=self.execution_id_path,
                 output_bucket=self.tmp_bucket,
                 **invocation_config)
-            
+
+            print('h3'*32)
+            self.logger.json(results)
+            print('h4'*32)
+
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
             inputargs = _awsbuild.pre_trigger()
