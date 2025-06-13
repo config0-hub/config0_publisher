@@ -266,6 +266,18 @@ class ResourceCmdHelper:
 
         self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json_file}"')
 
+        if not hasattr(self, "config0_background_json_file") or not self.config0_background_json_file:
+            self.config0_background_json_file = os.environ.get("CONFIG0_BACKGROUND_JSON_FILE")
+
+        if not self.config0_background_json_file:
+            try:
+                self.config0_background_json_file = os.path.join(self.stateful_dir,
+                                                                f"background-{self.stateful_id}.json")
+            except:
+                self.config0_background_json_file = None
+
+        self.logger.debug(f'u4324: CONFIG0_BACKGROUND_JSON_FILE "{self.config0_background_json_file}"')
+
     def _debug_print_out_key_class_vars(self):
         for _k, _v in self.syncvars.class_vars.items():
             try:
@@ -1512,20 +1524,12 @@ class ResourceCmdHelper:
             # testtest456
             print('h0'*32)
             self.logger.json(cinputargs)
-
-            try:
-                build_expire_at = time() + int(cinputargs["build_env_vars"]["BUILD_TIMEOUT"])
-                print('g0'*32)
-            except:
-                build_expire_at = time() + 900
-                print('g1' * 32)
             print('h1'*32)
             self.logger.json(invocation_config)
             print('h2'*32)
 
             results = executor.exec_lambda(
                 execution_id=self.execution_id,
-                build_expire_at=build_expire_at,
                 execution_id_path=self.execution_id_path,
                 output_bucket=self.tmp_bucket,
                 **invocation_config)
@@ -1599,11 +1603,14 @@ class ResourceCmdHelper:
         #    self.logger.error("pre-create failed")
         #    return pre_creation
 
-        self.logger.debug("f2"*32)
         if _use_codebuild:
             self.build_method = "codebuild"
 
         tf_results = self._exec_in_aws(method="create")
+
+        # testtest456
+        self.logger.debug("f2"*32)
+        self.logger.json(tf_results)
         self.logger.debug("f3"*32)
 
         # Should never get this far if execution failed
