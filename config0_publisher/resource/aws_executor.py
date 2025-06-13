@@ -82,13 +82,6 @@ def aws_executor(execution_type="lambda"):
                     except (ValueError, TypeError):
                         pass
                 
-                if not max_execution_time and build_env_vars.get('TIMEOUT'):
-                    try:
-                        max_execution_time = int(build_env_vars.get('TIMEOUT'))
-                        logger.debug(f"Using timeout from build_env_vars TIMEOUT: {max_execution_time}s")
-                    except (ValueError, TypeError):
-                        pass
-            
             # If not found in build_env_vars, try environment variables
             if not max_execution_time:
                 if os.environ.get('BUILD_TIMEOUT'):
@@ -97,14 +90,7 @@ def aws_executor(execution_type="lambda"):
                         logger.debug(f"Using timeout from env BUILD_TIMEOUT: {max_execution_time}s")
                     except (ValueError, TypeError):
                         pass
-                
-                if not max_execution_time and os.environ.get('TIMEOUT'):
-                    try:
-                        max_execution_time = int(os.environ.get('TIMEOUT'))
-                        logger.debug(f"Using timeout from env TIMEOUT: {max_execution_time}s")
-                    except (ValueError, TypeError):
-                        pass
-            
+
             # Finally, allow explicit override
             if kwargs.get('max_execution_time'):
                 max_execution_time = kwargs.get('max_execution_time')
@@ -121,6 +107,7 @@ def aws_executor(execution_type="lambda"):
             
             # Add buffer time for execution tracking (to account for overheads)
             tracking_max_time = max_execution_time + 300  # Add 5 minutes buffer
+            build_expire_at = time.time() + max_execution_time  # Add 5 minutes buffer
 
             # Generate a deterministic execution ID based on resource identifiers
             # This allows checking for existing executions
@@ -258,6 +245,7 @@ def aws_executor(execution_type="lambda"):
                                         'background': True,
                                         'already_running': True,
                                         'elapsed_time': elapsed_time,
+                                        'build_expire_at': build_expire_at,
                                         'remaining_time': remaining_time
                                     }
                             else:
@@ -274,6 +262,7 @@ def aws_executor(execution_type="lambda"):
                                     'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                     'output': f"Execution already in progress with ID: {execution_id}",
                                     'background': True,
+                                    'build_expire_at': build_expire_at,
                                     'already_running': True
                                 }
                     except s3_client.exceptions.NoSuchKey:
@@ -578,6 +567,8 @@ def aws_executor(execution_type="lambda"):
                 'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
                 'done_url': f"s3://{output_bucket}/executions/{execution_id}/done",
                 'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
+                'build_expire_at': build_expire_at,
+                'background': True,
                 'output': f"Initiated {execution_type} execution with ID: {execution_id}"
             }
             
@@ -807,12 +798,6 @@ class AWSAsyncExecutor:
                     except (ValueError, TypeError):
                         pass
                 
-                if not max_execution_time and build_env_vars.get('TIMEOUT'):
-                    try:
-                        max_execution_time = int(build_env_vars.get('TIMEOUT'))
-                    except (ValueError, TypeError):
-                        pass
-            
             # If still not found, try environment variables
             if not max_execution_time:
                 if os.environ.get('BUILD_TIMEOUT'):
