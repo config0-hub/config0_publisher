@@ -255,6 +255,7 @@ def aws_executor(execution_type="lambda"):
                                         'done_url': f"s3://{output_bucket}/executions/{execution_id}/done",
                                         'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                         'output': f"Execution already in progress with ID: {execution_id}",
+                                        'background': True,
                                         'already_running': True,
                                         'elapsed_time': elapsed_time,
                                         'remaining_time': remaining_time
@@ -272,6 +273,7 @@ def aws_executor(execution_type="lambda"):
                                     'done_url': f"s3://{output_bucket}/executions/{execution_id}/done",
                                     'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                     'output': f"Execution already in progress with ID: {execution_id}",
+                                    'background': True,
                                     'already_running': True
                                 }
                     except s3_client.exceptions.NoSuchKey:
@@ -819,12 +821,6 @@ class AWSAsyncExecutor:
                     except (ValueError, TypeError):
                         pass
                 
-                if not max_execution_time and os.environ.get('TIMEOUT'):
-                    try:
-                        max_execution_time = int(os.environ.get('TIMEOUT'))
-                    except (ValueError, TypeError):
-                        pass
-            
             # If still no timeout, use default based on resource type
             if not max_execution_time:
                 resource_type = getattr(self, 'resource_type', '').lower()

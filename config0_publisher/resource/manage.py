@@ -1512,12 +1512,20 @@ class ResourceCmdHelper:
             # testtest456
             print('h0'*32)
             self.logger.json(cinputargs)
+
+            try:
+                build_expire_at = time() + int(cinputargs["build_env_vars"]["BUILD_TIMEOUT"])
+                print('g0'*32)
+            except:
+                build_expire_at = time() + 900
+                print('g1' * 32)
             print('h1'*32)
             self.logger.json(invocation_config)
             print('h2'*32)
 
             results = executor.exec_lambda(
                 execution_id=self.execution_id,
+                build_expire_at=build_expire_at,
                 execution_id_path=self.execution_id_path,
                 output_bucket=self.tmp_bucket,
                 **invocation_config)
