@@ -178,7 +178,7 @@ class ResourceCmdHelper:
             self.force_new_execution = kwargs.get("force_new_execution", False)
 
         # testtest456 - remove
-        self.force_new_execution = True
+        #self.force_new_execution = True
 
     def _set_execution_id(self,**kwargs):
 
@@ -1515,7 +1515,6 @@ class ResourceCmdHelper:
             print('h1'*32)
             self.logger.json(invocation_config)
             print('h2'*32)
-            #raise Exception('ho'*32)
 
             results = executor.exec_lambda(
                 execution_id=self.execution_id,

@@ -252,6 +252,7 @@ def aws_executor(execution_type="lambda"):
                                         'execution_type': execution_type,
                                         'status_url': f"s3://{output_bucket}/executions/{execution_id}/status",
                                         'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
+                                        'done_url': f"s3://{output_bucket}/executions/{execution_id}/done",
                                         'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                         'output': f"Execution already in progress with ID: {execution_id}",
                                         'already_running': True,
@@ -268,6 +269,7 @@ def aws_executor(execution_type="lambda"):
                                     'execution_type': execution_type,
                                     'status_url': f"s3://{output_bucket}/executions/{execution_id}/status",
                                     'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
+                                    'done_url': f"s3://{output_bucket}/executions/{execution_id}/done",
                                     'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                                     'output': f"Execution already in progress with ID: {execution_id}",
                                     'already_running': True
@@ -572,6 +574,7 @@ def aws_executor(execution_type="lambda"):
                 'execution_type': execution_type,
                 'status_url': f"s3://{output_bucket}/executions/{execution_id}/status",
                 'result_url': f"s3://{output_bucket}/executions/{execution_id}/result.json",
+                'done_url': f"s3://{output_bucket}/executions/{execution_id}/done",
                 'logs_url': f"s3://{output_bucket}/executions/{execution_id}/logs.txt",
                 'output': f"Initiated {execution_type} execution with ID: {execution_id}"
             }
