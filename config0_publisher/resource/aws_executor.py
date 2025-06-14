@@ -131,7 +131,8 @@ def get_execution_status(execution_id=None, output_bucket=None):
     # Check for initiated marker
     initiated_key = f"executions/{execution_id}/initiated"
     # testtest456
-    print(_s3_get_object(s3_client, output_bucket, initiated_key)
+    print(_s3_get_object(s3_client, output_bucket, initiated_key))
+
     try:
         result["t0"] = int(_s3_get_object(s3_client, output_bucket, initiated_key))
         result["initiated"] = True
