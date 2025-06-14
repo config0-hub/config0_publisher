@@ -1542,7 +1542,8 @@ class ResourceCmdHelper(ResourcePhases):
 
         tf_results = self._exec_in_aws(method="create")
 
-        if tf_results.get("phases") and tf_results.get("in_progress") and tf_results.get("status") is True:
+        #if tf_results.get("phases") and results.get("in_progress") and tf_results.get("status") is True:
+        if tf_results.get("phases") and tf_results.get("status") is True:
             self.write_phases_to_json_file(tf_results)
             return tf_results
 
