@@ -616,7 +616,6 @@ class AWSAsyncExecutor:
                 - initiated_key: bucket key to the initiated marker
                 - result_key: bucket key to retrieve execution results
                 - done_key: bucket key to the done marker
-                - logs_key: bucket key to retrieve execution logs
         """
         pass  # Implementation handled by decorator
     
@@ -656,7 +655,6 @@ class AWSAsyncExecutor:
                 - initiated_key: bucket key to the initiated marker
                 - result_key: bucket key to retrieve execution results
                 - done_key: bucket key to the done marker
-                - logs_key: bucket key to retrieve execution logs
         """
         pass  # Implementation handled by decorator
     

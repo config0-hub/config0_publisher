@@ -1245,23 +1245,16 @@ class ResourceCmdHelper(ResourcePhases):
         return True
 
     def eval_log(self, results, local_log=None):
-
         output = results.get("output")
-
         if not output:
-            output = results.get("log")
-
-        if not output:
-            output = results.get("logs")
-
-        if not output:
-            print('i4' * 32)
             return
 
         output = self.clean_output(output)
         self.final_output = output
         self.append_log(self.final_output)
-        del results["output"]
+
+        if "output" in results:
+            del results["output"]
 
         # ref 34532453245
         if local_log:
