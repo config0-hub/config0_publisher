@@ -1512,7 +1512,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         if "tf_status" in results:
             try:
-                results["status"] = bool(results["tf_status"])
+                results["status"] = eval(results["tf_status"])
             except:
                 results["status"] = results["tf_status"]
 
