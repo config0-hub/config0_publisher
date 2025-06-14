@@ -474,7 +474,8 @@ def aws_executor(execution_type="lambda"):
                            json.dumps(result),
                            content_type='application/json')
 
-            result['output'] = f"Initiated {execution_type} execution with ID: {self.execution_id}"
+            #result['output'] = f"Initiated {execution_type} execution with ID: {self.execution_id}"
+            result['init'] = True
 
             # Add build ID for CodeBuild if available
             if execution_type.lower() == "codebuild" and 'build_id' in locals():
