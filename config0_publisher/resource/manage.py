@@ -29,6 +29,7 @@ import hashlib
 from pathlib import Path
 from copy import deepcopy
 from time import time
+from time import sleep
 
 from config0_publisher.utilities import id_generator2
 from config0_publisher.loggerly import Config0Logger
@@ -1470,15 +1471,21 @@ class ResourceCmdHelper(ResourcePhases):
 
         # Use the appropriate build method and prepare invocation configuration
         if self.build_method == "lambda":
-            _awsbuild = Lambdabuild(**cinputargs)
-            invocation_config = _awsbuild.pre_trigger()
-
             # testtest456
             print('h0'*32)
-            self.logger.json(cinputargs)
+            sleep(10)
+            _awsbuild = Lambdabuild(**cinputargs)
             print('h1'*32)
-            self.logger.json(invocation_config)
+            sleep(10)
+            invocation_config = _awsbuild.pre_trigger()
             print('h2'*32)
+            sleep(10)
+
+            # testtest456
+            #self.logger.json(cinputargs)
+            #print('h1'*32)
+            #self.logger.json(invocation_config)
+            #print('h2'*32)
 
             results = executor.exec_lambda(
                 **invocation_config)
