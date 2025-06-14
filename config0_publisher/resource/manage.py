@@ -1563,8 +1563,12 @@ class ResourceCmdHelper(ResourcePhases):
         print(tf_results.get("status"))
         print(tf_results.get("status"))
         print(tf_results.get("status"))
+        print(type(tf_results.get("status")))
+        print(type(tf_results.get("status")))
+        print(type(tf_results.get("status")))
+        print(type(tf_results.get("status")))
         self.logger.debug("f4" * 32)
-        if not tf_results.get("status"):
+        if tf_results.get("status") in [ "False", False ]:
             self.logger.debug("f5" * 32)
             self.logger.debug("f5" * 32)
             self.logger.debug("f5" * 32)
