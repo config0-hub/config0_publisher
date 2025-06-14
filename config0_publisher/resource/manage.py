@@ -1494,7 +1494,12 @@ class ResourceCmdHelper(ResourcePhases):
             
         else:
             return False
-        
+
+        if results.get("done"):
+            results = results["results"]
+        elif results.get("in_progress"):
+            return results
+
         if method == "destroy":
             try:
                 os.chdir(self.cwd)

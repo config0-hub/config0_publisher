@@ -173,7 +173,9 @@ def get_execution_status(execution_id=None, output_bucket=None):
        result["done"] = False
 
     if result.get("done"):
-       return result
+        result["results"] = _s3_get_object(s3_client,
+                                           output_bucket,
+                                           result["result_key"])
 
     return result
 
@@ -246,13 +248,9 @@ def aws_executor(execution_type="lambda"):
             build_expire_at = int(time.time()) + int(max_execution_time)
             existing_run = self.check_execution_status()
 
-            # testtest456
-            print('x0'*32)
-            print(existing_run)
-            print('x1'*32)
-
             if existing_run.get("done"):
                 existing_run["status"]["done"] = True
+                return _s3_get_object(s3_client, self.output_bucket, initiated_key)
                 return existing_run["status"]
 
             if existing_run.get("status"):
@@ -461,10 +459,10 @@ def aws_executor(execution_type="lambda"):
                 'execution_id': self.execution_id,
                 'output_bucket': self.output_bucket,
                 'execution_type': execution_type,
-                'initiated_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/initiated",
-                'result_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/result.json",
-                'done_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/done",
-                'status': f"s3://{self.output_bucket}/executions/{self.execution_id}/status.json",
+                'initiated_key': f"executions/{self.execution_id}/initiated",
+                'result_key': f"executions/{self.execution_id}/result.json",
+                'done_key': f"executions/{self.execution_id}/done",
+                'status_key': f"executions/{self.execution_id}/status.json",
                 'build_expire_at': build_expire_at,
                 'phases': True
             }
@@ -613,10 +611,10 @@ class AWSAsyncExecutor:
                 - execution_id: Unique identifier for the execution
                 - output_bucket: S3 bucket for tracking
                 - execution_type: "lambda"
-                - initiated_url: URL to the initiated marker
-                - result_url: URL to retrieve execution results
-                - done_url: URL to the done marker
-                - logs_url: URL to retrieve execution logs
+                - initiated_key: bucket key to the initiated marker
+                - result_key: bucket key to retrieve execution results
+                - done_key: bucket key to the done marker
+                - logs_key: bucket key to retrieve execution logs
         """
         pass  # Implementation handled by decorator
     
@@ -653,10 +651,10 @@ class AWSAsyncExecutor:
                 - output_bucket: S3 bucket for tracking
                 - execution_type: "codebuild"
                 - build_id: CodeBuild build ID
-                - initiated_url: URL to the initiated marker
-                - result_url: URL to retrieve execution results
-                - done_url: URL to the done marker
-                - logs_url: URL to retrieve execution logs
+                - initiated_key: bucket key to the initiated marker
+                - result_key: bucket key to retrieve execution results
+                - done_key: bucket key to the done marker
+                - logs_key: bucket key to retrieve execution logs
         """
         pass  # Implementation handled by decorator
     
