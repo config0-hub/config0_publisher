@@ -1510,17 +1510,17 @@ class ResourceCmdHelper(ResourcePhases):
             except (FileNotFoundError, PermissionError) as e:
                 os.chdir("/tmp")
 
-        self.logger.debug(f'tf_status: "{results.get("tf_status")}"')
-        self.logger.debug(f'tf_exitcode: "{results.get("tf_exitcode")}"')
-
-        if results.get("tf_status"):
+        if "tf_status" in results:
             try:
                 results["status"] = bool(results["tf_status"])
             except:
                 results["status"] = results["tf_status"]
 
-        if results.get("tf_exitcode"):
-            results["exitcode"] = results["tf_exitcode"]
+        if "tf_exitcode" in results:
+            try:
+                results["exitcode"] = int(results["tf_exitcode"])
+            except:
+                results["exitcode"] = results["tf_exitcode"]
 
         self.eval_failure(results, method)
         return results
