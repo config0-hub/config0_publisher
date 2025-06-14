@@ -1558,8 +1558,6 @@ class ResourceCmdHelper(ResourcePhases):
         self.logger.json(tf_results)
         self.logger.debug("f3"*32)
 
-        # Should never get this far if execution failed
-        # because eval_failure should exit out
         if not tf_results.get("status"):
             return tf_results
 

@@ -250,7 +250,7 @@ def aws_executor(execution_type="lambda"):
 
             if existing_run.get("done"):
                 existing_run["status"]["done"] = True
-                return _s3_get_object(s3_client, self.output_bucket, initiated_key)
+                self.clear_execution()
                 return existing_run["status"]
 
             if existing_run.get("status"):
