@@ -1247,9 +1247,13 @@ class ResourceCmdHelper(ResourcePhases):
     def eval_log(self, results, local_log=None):
 
         output = results.get("output")
+
         if not output:
-            print('i3' * 32)
             output = results.get("log")
+
+        if not output:
+            output = results.get("logs")
+
         if not output:
             print('i4' * 32)
             return
