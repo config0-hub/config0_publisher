@@ -1483,6 +1483,9 @@ class ResourceCmdHelper(ResourcePhases):
             results = executor.exec_lambda(
                 **invocation_config)
 
+            self.logger.json(results)
+            print('h3'*32)
+
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
             inputargs = _awsbuild.pre_trigger()
