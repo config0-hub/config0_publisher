@@ -1513,9 +1513,9 @@ class ResourceCmdHelper(ResourcePhases):
                 os.chdir("/tmp")
 
         if "tf_status" in results:
-            try:
-                results["status"] = eval(results["tf_status"])
-            except:
+            if results.get("tf_status") in [ "False", False]:
+                results["status"] = False
+            else:
                 results["status"] = results["tf_status"]
 
         if "tf_exitcode" in results:
