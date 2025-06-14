@@ -41,31 +41,135 @@ logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 from config0_publisher.loggerly import Config0Logger
 
-
-def delete_s3_object(bucket, key, logger=None):
+def _delete_s3_object(s3_client, bucket, key):
     """
     Safely delete an object from S3 with error handling
     
     Args:
         bucket (str): S3 bucket name
         key (str): Object key to delete
-        logger (object, optional): Logger to use for logging messages
-        
     Returns:
         bool: True if deletion was successful, False otherwise
     """
-    if logger is None:
-        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-    
     try:
-        s3_client = boto3.client('s3')
         s3_client.delete_object(Bucket=bucket, Key=key)
-        logger.debug(f"Deleted S3 object s3://{bucket}/{key}")
+        print(f"Deleted S3 object s3://{bucket}/{key}")
         return True
     except Exception as e:
-        logger.warning(f"Failed to delete S3 object s3://{bucket}/{key}: {str(e)}")
+        print(f"WARNING: Failed to delete S3 object s3://{bucket}/{key}: {str(e)}")
         return False
 
+def _s3_put_object(s3_client, bucket, key, body, content_type='text/plain'):
+    """
+    Put an object to S3, handling errors gracefully
+    """
+    if not bucket or not key:
+        return False
+    
+    try:
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=body,
+            ContentType=content_type
+        )
+        print(f"Successfully wrote to S3: s3://{bucket}/{key}")
+        return True
+    except Exception as e:
+        print(f"Failed to write to S3: s3://{bucket}/{key} - {str(e)}")
+        return False
+
+def _s3_get_object(s3_client, bucket, key):
+    """
+    Fetch an object from S3 and return its content.
+    - JSON (application/json): Parsed JSON (dict or list).
+    - Plain text (text/plain): Integer if valid, otherwise string.
+    - Other content types: Raw bytes.
+    """
+    try:
+        response = s3_client.get_object(Bucket=bucket, Key=key)
+        content_type = response.get('ContentType', '')
+        content = response['Body'].read()
+
+        if content_type == 'application/json':
+            return json.loads(content.decode('utf-8'))
+        
+        if content_type in ['text/plain', 'application/octet-stream']:
+            decoded = content.decode('utf-8').strip()
+            return int(decoded) if decoded.lstrip('-+').isdigit() else decoded
+
+        return content  # Return raw bytes for other content types
+
+    except Exception as e:
+        print(f"Error fetching object: {e}")
+        return False
+
+def get_execution_status(execution_id=None, output_bucket=None):
+    """
+    Get the status of an execution from S3 using initiated and done markers.
+
+    Args:
+        execution_id (str, optional): Execution ID to check
+        output_bucket (str, optional): S3 bucket where execution data is stored
+
+    Returns:
+        dict: Status information for the execution
+    """
+
+    # Initialize result structure
+    result = {
+        "execution_id": execution_id,
+        "initiated": False,
+        "done": False,
+        "checkin": False,
+        "in_progress": False,
+        "expired": False
+    }
+
+    s3_client = boto3.client('s3')
+
+    # Check for initiated marker
+    initiated_key = f"executions/{execution_id}/initiated"
+    try:
+        result["t0"] = int(_s3_get_object(s3_client, output_bucket, initiated_key))
+        result["initiated"] = True
+    except:
+        result["initiated"] = False
+        return result
+
+    if result.get("initiated"):
+        return result
+
+    expire_at_key = f"executions/{execution_id}/expire_at"
+    try:
+        expire_at = int(_s3_get_object(s3_client, output_bucket, expire_at_key))
+        if int(time.time()) > expire_at:
+            result["expired"] = True
+    except:
+        result["expired"] = False
+
+    if result.get("expired"):
+        return result
+
+    # Check for done marker
+    done_key = f"executions/{execution_id}/done"
+    try:
+        result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
+        result["done"] = True
+    except:
+        result["done"] = False
+
+    if result.get("done"):
+        return result
+    
+    checkin_key = f"executions/{execution_id}/checkin.json"
+    try:
+        result["checkin"] = int(_s3_get_object(s3_client, output_bucket, checkin_key))
+        result["in_progress"] = True
+    except:
+        result["in_progress"] = False
+
+    return result
 
 def aws_executor(execution_type="lambda"):
     """
@@ -84,9 +188,11 @@ def aws_executor(execution_type="lambda"):
         @functools.wraps(func)
        
         def wrapper(self, **kwargs):
+
+            s3_client = boto3.client('s3')
+
             # Initialize logger
             logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-            
             logger.debug(f"Starting {execution_type} execution with {func.__name__}")
 
             # Get resource identifiers
@@ -132,6 +238,11 @@ def aws_executor(execution_type="lambda"):
             
             # Calculate build expiration time
             build_expire_at = int(time.time()) + int(max_execution_time)
+
+            existing_run = self.check_execution_status()
+
+            if existing_run.get("in_progress") and existing_run.get("checkin"):
+                return existing_run["checkin"]
 
             # Prepare the payload from kwargs
             payload = {
@@ -204,7 +315,7 @@ def aws_executor(execution_type="lambda"):
                         logger.error(f"Lambda invocation failed with status code: {status_code}")
                         
                         # Clean up initiated marker
-                        delete_s3_object(self.output_bucket, f"executions/{self.execution_id}/initiated", logger)
+                        _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                         
                         return {
                             'status': False,
@@ -218,7 +329,7 @@ def aws_executor(execution_type="lambda"):
                     logger.error(f"Lambda invocation failed with exception: {str(e)}")
                     
                     # Clean up initiated marker
-                    delete_s3_object(self.output_bucket, f"executions/{self.execution_id}/initiated", logger)
+                    _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                     
                     return {
                         'status': False,
@@ -295,7 +406,7 @@ def aws_executor(execution_type="lambda"):
                         logger.error("Failed to start CodeBuild project")
                         
                         # Clean up initiated marker
-                        delete_s3_object(self.output_bucket, f"executions/{self.execution_id}/initiated", logger)
+                        _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                         
                         return {
                             'status': False,
@@ -313,7 +424,7 @@ def aws_executor(execution_type="lambda"):
                     logger.error(f"CodeBuild start failed with exception: {str(e)}")
                     
                     # Clean up initiated marker
-                    delete_s3_object(self.output_bucket, f"executions/{self.execution_id}/initiated", logger)
+                    _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                     
                     return {
                         'status': False,
@@ -325,7 +436,7 @@ def aws_executor(execution_type="lambda"):
                 
             else:
                 # Clean up initiated marker
-                delete_s3_object(self.output_bucket, f"executions/{self.execution_id}/initiated", logger)
+                _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                 
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
             
@@ -338,11 +449,19 @@ def aws_executor(execution_type="lambda"):
                 'initiated_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/initiated",
                 'result_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/result.json",
                 'done_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/done",
+                'checkin': f"s3://{self.output_bucket}/executions/{self.execution_id}/checkin.json",
                 'build_expire_at': build_expire_at,
-                'phases': True,
-                'output': f"Initiated {execution_type} execution with ID: {self.execution_id}"
+                'phases': True
             }
-            
+
+            _s3_put_object(s3_client,
+                           self.output_bucket,
+                           f"s3://{self.output_bucket}/executions/{self.execution_id}/checkin.json",
+                           json.dumps(result),
+                           content_type='application/json')
+
+            results['output'] = f"Initiated {execution_type} execution with ID: {self.execution_id}"
+
             # Add build ID for CodeBuild if available
             if execution_type.lower() == "codebuild" and 'build_id' in locals():
                 result['build_id'] = build_id
@@ -529,43 +648,3 @@ class AWSAsyncExecutor:
     def check_execution_status(self):
         return get_execution_status(self.execution_id,self.output_bucket)
 
-def get_execution_status(execution_id=None, output_bucket=None):
-    """
-    Get the status of an execution from S3 using initiated and done markers.
-
-    Args:
-        execution_id (str, optional): Execution ID to check
-        output_bucket (str, optional): S3 bucket where execution data is stored
-
-    Returns:
-        dict: Status information for the execution
-    """
-
-    # Initialize result structure
-    result = {
-        "execution_id": execution_id,
-        "initiated": False,
-        "completed": False,
-        "result_url": f"s3://{output_bucket}/executions/{execution_id}/result.json"
-    }
-
-    s3_client = boto3.client('s3')
-
-    # Check for initiated marker
-    initiated_key = f"executions/{execution_id}/initiated"
-    try:
-        result["t0"] = int(s3_client.get_object(Bucket=output_bucket, Key=initiated_key)['Body'].read())
-        result["initiated"] = True
-    except:
-        result["initiated"] = False
-        return result
-
-    # Check for done marker
-    done_key = f"executions/{execution_id}/done"
-    try:
-        result["t1"] = int(s3_client.get_object(Bucket=output_bucket, Key=done_key)['Body'].read())
-        result["completed"] = True
-    except:
-        result["completed"] = False
-
-    return result
