@@ -139,7 +139,7 @@ def get_execution_status(execution_id=None, output_bucket=None):
         result["initiated"] = False
         return result
 
-    if result.get("initiated"):
+    if not result.get("initiated"):
         return result
 
     expire_at_key = f"executions/{execution_id}/expire_at"
