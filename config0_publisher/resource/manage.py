@@ -1245,11 +1245,10 @@ class ResourceCmdHelper(ResourcePhases):
         return True
 
     def eval_log(self, results, local_log=None):
-        output = results.get("output")
 
+        output = results.get("output")
         if not output:
             output = results.get("log")
-
         if not output:
             return
 
@@ -1265,9 +1264,13 @@ class ResourceCmdHelper(ResourcePhases):
             except:
                 self.logger.debug("could not write local log")
 
+        print('i3')
         print(self.final_output)
+        print('i4')
+        raise Exception("i5")
 
     def eval_failure(self, results, method):
+
         if results.get("status") is not False:
             return
 
@@ -1478,17 +1481,17 @@ class ResourceCmdHelper(ResourcePhases):
             invocation_config = _awsbuild.pre_trigger()
 
             # testtest456
-            print('h0'*32)
-            self.logger.json(cinputargs)
-            print('h1'*32)
-            self.logger.json(invocation_config)
-            print('h2'*32)
+            #print('h0'*32)
+            #self.logger.json(cinputargs)
+            #print('h1'*32)
+            #self.logger.json(invocation_config)
+            #print('h2'*32)
 
             results = executor.exec_lambda(
                 **invocation_config)
 
-            self.logger.json(results)
-            print('h3'*32)
+            #self.logger.json(results)
+            #print('h3'*32)
 
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
