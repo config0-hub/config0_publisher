@@ -251,8 +251,7 @@ def aws_executor(execution_type="lambda"):
 
             if existing_run.get("done"):
                 #existing_run["status"]["done"] = True
-                # testtest456
-                #self.clear_execution()
+                self.clear_execution()
                 return existing_run["results"]
 
             if existing_run.get("status"):
