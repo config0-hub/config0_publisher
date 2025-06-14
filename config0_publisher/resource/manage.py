@@ -1471,6 +1471,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         # Use the appropriate build method and prepare invocation configuration
         if self.build_method == "lambda":
+
             # testtest456
             print('h0'*32)
             sleep(10)
