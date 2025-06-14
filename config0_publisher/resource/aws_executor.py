@@ -155,21 +155,23 @@ def get_execution_status(execution_id=None, output_bucket=None):
         return result
 
     # Check for done marker
-    done_key = f"executions/{execution_id}/done"
-    try:
-        result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
-        if result.get("t1"):
-            result["done"] = True
-        else:
-            del result["t1"]
-    except:
-        result["done"] = False
+    #done_key = f"executions/{execution_id}/done"
+    #try:
+    #    result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
+    #    if result.get("t1"):
+    #        result["done"] = True
+    #    else:
+    #        del result["t1"]
+    #except:
+    #    result["done"] = False
 
-    if result.get("done"):
-        return result
+    #if result.get("done"):
+    #    return result
     
     checkin_key = f"executions/{execution_id}/checkin.json"
+    print('y0'*32)
     print(_s3_get_object(s3_client, output_bucket, checkin_key))
+    print('y1'*32)
     try:
         result["checkin"] = _s3_get_object(s3_client, output_bucket, checkin_key)
         if result.get("checkin"):
