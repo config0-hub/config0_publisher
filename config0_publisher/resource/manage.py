@@ -1496,6 +1496,7 @@ class ResourceCmdHelper(ResourcePhases):
             return False
 
         if results.get("done"):
+            print(results.keys())
             results = results["results"]
         elif results.get("in_progress"):
             return results
