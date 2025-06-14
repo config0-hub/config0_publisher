@@ -1516,6 +1516,12 @@ class ResourceCmdHelper(ResourcePhases):
             except:
                 results["status"] = results["tf_status"]
 
+        print(results["status"])
+        print(type(results["status"]))
+        print(results["tf_status"])
+        print(type(results["tf_status"]))
+        raise Exception('f9')
+
         if "tf_exitcode" in results:
             try:
                 results["exitcode"] = int(results["tf_exitcode"])
