@@ -1558,8 +1558,20 @@ class ResourceCmdHelper(ResourcePhases):
         self.logger.json(tf_results)
         self.logger.debug("f3"*32)
 
+        self.logger.debug("f4" * 32)
+        print(tf_results.get("status"))
+        print(tf_results.get("status"))
+        print(tf_results.get("status"))
+        print(tf_results.get("status"))
+        self.logger.debug("f4" * 32)
         if not tf_results.get("status"):
+            self.logger.debug("f5" * 32)
+            self.logger.debug("f5" * 32)
+            self.logger.debug("f5" * 32)
             return tf_results
+        self.logger.debug("f6" * 32)
+        self.logger.debug("f6" * 32)
+        self.logger.debug("f6" * 32)
 
         if hasattr(self, "post_create") and callable(self.post_create):
             self.post_create()
