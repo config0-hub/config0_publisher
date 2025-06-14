@@ -121,7 +121,7 @@ def get_execution_status(execution_id=None, output_bucket=None):
         "execution_id": execution_id,
         "initiated": False,
         "done": False,
-        "checkin": False,
+        "status": False,
         "in_progress": False,
         "expired": False
     }
@@ -154,27 +154,27 @@ def get_execution_status(execution_id=None, output_bucket=None):
     if result.get("expired"):
         return result
 
-    checkin_key = f"executions/{execution_id}/checkin.json"
+    status_key = f"executions/{execution_id}/status.json"
     try:
-        result["checkin"] = _s3_get_object(s3_client, output_bucket, checkin_key)
-        if not result.get("checkin"):
-            del result["checkin"]
+        result["status"] = _s3_get_object(s3_client, output_bucket, status_key)
+        if not result.get("status"):
+            del result["status"]
     except:
-        result["checkin"] = False
+        result["status"] = False
 
     # Check for done marker
-    # done_key = f"executions/{execution_id}/done"
-    # try:
-    #    result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
-    #    if result.get("t1"):
-    #        result["done"] = True
-    #    else:
-    #        del result["t1"]
-    # except:
-    #    result["done"] = False
+    done_key = f"executions/{execution_id}/done"
+    try:
+       result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
+       if result.get("t1"):
+           result["done"] = True
+       else:
+           del result["t1"]
+    except:
+       result["done"] = False
 
-    # if result.get("done"):
-    #    return result
+    if result.get("done"):
+       return result
 
     return result
 
@@ -252,9 +252,13 @@ def aws_executor(execution_type="lambda"):
             print(existing_run)
             print('x1'*32)
 
-            if existing_run.get("checkin"):
-                existing_run["checkin"]["in_progress"] = True
-                return existing_run["checkin"]
+            if existing_run.get("done"):
+                existing_run["status"]["done"] = True
+                return existing_run["status"]
+
+            if existing_run.get("status"):
+                existing_run["status"]["in_progress"] = True
+                return existing_run["status"]
 
             # Prepare the payload from kwargs
             payload = {
@@ -461,14 +465,14 @@ def aws_executor(execution_type="lambda"):
                 'initiated_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/initiated",
                 'result_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/result.json",
                 'done_url': f"s3://{self.output_bucket}/executions/{self.execution_id}/done",
-                'checkin': f"s3://{self.output_bucket}/executions/{self.execution_id}/checkin.json",
+                'status': f"s3://{self.output_bucket}/executions/{self.execution_id}/status.json",
                 'build_expire_at': build_expire_at,
                 'phases': True
             }
 
             _s3_put_object(s3_client,
                            self.output_bucket,
-                           f"executions/{self.execution_id}/checkin.json",
+                           f"executions/{self.execution_id}/status.json",
                            json.dumps(result),
                            content_type='application/json')
 
