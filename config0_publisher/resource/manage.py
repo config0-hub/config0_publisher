@@ -1243,10 +1243,8 @@ class ResourceCmdHelper(ResourcePhases):
             except:
                 self.logger.debug("could not write local log")
 
-        print('i5'*32)
+        # testtest456
         print(self.final_output)
-        print('i6'*32)
-        raise Exception("i5"*32)
 
     def eval_failure(self, results, method):
 
