@@ -461,7 +461,7 @@ def aws_executor(execution_type="lambda"):
 
             _s3_put_object(s3_client,
                            self.output_bucket,
-                           f"s3://{self.output_bucket}/executions/{self.execution_id}/checkin.json",
+                           f"executions/{self.execution_id}/checkin.json",
                            json.dumps(result),
                            content_type='application/json')
 
@@ -652,4 +652,3 @@ class AWSAsyncExecutor:
     
     def check_execution_status(self):
         return get_execution_status(self.execution_id,self.output_bucket)
-
