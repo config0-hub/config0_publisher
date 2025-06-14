@@ -1267,7 +1267,7 @@ class ResourceCmdHelper(ResourcePhases):
         if results.get("status") is not False:
             return
 
-        self.eval_log(results)
+        #self.eval_log(results)
 
         print("")
         print("-"*32)
@@ -1498,6 +1498,15 @@ class ResourceCmdHelper(ResourcePhases):
             except (FileNotFoundError, PermissionError) as e:
                 os.chdir("/tmp")
 
+        self.logger.debug(f'tf_status: "{results.get("tf_status")}"')
+        self.logger.debug(f'tf_exitcode: "{results.get("tf_exitcode")}"')
+
+        if results.get("tf_status"):
+            results["status"] = results["tf_status"]
+
+        if results.get("tf_exitcode"):
+            results["exitcode"] = results["tf_exitcode"]
+
         self.eval_failure(results, method)
         return results
 
@@ -1576,4 +1585,4 @@ class ResourceCmdHelper(ResourcePhases):
 
         # Evaluation of log should be at the end
         # outside of _exec_in_aws
-        self.eval_log(tf_results, local_log=True)
+        #self.eval_log(tf_results, local_log=True)
