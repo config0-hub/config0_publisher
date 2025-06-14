@@ -245,7 +245,6 @@ def aws_executor(execution_type="lambda"):
             
             # Calculate build expiration time
             build_expire_at = int(time.time()) + int(max_execution_time)
-
             existing_run = self.check_execution_status()
 
             # testtest456
@@ -254,7 +253,7 @@ def aws_executor(execution_type="lambda"):
             print('x1'*32)
 
             if existing_run.get("checkin"):
-                existing_run["checkin"]["fixme"] = "later"
+                existing_run["checkin"]["in_progress"] = True
                 return existing_run["checkin"]
 
             # Prepare the payload from kwargs
