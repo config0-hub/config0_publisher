@@ -7,6 +7,7 @@ import json
 import os
 import hashlib
 from string import ascii_lowercase
+from pathlib import Path
 
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.shellouts import mkdir
@@ -27,6 +28,45 @@ def print_json(results):
 
 def nice_json(results):
     return json.dumps(results, sort_keys=True, cls=DateTimeJsonEncoder, indent=4)
+
+# ref 34532045732
+def to_jsonfile(values, filename, exec_dir=None):
+    """
+    Write values to a JSON file in the config0_resources directory.
+
+    Args:
+        values (dict): Data to write to JSON file
+        filename (str): Name of the file to create
+        exec_dir (str, optional): Execution directory. Defaults to current directory.
+
+    Returns:
+        bool: True if write successful, False otherwise
+
+    Example:
+        >>> to_jsonfile({"key": "value"}, "resource.json")
+        Successfully wrote contents to /path/to/config0_resources/resource.json
+        True
+    """
+
+    if not exec_dir: 
+        exec_dir = os.getcwd()
+
+    file_dir = os.path.join(exec_dir, "config0_resources")
+    file_path = os.path.join(file_dir, filename)
+
+    # Create directory if it doesn't exist
+    Path(file_dir).mkdir(parents=True, exist_ok=True)
+
+    try:
+        with open(file_path, "w") as file:
+            file.write(json.dumps(values))
+        status = True
+        print(f"Successfully wrote contents to {file_path}")
+    except:
+        print(f"Failed to write contents to {file_path}")
+        status = False
+
+    return status
 
 def convert_str2list(_object, split_char=None):
 

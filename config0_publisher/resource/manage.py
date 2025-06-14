@@ -34,6 +34,7 @@ from config0_publisher.utilities import id_generator2
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.utilities import print_json
 from config0_publisher.utilities import to_json
+from config0_publisher.utilities import to_jsonfile
 from config0_publisher.utilities import get_hash
 from config0_publisher.utilities import eval_str_to_join
 from config0_publisher.shellouts import execute4
@@ -41,7 +42,7 @@ from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
 from config0_publisher.templating import list_template_files
 from config0_publisher.variables import EnvVarsToClassVars
-#from config0_publisher.resources.sync import SyncToShare
+from config0_publisher.resources.phases import ResourcePhases
 
 #############################################
 # insert back to 3531543
@@ -57,45 +58,6 @@ from config0_publisher.resource.aws_executor import aws_executor
 from config0_publisher.resource.aws_executor import AWSAsyncExecutor
 
 #############################################
-
-# ref 34532045732
-def to_jsonfile(values, filename, exec_dir=None):
-    """
-    Write values to a JSON file in the config0_resources directory.
-
-    Args:
-        values (dict): Data to write to JSON file
-        filename (str): Name of the file to create
-        exec_dir (str, optional): Execution directory. Defaults to current directory.
-
-    Returns:
-        bool: True if write successful, False otherwise
-
-    Example:
-        >>> to_jsonfile({"key": "value"}, "resource.json")
-        Successfully wrote contents to /path/to/config0_resources/resource.json
-        True
-    """
-
-    if not exec_dir: 
-        exec_dir = os.getcwd()
-
-    file_dir = os.path.join(exec_dir, "config0_resources")
-    file_path = os.path.join(file_dir, filename)
-
-    # Create directory if it doesn't exist
-    Path(file_dir).mkdir(parents=True, exist_ok=True)
-
-    try:
-        with open(file_path, "w") as file:
-            file.write(json.dumps(values))
-        status = True
-        print(f"Successfully wrote contents to {file_path}")
-    except:
-        print(f"Failed to write contents to {file_path}")
-        status = False
-
-    return status
 
 def _to_json(output):
     if isinstance(output, dict):
@@ -114,10 +76,7 @@ def _to_json(output):
 
     return output
 
-
-# testtest456
-#class ResourceCmdHelper(SyncToShare):
-class ResourceCmdHelper:
+class ResourceCmdHelper(ResourcePhases):
 
     def __init__(self, **kwargs):
         """
@@ -154,6 +113,8 @@ class ResourceCmdHelper:
 
         if not self.build_env_vars:
             self.build_env_vars = {}
+
+        ResourcePhases.__init__(self)
 
         # set specified env variables
         self._set_env_vars(env_vars=kwargs.get("env_vars"),
@@ -266,17 +227,17 @@ class ResourceCmdHelper:
 
         self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json_file}"')
 
-        if not hasattr(self, "config0_background_json_file") or not self.config0_background_json_file:
-            self.config0_background_json_file = os.environ.get("CONFIG0_BACKGROUND_JSON_FILE")
+        if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
+            self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
 
-        if not self.config0_background_json_file:
+        if not self.config0_phases_json_file:
             try:
-                self.config0_background_json_file = os.path.join(self.stateful_dir,
-                                                                f"background-{self.stateful_id}.json")
+                self.config0_phases_json_file = os.path.join(self.stateful_dir,
+                                                             f"phases-{self.stateful_id}.json")
             except:
-                self.config0_background_json_file = None
+                self.config0_phases_json_file = None
 
-        self.logger.debug(f'u4324: CONFIG0_BACKGROUND_JSON_FILE "{self.config0_background_json_file}"')
+        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json_file}"')
 
     def _debug_print_out_key_class_vars(self):
         for _k, _v in self.syncvars.class_vars.items():
@@ -1422,10 +1383,7 @@ class ResourceCmdHelper:
             "execution_id": self.execution_id,
             "execution_id_path": self.execution_id_path
         }
-        
-        # Add clear_existing to clear any previous execution files
-        cinputargs["clear_existing"] = True
-        
+
         # Usually associated with create
         if method in ["apply", "create"]:
             if self.build_env_vars:
@@ -1497,6 +1455,8 @@ class ResourceCmdHelper:
         executor = AWSAsyncExecutor(
             resource_type="terraform", 
             resource_id=self.stateful_id,
+            execution_id=self.execution_id,
+            output_bucket=self.tmp_bucket,
             stateful_id=self.stateful_id,
             method=method,
             aws_region=self.aws_region,
@@ -1505,14 +1465,13 @@ class ResourceCmdHelper:
             remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None),
             build_timeout=self.build_timeout
         )
-        
+
+        #executor.clear_execution()
+
         # Use the appropriate build method and prepare invocation configuration
         if self.build_method == "lambda":
             _awsbuild = Lambdabuild(**cinputargs)
             invocation_config = _awsbuild.pre_trigger()
-
-            # Pass the clear_existing parameter to clean up previous executions
-            invocation_config["clear_existing"] = True
 
             # testtest456
             print('h0'*32)
@@ -1522,18 +1481,12 @@ class ResourceCmdHelper:
             print('h2'*32)
 
             results = executor.exec_lambda(
-                execution_id=self.execution_id,
-                execution_id_path=self.execution_id_path,
-                output_bucket=self.tmp_bucket,
                 **invocation_config)
 
         elif self.build_method == "codebuild":
             _awsbuild = Codebuild(**cinputargs)
             inputargs = _awsbuild.pre_trigger()
-            
-            # Pass the clear_existing parameter to clean up previous executions
-            inputargs["clear_existing"] = True
-                
+
             results = executor.exec_codebuild(**inputargs)
             
         else:
@@ -1571,6 +1524,12 @@ class ResourceCmdHelper:
             _use_codebuild = True
         else:
             _use_codebuild = None
+
+        #pre_creation = self._exec_in_aws(method="pre-create")
+        #if not pre_creation.get("status"):
+        #    self.logger.debug("f1a" * 32)
+        #    self.logger.error("pre-create failed")
+        #    return pre_creation
 
         if _use_codebuild:
             self.build_method = "codebuild"
@@ -1618,282 +1577,3 @@ class ResourceCmdHelper:
         # Evaluation of log should be at the end
         # outside of _exec_in_aws
         self.eval_log(tf_results, local_log=True)
-
-    #############################################
-    
-    def get_execution_status(self, execution_id=None, output_bucket=None):
-        """
-        Get the status of an execution from S3 using initiated and done markers.
-        
-        Args:
-            execution_id (str, optional): Execution ID to check
-            output_bucket (str, optional): S3 bucket where execution data is stored
-            
-        Returns:
-            dict: Status information for the execution
-        """
-        # Generate execution_id if not provided
-        if not execution_id:
-            if not hasattr(self, 'resource_type') or not hasattr(self, 'stateful_id'):
-                self.logger.error("Cannot get execution status: No execution_id provided and resource_type/stateful_id not available")
-                return None
-            
-            # Create deterministic execution ID based on resource identifiers
-            base_string = f"{self.resource_type}:{self.stateful_id}"
-            execution_id = hashlib.md5(base_string.encode()).hexdigest()
-        
-        # Determine output bucket using same priority order
-        if not output_bucket:
-            if hasattr(self, 'output_bucket') and self.output_bucket:
-                output_bucket = self.output_bucket
-            elif hasattr(self, 'tmp_bucket') and self.tmp_bucket:
-                output_bucket = self.tmp_bucket
-            elif os.environ.get('OUTPUT_BUCKET'):
-                output_bucket = os.environ.get('OUTPUT_BUCKET')
-            elif os.environ.get('TMP_BUCKET'):
-                output_bucket = os.environ.get('TMP_BUCKET')
-            else:
-                self.logger.error("No output bucket specified for status check")
-                return None
-        
-        # Initialize result structure
-        result = {
-            "execution_id": execution_id,
-            "found": False,
-            "initiated": False,
-            "completed": False,
-            "success": None,
-            "initiated_time": None,
-            "completed_time": None,
-            "elapsed_time": None,
-            "result_url": f"s3://{output_bucket}/executions/{execution_id}/result.json",
-            "logs_url": f"s3://{output_bucket}/executions/{execution_id}/logs.txt"
-        }
-        
-        try:
-            s3_client = boto3.client('s3')
-            
-            # Check for initiated marker
-            initiated_key = f"executions/{execution_id}/initiated"
-            try:
-                initiated_obj = s3_client.get_object(Bucket=output_bucket, Key=initiated_key)
-                initiated_data = json.loads(initiated_obj['Body'].read().decode('utf-8'))
-                
-                result["found"] = True
-                result["initiated"] = True
-                result["initiated_time"] = initiated_data.get('start_time')
-                result["status"] = "in_progress"  # If initiated but not done, it's in progress
-                
-                # If execution has a build_id, include it
-                if 'build_id' in initiated_data:
-                    result["build_id"] = initiated_data['build_id']
-                
-                # Update result structure with additional initiated data
-                for key in ['resource_type', 'resource_id', 'method', 'execution_type']:
-                    if key in initiated_data:
-                        result[key] = initiated_data[key]
-                
-            except s3_client.exceptions.NoSuchKey:
-                self.logger.debug(f"No initiated marker found for execution {execution_id}")
-            
-            # Check for done marker
-            done_key = f"executions/{execution_id}/done"
-            try:
-                done_obj = s3_client.get_object(Bucket=output_bucket, Key=done_key)
-                done_data = done_obj['Body'].read().decode('utf-8')
-                
-                result["found"] = True
-                result["completed"] = True
-                
-                # Try to parse the done marker as JSON if possible
-                try:
-                    done_json = json.loads(done_data)
-                    
-                    # If it's valid JSON, extract data
-                    if isinstance(done_json, dict):
-                        result["success"] = done_json.get('success', done_json.get('status'))
-                        result["status"] = "completed" if result["success"] else "failed"
-                        
-                        if 'end_time' in done_json:
-                            result["completed_time"] = done_json['end_time']
-                        
-                        # Copy any other fields from done_json to result
-                        for key, value in done_json.items():
-                            if key not in result:
-                                result[key] = value
-                except json.JSONDecodeError:
-                    # If it's not JSON, use the raw content
-                    success_value = done_data.strip().lower() in ['success', 'true']
-                    result["success"] = success_value
-                    result["status"] = "completed" if success_value else "failed"
-                
-                # Calculate elapsed time if we have both start and end times
-                if result["initiated_time"] and result["completed_time"]:
-                    result["elapsed_time"] = result["completed_time"] - result["initiated_time"]
-                
-            except s3_client.exceptions.NoSuchKey:
-                self.logger.debug(f"No done marker found for execution {execution_id}")
-            
-            # If we found an initiated marker but no done marker, calculate elapsed time from now
-            if result["initiated_time"] and not result["completed_time"]:
-                result["elapsed_time"] = time() - result["initiated_time"]
-                
-            return result
-            
-        except Exception as e:
-            self.logger.error(f"Error checking execution status: {str(e)}")
-            result["error"] = str(e)
-            return result
-    
-    def clear_execution(self, execution_id=None, output_bucket=None):
-        """
-        Clear all S3 objects related to a specific execution.
-        
-        Args:
-            execution_id (str, optional): Execution ID to clear. If not provided,
-                                         a deterministic ID will be generated.
-            output_bucket (str, optional): S3 bucket where execution data is stored.
-                                     
-        Returns:
-            int: Number of objects deleted, or -1 if an error occurred
-        """
-        if not execution_id:
-            # Generate deterministic execution ID based on resource identifiers
-            if not hasattr(self, 'resource_type') or not hasattr(self, 'stateful_id'):
-                self.logger.error("Cannot clear execution: No execution_id provided and resource_type/stateful_id not available")
-                return -1
-                
-            base_string = f"{self.resource_type}:{self.stateful_id}"
-            execution_id = hashlib.md5(base_string.encode()).hexdigest()
-        
-        # Determine output bucket using same priority order
-        if not output_bucket:
-            if hasattr(self, 'output_bucket') and self.output_bucket:
-                output_bucket = self.output_bucket
-            elif hasattr(self, 'tmp_bucket') and self.tmp_bucket:
-                output_bucket = self.tmp_bucket
-            elif os.environ.get('OUTPUT_BUCKET'):
-                output_bucket = os.environ.get('OUTPUT_BUCKET')
-            elif os.environ.get('TMP_BUCKET'):
-                output_bucket = os.environ.get('TMP_BUCKET')
-            else:
-                self.logger.error("No output bucket specified for clearing execution")
-                return -1
-        
-        try:
-            # Delete entire execution directory from S3
-            s3_client = boto3.client('s3')
-            execution_prefix = f"executions/{execution_id}/"
-            
-            self.logger.info(f"Deleting execution directory for {execution_id}")
-            
-            # List all objects with the execution prefix
-            paginator = s3_client.get_paginator('list_objects_v2')
-            objects_to_delete = []
-            
-            # Collect all objects with the execution prefix
-            for page in paginator.paginate(Bucket=output_bucket, Prefix=execution_prefix):
-                if 'Contents' in page:
-                    for obj in page['Contents']:
-                        objects_to_delete.append({'Key': obj['Key']})
-            
-            # Delete all objects if any were found
-            if objects_to_delete:
-                s3_client.delete_objects(
-                    Bucket=output_bucket,
-                    Delete={'Objects': objects_to_delete}
-                )
-                self.logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
-                return len(objects_to_delete)
-            else:
-                self.logger.info(f"No existing objects found for execution {execution_id}")
-                return 0
-                
-        except Exception as e:
-            self.logger.error(f"Failed to delete execution directory: {str(e)}")
-            return -1
-    
-    def wait_for_execution(self, execution_id=None, output_bucket=None, timeout=600, check_interval=10, return_result=True):
-        """
-        Wait for an execution to complete and optionally return the result.
-        
-        Args:
-            execution_id (str, optional): Execution ID to check
-            output_bucket (str, optional): S3 bucket where execution data is stored
-            timeout (int, optional): Maximum time to wait in seconds
-            check_interval (int, optional): Time between status checks in seconds
-            return_result (bool, optional): Whether to fetch and return the execution result
-            
-        Returns:
-            dict: Execution result with status information
-        """
-        start_time = time()
-        end_time = start_time + timeout
-        
-        while time() < end_time:
-            status = self.get_execution_status(
-                execution_id=execution_id,
-                output_bucket=output_bucket
-            )
-            
-            if not status or not status.get('found'):
-                self.logger.info(f"Execution not found yet, waiting...")
-                time.sleep(check_interval)
-                continue
-            
-            if status.get('completed'):
-                self.logger.info(f"Execution completed with status: {status.get('status', 'unknown')}")
-                
-                # If requested, get the result from S3
-                if return_result and output_bucket:
-                    try:
-                        s3_client = boto3.client('s3')
-                        
-                        if not execution_id:
-                            if not hasattr(self, 'resource_type') or not hasattr(self, 'stateful_id'):
-                                self.logger.error("Cannot get result: No execution_id provided and resource_type/stateful_id not available")
-                                return status
-                            
-                            base_string = f"{self.resource_type}:{self.stateful_id}"
-                            execution_id = hashlib.md5(base_string.encode()).hexdigest()
-                        
-                        # Try to fetch the result file
-                        result_key = f"executions/{execution_id}/result.json"
-                        try:
-                            result_obj = s3_client.get_object(Bucket=output_bucket, Key=result_key)
-                            result_data = json.loads(result_obj['Body'].read().decode('utf-8'))
-                            
-                            # Merge result data with status
-                            for key, value in result_data.items():
-                                if key not in status:
-                                    status[key] = value
-                            
-                            status['result_retrieved'] = True
-                        except s3_client.exceptions.NoSuchKey:
-                            self.logger.warning(f"No result file found at s3://{output_bucket}/{result_key}")
-                            status['result_retrieved'] = False
-                    except Exception as e:
-                        self.logger.error(f"Error retrieving result: {str(e)}")
-                        status['result_error'] = str(e)
-                        status['result_retrieved'] = False
-                
-                return status
-            
-            elapsed = time() - start_time
-            remaining = timeout - elapsed
-            self.logger.info(f"Execution in progress, elapsed time: {elapsed:.1f}s, remaining timeout: {remaining:.1f}s")
-            time.sleep(check_interval)
-        
-        # If we got here, we timed out
-        self.logger.warning(f"Timed out waiting for execution to complete after {timeout}s")
-        status = self.get_execution_status(
-            execution_id=execution_id,
-            output_bucket=output_bucket
-        )
-        
-        if status:
-            status['timed_out'] = True
-        else:
-            status = {'timed_out': True, 'found': False}
-        
-        return status
