@@ -1024,25 +1024,24 @@ class ResourceCmdHelper(ResourcePhases):
         exit(0)
         
     @staticmethod
-    def clean_output(results, replace=True):
+    def clean_output(output):
         clean_lines = []
 
-        if isinstance(results["output"], list):
-            for line in results["output"]:
+        if isinstance(output, list):
+            for line in output:
                 try:
                     clean_lines.append(line.decode("utf-8"))
                 except:
                     clean_lines.append(line)
         else:
             try:
-                clean_lines.append((results["output"].decode("utf-8")))
+                clean_lines.append((output.decode("utf-8")))
             except:
-                clean_lines.append(results["output"])
+                clean_lines.append(output)
 
-        if replace:
-            results["output"] = "\n".join(clean_lines)
+        output = "\n".join(clean_lines)
 
-        return clean_lines
+        return output
 
     def execute(self, cmd, **kwargs):
         results = self.execute3(cmd, **kwargs)
@@ -1246,11 +1245,16 @@ class ResourceCmdHelper(ResourcePhases):
         return True
 
     def eval_log(self, results, local_log=None):
-        if not results.get("output"):
+        output = results.get("output")
+
+        if not output:
+            output = results.get("log")
+
+        if not output:
             return
 
-        self.clean_output(results, replace=True)
-        self.final_output = results["output"]
+        output = self.clean_output(output)
+        self.final_output = output
         self.append_log(self.final_output)
         del results["output"]
 
@@ -1267,7 +1271,7 @@ class ResourceCmdHelper(ResourcePhases):
         if results.get("status") is not False:
             return
 
-        #self.eval_log(results)
+        self.eval_log(results)
 
         print("")
         print("-"*32)
@@ -1510,7 +1514,10 @@ class ResourceCmdHelper(ResourcePhases):
         self.logger.debug(f'tf_exitcode: "{results.get("tf_exitcode")}"')
 
         if results.get("tf_status"):
-            results["status"] = results["tf_status"]
+            try:
+                results["status"] = bool(results["tf_status"])
+            except:
+                results["status"] = results["tf_status"]
 
         if results.get("tf_exitcode"):
             results["exitcode"] = results["tf_exitcode"]
@@ -1557,18 +1564,18 @@ class ResourceCmdHelper(ResourcePhases):
         self.logger.debug("f2"*32)
         self.logger.json(tf_results)
         self.logger.debug("f3"*32)
+        print(tf_results.get("status"))
+        print(tf_results.get("status"))
+        print(tf_results.get("status"))
+        print(type(tf_results.get("status")))
+        print(type(tf_results.get("status")))
+        print(type(tf_results.get("status")))
+        self.logger.debug("f4"*32)
 
-        self.logger.debug("f4" * 32)
-        print(tf_results.get("status"))
-        print(tf_results.get("status"))
-        print(tf_results.get("status"))
-        print(tf_results.get("status"))
-        print(type(tf_results.get("status")))
-        print(type(tf_results.get("status")))
-        print(type(tf_results.get("status")))
-        print(type(tf_results.get("status")))
-        self.logger.debug("f4" * 32)
-        if tf_results.get("status") in [ "False", False ]:
+        if not tf_results.get("status"):
+            if tf_results.get("log"):
+                print
+
             self.logger.debug("f5" * 32)
             self.logger.debug("f5" * 32)
             self.logger.debug("f5" * 32)

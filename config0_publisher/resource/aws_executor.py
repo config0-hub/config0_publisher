@@ -254,7 +254,6 @@ def aws_executor(execution_type="lambda"):
                 # testtest456
                 #self.clear_execution()
                 return existing_run["results"]
-                return existing_run["status"]
 
             if existing_run.get("status"):
                 existing_run["status"]["in_progress"] = True
