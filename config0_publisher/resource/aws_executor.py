@@ -122,7 +122,6 @@ def get_execution_status(execution_id=None, output_bucket=None):
         "initiated": False,
         "done": False,
         "status": False,
-        "in_progress": False,
         "expired": False
     }
 
