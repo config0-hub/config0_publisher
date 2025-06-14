@@ -241,6 +241,11 @@ def aws_executor(execution_type="lambda"):
 
             existing_run = self.check_execution_status()
 
+            # testtest456
+            print('x0'*32)
+            print(existing_run)
+            print('x1'*32)
+
             if existing_run.get("in_progress") and existing_run.get("checkin"):
                 return existing_run["checkin"]
 
