@@ -43,7 +43,7 @@ from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
 from config0_publisher.templating import list_template_files
 from config0_publisher.variables import EnvVarsToClassVars
-from config0_publisher.resources.phases import ResourcePhases
+from config0_publisher.resource.phases import ResourcePhases
 
 #############################################
 # insert back to 3531543
