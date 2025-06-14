@@ -131,7 +131,7 @@ def aws_executor(execution_type="lambda"):
                     logger.debug(f"Using default CodeBuild timeout: {max_execution_time}s")
             
             # Calculate build expiration time
-            build_expire_at = time.time() + max_execution_time
+            build_expire_at = int(time.time()) + int(max_execution_time)
 
             # Prepare the payload from kwargs
             payload = {
@@ -307,7 +307,7 @@ def aws_executor(execution_type="lambda"):
                     
                     # Add build ID to payload
                     payload['build_id'] = build_id
-                    s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(time.time()))
+                    s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
 
                 except Exception as e:
                     logger.error(f"CodeBuild start failed with exception: {str(e)}")
