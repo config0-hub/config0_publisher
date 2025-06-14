@@ -154,32 +154,27 @@ def get_execution_status(execution_id=None, output_bucket=None):
     if result.get("expired"):
         return result
 
+    checkin_key = f"executions/{execution_id}/checkin.json"
+    try:
+        result["checkin"] = _s3_get_object(s3_client, output_bucket, checkin_key)
+        if not result.get("checkin"):
+            del result["checkin"]
+    except:
+        result["checkin"] = False
+
     # Check for done marker
-    #done_key = f"executions/{execution_id}/done"
-    #try:
+    # done_key = f"executions/{execution_id}/done"
+    # try:
     #    result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
     #    if result.get("t1"):
     #        result["done"] = True
     #    else:
     #        del result["t1"]
-    #except:
+    # except:
     #    result["done"] = False
 
-    #if result.get("done"):
+    # if result.get("done"):
     #    return result
-    
-    checkin_key = f"executions/{execution_id}/checkin.json"
-    print('y0'*32)
-    print(_s3_get_object(s3_client, output_bucket, checkin_key))
-    print('y1'*32)
-    try:
-        result["checkin"] = _s3_get_object(s3_client, output_bucket, checkin_key)
-        if result.get("checkin"):
-            result["in_progress"] = True
-        else:
-            del result["checkin"]
-    except:
-        result["in_progress"] = False
 
     return result
 
@@ -258,7 +253,8 @@ def aws_executor(execution_type="lambda"):
             print(existing_run)
             print('x1'*32)
 
-            if existing_run.get("in_progress") and existing_run.get("checkin"):
+            if existing_run.get("checkin"):
+                existing_run["checkin"]["fixme"] = "later"
                 return existing_run["checkin"]
 
             # Prepare the payload from kwargs
