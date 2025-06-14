@@ -170,7 +170,7 @@ def get_execution_status(execution_id=None, output_bucket=None):
     
     checkin_key = f"executions/{execution_id}/checkin.json"
     try:
-        result["checkin"] = int(_s3_get_object(s3_client, output_bucket, checkin_key))
+        result["checkin"] = _s3_get_object(s3_client, output_bucket, checkin_key)
         if result.get("checkin"):
             result["in_progress"] = True
         else:
