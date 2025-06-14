@@ -17,7 +17,6 @@ Environment Variables:
     JIFFY_ENHANCED_LOG: Enable enhanced logging
     DEBUG_STATEFUL: Enable debug mode for stateful operations
     CONFIG0_INITIAL_APPLY: Flag for initial application
-    FORCE_NEW_EXECUTION: Force a new execution regardless of existing ones
 """
 
 import os
@@ -132,15 +131,6 @@ class ResourceCmdHelper(ResourcePhases):
         # ref 34532453245
         self.final_output = None
         
-        # Set force_new_execution from environment variable if present
-        if os.environ.get("FORCE_NEW_EXECUTION"):
-            self.force_new_execution = True
-        else:
-            self.force_new_execution = kwargs.get("force_new_execution", False)
-
-        # testtest456 - remove
-        #self.force_new_execution = True
-
     def _set_execution_id(self,**kwargs):
 
         self.execution_id = os.environ.get("EXECUTION_ID", None)
@@ -227,17 +217,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         self.logger.debug(f'u4324: CONFIG0_RESOURCE_JSON_FILE "{self.config0_resource_json_file}"')
 
-        if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
-            self.config0_phases_json_file = os.environ.get("CONFIG0_PHASES_JSON_FILE")
-
-        if not self.config0_phases_json_file:
-            try:
-                self.config0_phases_json_file = os.path.join(self.stateful_dir,
-                                                             f"phases-{self.stateful_id}.json")
-            except:
-                self.config0_phases_json_file = None
-
-        self.logger.debug(f'u4324: CONFIG0_PHASES_JSON_FILE "{self.config0_phases_json_file}"')
+        self.set_phases_json()
 
     def _debug_print_out_key_class_vars(self):
         for _k, _v in self.syncvars.class_vars.items():
@@ -1562,29 +1542,12 @@ class ResourceCmdHelper(ResourcePhases):
 
         tf_results = self._exec_in_aws(method="create")
 
-        # testtest456
-        self.logger.debug("f2"*32)
-        self.logger.json(tf_results)
-        self.logger.debug("f3"*32)
-        print(tf_results.get("status"))
-        print(tf_results.get("status"))
-        print(tf_results.get("status"))
-        print(type(tf_results.get("status")))
-        print(type(tf_results.get("status")))
-        print(type(tf_results.get("status")))
-        self.logger.debug("f4"*32)
+        if tf_results.get("phases") and tf_results.get("in_progress") and tf_results.get("status") is True:
+            self.write_phases_to_json_file(tf_results)
+            return tf_results
 
         if not tf_results.get("status"):
-            if tf_results.get("log"):
-                print
-
-            self.logger.debug("f5" * 32)
-            self.logger.debug("f5" * 32)
-            self.logger.debug("f5" * 32)
             return tf_results
-        self.logger.debug("f6" * 32)
-        self.logger.debug("f6" * 32)
-        self.logger.debug("f6" * 32)
 
         if hasattr(self, "post_create") and callable(self.post_create):
             self.post_create()

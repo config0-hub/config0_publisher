@@ -13,14 +13,6 @@ from config0_publisher.shellouts import rm_rf
 class ResourcePhases:
 
     def __init__(self, **kwargs):
-        """
-        # TODO phases not fully implemented
-        # phases allow for non-blocking/bg execution
-        # => submit, retrieve
-        phases_info (dict): Information about all phases
-        phase (str): Current execution phase
-        current_phase (dict): Details of current phase
-        """
         self.classname = 'ResourcePhases'
         self.phases_params_hash = kwargs.get("phases_params_hash")
         self.phases_params = kwargs.get("phases_params")
