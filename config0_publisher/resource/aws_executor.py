@@ -132,9 +132,10 @@ def get_execution_status(execution_id=None, output_bucket=None):
     initiated_key = f"executions/{execution_id}/initiated"
     try:
         result["t0"] = int(_s3_get_object(s3_client, output_bucket, initiated_key))
-        if not result.get("t0"):
-            raise Exception("no initiated yet")
-        result["initiated"] = True
+        if result.get("t0"):
+            result["initiated"] = True
+        else:
+            del result["t0"]
     except:
         result["initiated"] = False
         return result
@@ -157,7 +158,10 @@ def get_execution_status(execution_id=None, output_bucket=None):
     done_key = f"executions/{execution_id}/done"
     try:
         result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
-        result["done"] = True
+        if result.get("t1"):
+            result["done"] = True
+        else:
+            del result["t1"]
     except:
         result["done"] = False
 
@@ -167,7 +171,10 @@ def get_execution_status(execution_id=None, output_bucket=None):
     checkin_key = f"executions/{execution_id}/checkin.json"
     try:
         result["checkin"] = int(_s3_get_object(s3_client, output_bucket, checkin_key))
-        result["in_progress"] = True
+        if result.get("checkin"):
+            result["in_progress"] = True
+        else:
+            del result["checkin"]
     except:
         result["in_progress"] = False
 
