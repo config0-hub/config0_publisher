@@ -1095,7 +1095,6 @@ class AWSAsyncExecutor:
             print('a'*32)
             print('a'*32)
             print('a'*32)
-            raise Exception('a')
             if execution_type.lower() == "lambda":
                 # Direct execution will handle recording
                 return self._direct_lambda_execution(**kwargs)
@@ -1107,7 +1106,9 @@ class AWSAsyncExecutor:
 
         # testtest456
         print('b'*32)
-        raise Exception('b')
+        print('b'*32)
+        print('b'*32)
+        print('b'*32)
 
         # Otherwise use the async decorated methods
         result = None
