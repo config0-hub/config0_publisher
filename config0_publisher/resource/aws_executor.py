@@ -197,6 +197,8 @@ def aws_executor(execution_type="lambda"):
         @functools.wraps(func)
        
         def wrapper(self, **kwargs):
+            # Store original args
+            original_args = kwargs.copy()
 
             s3_client = boto3.client('s3')
 
@@ -481,6 +483,14 @@ def aws_executor(execution_type="lambda"):
             if execution_type.lower() == "codebuild" and 'build_id' in locals():
                 result['build_id'] = build_id
             
+            # Record this invocation if we have the tracking method
+            if hasattr(self, '_record_invocation'):
+                try:
+                    # This is an initial invocation, not a followup
+                    self._record_invocation(f'{execution_type}_async', False, original_args, result)
+                except Exception as e:
+                    logger.warning(f"Failed to record invocation: {str(e)}")
+            
             return result
         return wrapper
     return decorator
@@ -501,8 +511,7 @@ class AWSAsyncExecutor:
         lambda_function_name (str): AWS Lambda function name for lambda execution
         lambda_region (str): AWS region where Lambda function is located
         codebuild_project_name (str): AWS CodeBuild project name for codebuild execution
-        tmp_bucket (str): S3 bucket for storing execution results
-        output_bucket (str): S3 bucket for storing execution results (alias for tmp_bucket)
+        output_bucket (str): S3 bucket for storing execution results
         execution_id (str): Deterministic or provided execution ID
     """
     
@@ -511,39 +520,443 @@ class AWSAsyncExecutor:
     lambda_region = os.environ.get("LAMBDA_REGION", "us-east-1")  # Default to us-east-1 for Lambda
     codebuild_project_name = os.environ.get("CODEBUILD_PROJECT_NAME", "config0-iac")
     
-    def __init__(self, resource_type, resource_id, execution_id, output_bucket, **kwargs):
+    # Maximum number of invocations to track per execution
+    MAX_INVOCATION_HISTORY = 3
+
+    def __init__(self, resource_type, resource_id, execution_id, output_bucket, sync_mode=None, **kwargs):
         """
         Initialize a new AWS Async Executor.
-        
+
         Args:
             resource_type (str): Type of infrastructure resource (terraform, cloudformation, etc.)
             resource_id (str): Identifier for the specific resource
-            execution_id (str): Execution ID for tracking
-            output_bucket (str): S3 bucket for execution tracking
+            execution_id (str, optional): Execution ID for tracking. Can be used in both sync and async modes.
+            output_bucket (str, optional): S3 bucket for execution tracking.
+            sync_mode (bool, optional): Explicitly set sync mode. If None, defaults to execution_id being None.
             **kwargs: Additional attributes to configure the execution environment
-                - stateful_id: Stateful resource identifier
-                - method: Operation method (create, destroy, etc.)
-                - aws_region: AWS region for the infrastructure operation
-                - lambda_region: AWS region for the Lambda function (defaults to us-east-1)
-                - app_dir: Application directory
-                - app_name: Application name
-                - remote_stateful_bucket: S3 bucket for state storage
-                - build_timeout: Maximum execution time in seconds
         """
+        # Validate input types
+        if not isinstance(resource_type, str):
+            raise TypeError(f"resource_type must be a string, got {type(resource_type).__name__}")
+        if not isinstance(resource_id, str):
+            raise TypeError(f"resource_id must be a string, got {type(resource_id).__name__}")
+        if execution_id is not None and not isinstance(execution_id, str):
+            raise TypeError(f"execution_id must be a string or None, got {type(execution_id).__name__}")
+        if output_bucket is not None and not isinstance(output_bucket, str):
+            raise TypeError(f"output_bucket must be a string or None, got {type(output_bucket).__name__}")
+
+        # Assign attributes
         self.resource_type = resource_type
         self.resource_id = resource_id
         self.execution_id = execution_id
         self.output_bucket = output_bucket
-        self.tmp_bucket = self.output_bucket
+        self.sync_mode = True if sync_mode else None
 
-        # Set additional attributes from kwargs
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        # Set tmp_bucket for backward compatibility
+        self.tmp_bucket = output_bucket
+
+    def _record_invocation(self, invocation_type, is_followup, args, result):
+        """
+        Record an invocation to S3
+        
+        Args:
+            invocation_type (str): Type of invocation (lambda, codebuild)
+            is_followup (bool): Whether this is a follow-up status check
+            args (dict): Arguments passed to the execution method
+            result (dict): Result returned from the execution
             
-        # Ensure lambda_region is set to us-east-1 unless explicitly overridden
-        if not hasattr(self, "lambda_region"):
-            self.lambda_region = self.__class__.lambda_region
+        Returns:
+            bool: True if recording was successful, False otherwise
+        """
+        # If we don't have S3 storage, skip recording
+        if not self.output_bucket:
+            return False
+            
+        # Create a record ID that allows tracking across processes
+        record_id = str(uuid.uuid4())
+        
+        # Create a timestamped record
+        record = {
+            'record_id': record_id,
+            'timestamp': int(time.time()),
+            'invocation_type': invocation_type,
+            'is_followup': is_followup,
+            'arguments': args.copy() if args else {},  # Make a copy to avoid reference issues
+            'result': result
+        }
+        
+        # Get the correct execution ID - either from self or from args
+        execution_id = self.execution_id
+        if not execution_id and 'execution_id' in args:
+            execution_id = args['execution_id']
+            
+        # Skip recording if we don't have an execution ID
+        if not execution_id:
+            return False
+            
+        try:
+            # Always write the individual invocation record
+            s3_client = boto3.client('s3')
+            invocation_key = f"executions/{execution_id}/invocations/{record_id}.json"
+            
+            _s3_put_object(s3_client,
+                          self.output_bucket,
+                          invocation_key,
+                          json.dumps(record),
+                          content_type='application/json')
+            
+            # Now update the summary history with limited entries
+            try:
+                # Try to read existing summary history
+                history_key = f"executions/{execution_id}/invocation_history.json"
+                history = _s3_get_object(s3_client, self.output_bucket, history_key)
+                
+                if isinstance(history, dict) and 'invocations' in history:
+                    # Add new record to list
+                    invocations = history['invocations']
+                    invocations.append(record)
+                    
+                    # Keep only the most recent MAX_INVOCATION_HISTORY items
+                    if len(invocations) > self.MAX_INVOCATION_HISTORY:
+                        invocations = invocations[-self.MAX_INVOCATION_HISTORY:]
+                    
+                    # Update history object
+                    history['invocations'] = invocations
+                    
+                    # Write updated history
+                    _s3_put_object(s3_client,
+                                  self.output_bucket,
+                                  history_key,
+                                  json.dumps(history),
+                                  content_type='application/json')
+                else:
+                    # Create new history object
+                    new_history = {
+                        'execution_id': execution_id,
+                        'invocations': [record]
+                    }
+                    
+                    # Write new history
+                    _s3_put_object(s3_client,
+                                  self.output_bucket,
+                                  history_key,
+                                  json.dumps(new_history),
+                                  content_type='application/json')
+            except:
+                # If reading/updating summary fails, create a new one
+                new_history = {
+                    'execution_id': execution_id,
+                    'invocations': [record]
+                }
+                
+                _s3_put_object(s3_client,
+                              self.output_bucket,
+                              history_key,
+                              json.dumps(new_history),
+                              content_type='application/json')
+                
+            return True
+                
+        except Exception as e:
+            print(f"Failed to record invocation to S3: {str(e)}")
+            return False
 
+    def _direct_lambda_execution(self, **kwargs):
+        """
+        Directly execute Lambda function in synchronous mode (no async tracking)
+        """
+        # Store original args for history
+        original_args = kwargs.copy()
+        
+        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+        logger.debug("Executing Lambda function in synchronous mode")
+        
+        # Get Lambda function details
+        function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
+        lambda_region = getattr(self, 'lambda_region', 'us-east-1')
+        
+        # Initialize Lambda client
+        lambda_client = boto3.client('lambda', region_name=lambda_region)
+        
+        # Prepare the payload
+        payload = {
+            'params': kwargs,
+            'resource_type': self.resource_type,
+            'resource_id': self.resource_id
+        }
+        
+        # Add additional attributes if available
+        for attr in ['stateful_id', 'method', 'aws_region', 'version', 
+                     'binary', 'build_timeout', 'app_dir', 'app_name', 
+                     'remote_stateful_bucket']:
+            if hasattr(self, attr):
+                payload[attr] = getattr(self, attr)
+        
+        # If there's a pre-configured payload, merge with it
+        if kwargs.get('Payload'):
+            if isinstance(kwargs['Payload'], str):
+                try:
+                    payload_obj = json.loads(kwargs['Payload'])
+                    if isinstance(payload_obj, dict):
+                        # Merge the payloads
+                        for key, value in payload.items():
+                            if key not in payload_obj:
+                                payload_obj[key] = value
+                        payload = payload_obj
+                except:
+                    pass
+            elif isinstance(kwargs['Payload'], dict):
+                # Merge the payloads
+                for key, value in payload.items():
+                    if key not in kwargs['Payload']:
+                        kwargs['Payload'][key] = value
+                payload = kwargs['Payload']
+        
+        lambda_payload = json.dumps(payload)
+        
+        # Prepare Lambda invocation parameters
+        lambda_params = {
+            'FunctionName': function_name,
+            'InvocationType': 'RequestResponse',  # Synchronous
+            'Payload': lambda_payload
+        }
+        
+        try:
+            # Invoke Lambda function
+            response = lambda_client.invoke(**lambda_params)
+            
+            # Check response status
+            status_code = response.get('StatusCode')
+            
+            if status_code != 200:
+                logger.error(f"Lambda invocation failed with status code: {status_code}")
+                result = {
+                    'status': False,
+                    'error': f"Lambda invocation failed with status code: {status_code}",
+                    'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
+                }
+                # Record the execution in history - not a followup
+                self._record_invocation('lambda_direct', False, original_args, result)
+                return result
+            
+            # Get the response payload
+            response_payload = response.get('Payload').read().decode('utf-8')
+            
+            try:
+                # Parse the response
+                result = json.loads(response_payload)
+                # Record the execution in history - not a followup
+                self._record_invocation('lambda_direct', False, original_args, result)
+                return result
+            except:
+                # If parsing fails, return the raw response
+                result = {
+                    'status': True,
+                    'output': response_payload
+                }
+                # Record the execution in history - not a followup
+                self._record_invocation('lambda_direct', False, original_args, result)
+                return result
+                
+        except Exception as e:
+            logger.error(f"Lambda invocation failed with exception: {str(e)}")
+            result = {
+                'status': False,
+                'error': f"Lambda invocation failed with exception: {str(e)}",
+                'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
+            }
+            # Record the execution in history - not a followup
+            self._record_invocation('lambda_direct', False, original_args, result)
+            return result
+
+    def _direct_codebuild_execution(self, **kwargs):
+        """
+        Start a CodeBuild project and wait for completion (sync mode)
+        """
+        # Store original args for history
+        original_args = kwargs.copy()
+        
+        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
+        logger.debug("Starting CodeBuild project in synchronous mode")
+        
+        # Start with all the original parameters
+        build_params = dict(kwargs)
+        
+        # Get the project name
+        project_name = build_params.get('projectName') or getattr(self, 'codebuild_project_name', 'config0-iac')
+        build_params['projectName'] = project_name
+        
+        # Handle environment variables
+        if 'environmentVariablesOverride' in build_params:
+            env_vars = build_params['environmentVariablesOverride']
+        else:
+            env_vars = []
+            build_params['environmentVariablesOverride'] = env_vars
+        
+        # Add our resource information to environment variables
+        resource_vars = [
+            {'name': 'RESOURCE_TYPE', 'value': self.resource_type},
+            {'name': 'RESOURCE_ID', 'value': self.resource_id}
+        ]
+        
+        for var in resource_vars:
+            found = False
+            for env_var in env_vars:
+                if env_var.get('name') == var['name']:
+                    found = True
+                    break
+            if not found:
+                env_vars.append(var)
+        
+        # Add other attributes as environment variables
+        for attr in ['stateful_id', 'method', 'aws_region', 'app_dir', 'app_name']:
+            if hasattr(self, attr):
+                found = False
+                for env_var in env_vars:
+                    if env_var.get('name') == attr.upper():
+                        found = True
+                        break
+                if not found and getattr(self, attr):
+                    env_vars.append({
+                        'name': attr.upper(),
+                        'value': str(getattr(self, attr))
+                    })
+        
+        # Remove any parameters that aren't valid for CodeBuild API
+        for key in list(build_params.keys()):
+            if key not in [
+                'projectName', 'environmentVariablesOverride', 
+                'timeoutInMinutesOverride', 'imageOverride', 
+                'computeTypeOverride', 'environmentTypeOverride',
+                'buildspecOverride'
+            ]:
+                del build_params[key]
+        
+        # Use the infrastructure region for CodeBuild
+        codebuild_region = getattr(self, 'aws_region', 'us-east-1')
+        
+        # Initialize CodeBuild client
+        codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
+        
+        try:
+            # Start the build
+            response = codebuild_client.start_build(**build_params)
+            
+            # Extract build information
+            build = response.get('build', {})
+            build_id = build.get('id')
+            
+            if not build_id:
+                logger.error("Failed to start CodeBuild project")
+                result = {
+                    'status': False,
+                    'error': "Failed to start CodeBuild project",
+                    'output': f"Failed to start CodeBuild project {project_name} in region {codebuild_region}"
+                }
+                # Record the invocation - not a followup
+                self._record_invocation('codebuild_direct', False, original_args, result)
+                return result
+            
+            logger.debug(f"CodeBuild project started with build ID: {build_id}")
+            
+            # Record the build start - not a followup
+            start_result = {
+                'status': True,
+                'build_id': build_id,
+                'build_status': 'IN_PROGRESS',
+                'output': f"Started CodeBuild project {project_name} build {build_id}"
+            }
+            self._record_invocation('codebuild_direct', False, original_args, start_result)
+            
+            # Wait for build to complete
+            build_complete = False
+            build_status = None
+            max_attempts = 600  # 10 minutes at 1 second intervals
+            attempts = 0
+            
+            while not build_complete and attempts < max_attempts:
+                # Get build status
+                build_info = codebuild_client.batch_get_builds(ids=[build_id])
+                
+                if 'builds' in build_info and len(build_info['builds']) > 0:
+                    build_data = build_info['builds'][0]
+                    build_status = build_data.get('buildStatus')
+                    
+                    if build_status in ['SUCCEEDED', 'FAILED', 'FAULT', 'TIMED_OUT', 'STOPPED']:
+                        build_complete = True
+                        build_phases = build_data.get('phases', [])
+                        logs_info = build_data.get('logs', {})
+                        
+                        # Prepare result
+                        result = {
+                            'status': build_status == 'SUCCEEDED',
+                            'build_id': build_id,
+                            'build_status': build_status,
+                            'project_name': project_name,
+                            'start_time': build_data.get('startTime'),
+                            'end_time': build_data.get('endTime'),
+                            'phases': build_phases
+                        }
+                        
+                        # Try to get logs
+                        if logs_info.get('cloudWatchLogs', {}).get('logGroup') and logs_info.get('cloudWatchLogs', {}).get('logStream'):
+                            log_group = logs_info['cloudWatchLogs']['logGroup']
+                            log_stream = logs_info['cloudWatchLogs']['logStream']
+                            
+                            try:
+                                logs_client = boto3.client('logs', region_name=codebuild_region)
+                                log_events = logs_client.get_log_events(
+                                    logGroupName=log_group,
+                                    logStreamName=log_stream
+                                )
+                                
+                                log_messages = [event['message'] for event in log_events.get('events', [])]
+                                result['logs'] = '\n'.join(log_messages)
+                            except Exception as log_e:
+                                result['logs_error'] = str(log_e)
+                        
+                        # Record the final result - this is a followup
+                        self._record_invocation('codebuild_direct', True, {'build_id': build_id}, result)
+                        return result
+                
+                # Sleep before checking again
+                time.sleep(1)
+                attempts += 1
+                
+                # Every 30 seconds, record a status update
+                if attempts % 30 == 0:
+                    status_result = {
+                        'status': True,
+                        'build_id': build_id,
+                        'build_status': 'IN_PROGRESS',
+                        'attempts': attempts,
+                        'output': f"Waiting for CodeBuild project {project_name} build {build_id}"
+                    }
+                    # This is a followup
+                    self._record_invocation('codebuild_direct', True, {'build_id': build_id}, status_result)
+            
+            # If we get here, the build didn't complete in time
+            timeout_result = {
+                'status': False,
+                'build_id': build_id,
+                'error': "Build did not complete in the allotted time",
+                'output': f"Timeout waiting for CodeBuild project {project_name} build {build_id}"
+            }
+            # This is a followup
+            self._record_invocation('codebuild_direct', True, {'build_id': build_id}, timeout_result)
+            return timeout_result
+                
+        except Exception as e:
+            logger.error(f"CodeBuild execution failed with exception: {str(e)}")
+            result = {
+                'status': False,
+                'error': f"CodeBuild execution failed with exception: {str(e)}",
+                'output': f"Exception when executing CodeBuild project {project_name} in region {codebuild_region}: {str(e)}"
+            }
+            # Record the invocation - not a followup
+            self._record_invocation('codebuild_direct', False, original_args, result)
+            return result
+    
     def clear_execution(self):
         """
         Clear all S3 objects related to a specific execution.
@@ -551,6 +964,10 @@ class AWSAsyncExecutor:
         Returns:
             int: Number of objects deleted, or -1 if an error occurred
         """
+        # Only attempt to clear if we have an execution_id and output_bucket
+        if not self.execution_id or not self.output_bucket:
+            return 0
+            
         logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
         
         try:
@@ -591,11 +1008,9 @@ class AWSAsyncExecutor:
         """
         Execute infrastructure operation through AWS Lambda.
         
-        Executes the operation asynchronously via AWS Lambda, which is suitable
-        for operations that complete within the Lambda execution time limit.
-        
-        This method can handle both direct parameters and a pre-configured invocation
-        configuration from Lambdabuild.
+        Executes the operation via AWS Lambda. If execution_id is provided at init time,
+        this will use asynchronous execution with S3 tracking. Otherwise, it will
+        execute synchronously and return the result directly.
         
         Args:
             **kwargs: Operation parameters including:
@@ -608,27 +1023,18 @@ class AWSAsyncExecutor:
                 - Payload: JSON payload or string with commands and environment variables
                 
         Returns:
-            dict: Execution tracking information with:
-                - status: True if execution started successfully
-                - execution_id: Unique identifier for the execution
-                - output_bucket: S3 bucket for tracking
-                - execution_type: "lambda"
-                - initiated_key: bucket key to the initiated marker
-                - result_key: bucket key to retrieve execution results
-                - done_key: bucket key to the done marker
+            dict: Execution result or tracking information depending on execution mode
         """
-        pass  # Implementation handled by decorator
+        pass  # Implementation handled by decorator or bypassed in sync mode
     
     @aws_executor(execution_type="codebuild")
     def exec_codebuild(self, **kwargs):
         """
         Execute infrastructure operation through AWS CodeBuild.
         
-        Executes the operation asynchronously via AWS CodeBuild, which is suitable
-        for longer-running operations that exceed Lambda execution time limits.
-        
-        This method can handle both direct parameters and a pre-configured build
-        specification from Codebuild.
+        Executes the operation via AWS CodeBuild. If execution_id is provided at init time,
+        this will use asynchronous execution with S3 tracking. Otherwise, it will
+        execute synchronously and return the result directly.
         
         Args:
             **kwargs: Operation parameters including:
@@ -646,17 +1052,122 @@ class AWSAsyncExecutor:
                 - buildspecOverride: Alternative buildspec file
                 
         Returns:
-            dict: Execution tracking information with:
-                - status: True if execution started successfully
-                - execution_id: Unique identifier for the execution
-                - output_bucket: S3 bucket for tracking
-                - execution_type: "codebuild"
-                - build_id: CodeBuild build ID
-                - initiated_key: bucket key to the initiated marker
-                - result_key: bucket key to retrieve execution results
-                - done_key: bucket key to the done marker
+            dict: Execution result or tracking information depending on execution mode
         """
-        pass  # Implementation handled by decorator
+        pass  # Implementation handled by decorator or bypassed in sync mode
     
     def check_execution_status(self):
-        return get_execution_status(self.execution_id,self.output_bucket)
+        """
+        Check the status of an execution.
+        
+        Returns:
+            dict: Status information for the execution, or empty dict in sync mode
+        """
+        if not self.execution_id or not self.output_bucket:
+            return {}
+            
+        status_result = get_execution_status(self.execution_id, self.output_bucket)
+        
+        # Record this as a followup check
+        self._record_invocation('status_check', True, {'execution_id': self.execution_id}, status_result)
+        
+        return status_result
+    
+    def execute(self, execution_type="lambda", **kwargs):
+        """
+        Unified execution method that automatically uses sync or async mode
+        based on whether execution_id was provided at init time.
+        
+        Args:
+            execution_type (str): "lambda" or "codebuild"
+            **kwargs: Parameters for the execution
+            
+        Returns:
+            dict: Execution result or tracking information
+        """
+        # Store original args for history
+        original_args = kwargs.copy()
+        original_args['execution_type'] = execution_type
+        
+        # Check if we're in sync mode (no execution_id provided)
+        if self.sync_mode:
+            if execution_type.lower() == "lambda":
+                # Direct execution will handle recording
+                return self._direct_lambda_execution(**kwargs)
+            elif execution_type.lower() == "codebuild":
+                # Direct execution will handle recording
+                return self._direct_codebuild_execution(**kwargs)
+            else:
+                raise ValueError(f"Unsupported execution_type: {execution_type}")
+        
+        # Otherwise use the async decorated methods
+        result = None
+        if execution_type.lower() == "lambda":
+            result = self.exec_lambda(**kwargs)
+            # Record the execution since decorator can't do it directly
+            self._record_invocation('lambda_async', False, original_args, result)
+            return result
+        elif execution_type.lower() == "codebuild":
+            result = self.exec_codebuild(**kwargs)
+            # Record the execution since decorator can't do it directly
+            self._record_invocation('codebuild_async', False, original_args, result)
+            return result
+        else:
+            raise ValueError(f"Unsupported execution_type: {execution_type}")
+    
+    def get_invocation_history(self, execution_id=None):
+        """
+        Get the invocation history for a specific execution ID from S3
+        
+        Args:
+            execution_id (str, optional): Execution ID to retrieve history for.
+                                        If None, uses this executor's execution_id.
+        
+        Returns:
+            list: List of invocation records or empty list if not found
+        """
+        if execution_id is None:
+            execution_id = self.execution_id
+            
+        if not execution_id or not self.output_bucket:
+            return []
+            
+        # Load from S3
+        try:
+            s3_client = boto3.client('s3')
+            history_key = f"executions/{execution_id}/invocation_history.json"
+            
+            history = _s3_get_object(s3_client, self.output_bucket, history_key)
+            if isinstance(history, dict) and 'invocations' in history:
+                return history['invocations']
+        except:
+            pass
+                
+        return []
+
+    def get_last_invocation(self, execution_id=None, only_initial=False):
+        """
+        Get the most recent invocation record from S3
+        
+        Args:
+            execution_id (str, optional): Execution ID to retrieve history for.
+                                        If None, uses this executor's execution_id.
+            only_initial (bool): If True, return only non-followup invocations
+        
+        Returns:
+            dict: The most recent invocation record or None if no invocations
+        """
+        history = self.get_invocation_history(execution_id)
+        
+        if not history:
+            return None
+            
+        if not only_initial:
+            return history[-1]
+            
+        # Filter for only initial (non-followup) invocations
+        initial_invocations = [record for record in history if not record.get('is_followup')]
+        if initial_invocations:
+            return initial_invocations[-1]
+            
+        return None
