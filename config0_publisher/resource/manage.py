@@ -1432,7 +1432,8 @@ class ResourceCmdHelper(ResourcePhases):
 
         #sync_mode = True if os.environ.get("AWS_EXEC_SYNC") else None
         # testtest456
-        sync_mode = True
+        #sync_mode = True
+        sync_mode = False
 
         # Always set execution_id for tracking
         self._set_execution_id()
@@ -1550,7 +1551,7 @@ class ResourceCmdHelper(ResourcePhases):
             _use_codebuild = None
 
         # testtest456
-        _use_codebuild = True
+        #_use_codebuild = True
 
         #pre_creation = self._exec_in_aws(method="pre-create")["results"]
         #if not pre_creation.get("status"):
