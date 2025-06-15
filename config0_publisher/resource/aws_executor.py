@@ -1104,14 +1104,10 @@ class AWSAsyncExecutor:
             else:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
-        # testtest456
-        print('b'*32)
-        print('b'*32)
-        print(result)
-        print(type(result))
-        body = result["body"]
-        print('b'*32)
-        print('b'*32)
+            if "body" in result:
+                result = result["body"]
+
+            return result
 
         # Otherwise use the async decorated methods
         result = None

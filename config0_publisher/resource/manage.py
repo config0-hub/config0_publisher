@@ -1476,26 +1476,26 @@ class ResourceCmdHelper(ResourcePhases):
             # Use the unified execute method with sync parameter
             results = executor.execute(
                 execution_type="codebuild",
-                sync=sync,
+                sync_mode=sync_mode,
                 **inputargs
             )
-
-            #executor.clear_execution()
-
-            # testtest456
-            #print('h0'*32)
-            #self.logger.json(cinputargs)
-            #print('h1'*32)
-            #self.logger.json(invocation_config)
-            #print('h2'*32)
 
         else:
             return False
 
-        if results.get("done"):
-            results = results["results"]
-        elif results.get("in_progress"):
-            return results
+        #executor.clear_execution()
+        # testtest456
+        #print('h0'*32)
+        #self.logger.json(cinputargs)
+        #print('h1'*32)
+        #self.logger.json(invocation_config)
+        #print('h2'*32)
+
+        if not sync_mode:
+            if results.get("done"):
+                results = results["results"]
+            elif results.get("in_progress"):
+                return results
 
         if method == "destroy":
             try:
