@@ -1101,6 +1101,14 @@ class AWSAsyncExecutor:
             else:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
+            status_result = get_execution_status(self.execution_id, self.output_bucket)
+
+            print('a0'*32)
+            print('a0'*32)
+            print(status_result)
+            print('a0'*32)
+            print('a0'*32)
+
             print('a1'*32)
             if "body" in result:
                 print('a2' * 32)
@@ -1108,6 +1116,7 @@ class AWSAsyncExecutor:
                 print(type(result))
                 print(result)
                 print('a3' * 32)
+
             return result
 
         # Otherwise use the async decorated methods
