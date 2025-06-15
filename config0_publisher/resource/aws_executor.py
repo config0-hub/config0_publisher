@@ -256,7 +256,8 @@ def aws_executor(execution_type="lambda"):
 
             # ref 5634623
             if existing_run.get("done"):
-                self.clear_execution()
+                # testtest456
+                #self.clear_execution()
                 return existing_run["results"]
 
             if existing_run.get("status"):
