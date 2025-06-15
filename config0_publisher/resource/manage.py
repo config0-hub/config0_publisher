@@ -1174,10 +1174,8 @@ class ResourceCmdHelper(ResourcePhases):
         failed_message = self.logger.aggmsg("")
         self.cmd_failed(failed_message=failed_message)
 
-    # testtest456
     # ref 4354523
-    #def create_build_envfile(self):
-    def create_build_envfile(self, encrypt=None, openssl=True):
+    def create_build_envfile(self):
         """
         we use stateful_id for the encrypt key
         """
