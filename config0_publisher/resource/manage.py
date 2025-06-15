@@ -1563,11 +1563,9 @@ class ResourceCmdHelper(ResourcePhases):
             self.write_phases_to_json_file(tf_results)
             return tf_results
 
-        if not tf_results.get("status"):
-            return tf_results
-
-        if hasattr(self, "post_create") and callable(self.post_create):
-            self.post_create()
+        if tf_results.get("status") or tf_results.get("tf_status"):
+            if hasattr(self, "post_create") and callable(self.post_create):
+                self.post_create()
             
         return tf_results
 
