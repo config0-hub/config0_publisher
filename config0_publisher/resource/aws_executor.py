@@ -1097,16 +1097,17 @@ class AWSAsyncExecutor:
             print('a'*32)
             if execution_type.lower() == "lambda":
                 # Direct execution will handle recording
-                return self._direct_lambda_execution(**kwargs)
+                result = self._direct_lambda_execution(**kwargs)
             elif execution_type.lower() == "codebuild":
                 # Direct execution will handle recording
-                return self._direct_codebuild_execution(**kwargs)
+                result = self._direct_codebuild_execution(**kwargs)
             else:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
         # testtest456
         print('b'*32)
         print('b'*32)
+        print(result)
         print('b'*32)
         print('b'*32)
 
