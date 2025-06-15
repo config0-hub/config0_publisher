@@ -1560,11 +1560,14 @@ class ResourceCmdHelper(ResourcePhases):
 
         #if tf_results.get("phases") and results.get("in_progress") and tf_results.get("status") is True:
         if tf_results.get("phases") and tf_results.get("status") is True:
+            self.logger.debug("e2" * 32)
             self.write_phases_to_json_file(tf_results)
             return tf_results
 
         if tf_results.get("status") or tf_results.get("tf_status"):
+            self.logger.debug("e3" * 32)
             if hasattr(self, "post_create") and callable(self.post_create):
+                self.logger.debug("e4" * 32)
                 self.post_create()
             
         return tf_results
