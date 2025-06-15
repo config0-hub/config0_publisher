@@ -1088,7 +1088,13 @@ class AWSAsyncExecutor:
         # Store original args for history
         original_args = kwargs.copy()
         original_args['execution_type'] = execution_type
-        
+
+        # testtest456
+        print('0' * 32)
+        print('0' * 32)
+        print('0' * 32)
+        raise Exception('0')
+
         # Check if we're in sync mode (no execution_id provided)
         if self.sync_mode:
             # testtest456
