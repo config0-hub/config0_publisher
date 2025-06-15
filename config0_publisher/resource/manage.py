@@ -1253,8 +1253,6 @@ class ResourceCmdHelper(ResourcePhases):
         if results.get("status") is not False:
             return
 
-        self.eval_log(results)
-
         print("")
         print("-"*32)
         failed_message = f"{self.app_name} {method} failed here {self.run_share_dir}!"
@@ -1427,7 +1425,7 @@ class ResourceCmdHelper(ResourcePhases):
         # Use backend to track state file
         if create_remote_state:
             self.create_aws_tf_backend()
-        return self._exec_in_aws(method=method)
+        return self._exec_in_aws(method=method)["results"]
     
     def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
@@ -1441,10 +1439,6 @@ class ResourceCmdHelper(ResourcePhases):
 
         # Get execution input arguments
         cinputargs = self._get_aws_exec_cinputargs(method=method)
-
-        # testtest456
-        self.logger.json(cinputargs)
-        raise Exception('9'*32)
 
         # Create AWS Async Executor with current settings
         executor = AWSAsyncExecutor(
@@ -1485,7 +1479,7 @@ class ResourceCmdHelper(ResourcePhases):
             )
 
         else:
-            return False
+            raise Exception("build_method needs be either lambda/codebuild")
 
         #executor.clear_execution()
         # testtest456
@@ -1499,7 +1493,8 @@ class ResourceCmdHelper(ResourcePhases):
             if results.get("done"):
                 results = results["results"]
             elif results.get("in_progress"):
-                return results
+                return { "cinputargs": cinputargs,
+                         "results": results }
 
         if not isinstance(results, dict):
             results = to_json(results)
@@ -1522,8 +1517,13 @@ class ResourceCmdHelper(ResourcePhases):
             except:
                 results["exitcode"] = results["tf_exitcode"]
 
+        self.eval_log(results)
         self.eval_failure(results, method)
-        return results
+
+        return {
+            "cinputargs": cinputargs,
+            "results": results
+        }
 
     def create(self):
         """Creates Terraform resources"""
@@ -1549,7 +1549,7 @@ class ResourceCmdHelper(ResourcePhases):
         else:
             _use_codebuild = None
 
-        #pre_creation = self._exec_in_aws(method="pre-create")
+        #pre_creation = self._exec_in_aws(method="pre-create")["results"]
         #if not pre_creation.get("status"):
         #    self.logger.debug("f1a" * 32)
         #    self.logger.error("pre-create failed")
@@ -1558,7 +1558,7 @@ class ResourceCmdHelper(ResourcePhases):
         if _use_codebuild:
             self.build_method = "codebuild"
 
-        tf_results = self._exec_in_aws(method="create")
+        tf_results = self._exec_in_aws(method="create")["results"]
 
         # testtest456
         self.logger.debug("e0"*32)
