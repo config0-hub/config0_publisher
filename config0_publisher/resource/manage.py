@@ -1425,7 +1425,7 @@ class ResourceCmdHelper(ResourcePhases):
             self.create_aws_tf_backend()
         return self._exec_in_aws(method=method)
 
-    def _exec_in_aws(self, method="create", sync=True):
+    def _exec_in_aws(self, method="create", sync=False):
         """Executes Terraform command in AWS with execution tracking"""
 
         # Always set execution_id for tracking
@@ -1447,8 +1447,9 @@ class ResourceCmdHelper(ResourcePhases):
             app_name=self.app_name,
             remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None),
             build_timeout=self.build_timeout,
-            sync_mode=sync  # Explicitly set sync mode
+            sync_mode=True
         )
+        #sync_mode = sync  # Explicitly set sync mode
 
         #executor.clear_execution()
 
