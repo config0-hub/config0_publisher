@@ -61,6 +61,7 @@ class ResourcePhases:
         rm_rf(self.config0_phases_json_file)
 
     def write_phases_to_json_file(self, content_json):
+
         if not hasattr(self, "config0_phases_json_file"):
             self.logger.debug("write_phases_to_json_file - config0_phases_json_file not set")
             return
@@ -68,10 +69,14 @@ class ResourcePhases:
         if not self.config0_phases_json_file:
             return
 
+        # Ensure the directory exists
+        directory = os.path.dirname(self.config0_phases_json_file)
+        if directory:  # Check if a directory path exists
+            os.makedirs(directory, exist_ok=True)
+
         self.logger.debug(f"u4324: inserting retrieved data into {self.config0_phases_json_file}")
 
-        to_jsonfile(content_json,
-                    self.config0_phases_json_file)
+        to_jsonfile(content_json, self.config0_phases_json_file)
 
 class ReferenceNotUsedResourcePhases:
 

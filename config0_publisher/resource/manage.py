@@ -994,10 +994,14 @@ class ResourceCmdHelper(ResourcePhases):
                 self.logger.debug(msg)
             return
 
+        # Ensure the directory exists
+        directory = os.path.dirname(self.config0_resource_json_file)
+        if directory:  # Check if a directory path exists
+            os.makedirs(directory, exist_ok=True)
+
         self.logger.debug(f"u4324: inserting retrieved data into {self.config0_resource_json_file}")
 
-        to_jsonfile(resource,
-                    self.config0_resource_json_file)
+        to_jsonfile(resource, self.config0_resource_json_file)
 
     def successful_output(self, **kwargs):
         self.print_output(**kwargs)
