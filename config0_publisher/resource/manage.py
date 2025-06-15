@@ -1442,6 +1442,10 @@ class ResourceCmdHelper(ResourcePhases):
         # Get execution input arguments
         cinputargs = self._get_aws_exec_cinputargs(method=method)
 
+        # testtest456
+        self.logger.json(cinputargs)
+        raise Exception('9'*32)
+
         # Create AWS Async Executor with current settings
         executor = AWSAsyncExecutor(
             resource_type="terraform",
