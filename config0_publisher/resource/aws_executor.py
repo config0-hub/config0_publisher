@@ -177,6 +177,7 @@ def get_execution_status(execution_id=None, output_bucket=None):
         result["results"] = _s3_get_object(s3_client,
                                            output_bucket,
                                            result_key)
+                                           # testtest456
                                            #result["status"]["result_key"])
         return result
 
@@ -253,8 +254,8 @@ def aws_executor(execution_type="lambda"):
             build_expire_at = int(time.time()) + int(max_execution_time)
             existing_run = self.check_execution_status()
 
+            # ref 5634623
             if existing_run.get("done"):
-                #existing_run["status"]["done"] = True
                 self.clear_execution()
                 return existing_run["results"]
 
@@ -1103,23 +1104,15 @@ class AWSAsyncExecutor:
             else:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
-            status_result = get_execution_status(self.execution_id, self.output_bucket)
+            status_result = self.check_execution_status()
 
-            print('a0'*32)
-            print('a0'*32)
-            print(status_result)
-            print('a0'*32)
-            print('a0'*32)
-
-            print('a1'*32)
-            if "body" in result:
-                print('a2' * 32)
-                result = result["body"]
-                print(type(result))
-                print(result)
-                print('a3' * 32)
-
-            return result
+            if status_result.get("done"):
+                self.clear_execution()
+                return status_result["results"]
+            elif "body" in result:
+                return result["body"]
+            else:
+                return result
 
         # Otherwise use the async decorated methods
         result = None
