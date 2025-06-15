@@ -1555,6 +1555,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         # testtest456
         self.logger.debug("e0"*32)
+        self.logger.debug(type(tf_results))
         self.logger.json(tf_results)
         self.logger.debug("e1"*32)
 

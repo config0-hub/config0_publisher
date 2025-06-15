@@ -1091,10 +1091,7 @@ class AWSAsyncExecutor:
         # Check if we're in sync mode (no execution_id provided)
         if sync_mode:
             # testtest456
-            print('a'*32)
-            print('a'*32)
-            print('a'*32)
-            print('a'*32)
+            print('a0'*32)
             if execution_type.lower() == "lambda":
                 # Direct execution will handle recording
                 result = self._direct_lambda_execution(**kwargs)
@@ -1104,9 +1101,13 @@ class AWSAsyncExecutor:
             else:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
+            print('a1'*32)
             if "body" in result:
+                print('a2' * 32)
                 result = result["body"]
-
+                print(type(result))
+                print(result)
+                print('a3' * 32)
             return result
 
         # Otherwise use the async decorated methods
