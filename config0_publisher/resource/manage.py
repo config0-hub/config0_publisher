@@ -1549,6 +1549,9 @@ class ResourceCmdHelper(ResourcePhases):
         else:
             _use_codebuild = None
 
+        # testtest456
+        _use_codebuild = True
+
         #pre_creation = self._exec_in_aws(method="pre-create")["results"]
         #if not pre_creation.get("status"):
         #    self.logger.debug("f1a" * 32)
