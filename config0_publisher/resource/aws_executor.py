@@ -523,7 +523,7 @@ class AWSAsyncExecutor:
     # Maximum number of invocations to track per execution
     MAX_INVOCATION_HISTORY = 3
 
-    def __init__(self, resource_type, resource_id, execution_id, output_bucket):
+    def __init__(self, resource_type, resource_id, execution_id, output_bucket, **kwargs):
         """
         Initialize a new AWS Async Executor.
 
