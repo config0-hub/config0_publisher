@@ -1108,6 +1108,8 @@ class AWSAsyncExecutor:
         print('b'*32)
         print('b'*32)
         print(result)
+        print(type(result))
+        body = result["body"]
         print('b'*32)
         print('b'*32)
 
