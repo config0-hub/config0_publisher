@@ -173,9 +173,11 @@ def get_execution_status(execution_id=None, output_bucket=None):
        result["done"] = False
 
     if result.get("done"):
+        result_key = f"executions/{execution_id}/result.json"
         result["results"] = _s3_get_object(s3_client,
                                            output_bucket,
-                                           result["status"]["result_key"])
+                                           result_key)
+                                           #result["status"]["result_key"])
         return result
 
     return result
