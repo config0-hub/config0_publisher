@@ -1107,7 +1107,8 @@ class AWSAsyncExecutor:
             status_result = self.check_execution_status()
 
             if status_result.get("done"):
-                self.clear_execution()
+                # testtest456
+                #self.clear_execution()
                 return status_result["results"]
             elif "body" in result:
                 return result["body"]
