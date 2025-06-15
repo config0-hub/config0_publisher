@@ -523,7 +523,7 @@ class AWSAsyncExecutor:
     # Maximum number of invocations to track per execution
     MAX_INVOCATION_HISTORY = 3
 
-    def __init__(self, resource_type, resource_id, execution_id, output_bucket, sync_mode=None, **kwargs):
+    def __init__(self, resource_type, resource_id, execution_id, output_bucket):
         """
         Initialize a new AWS Async Executor.
 
@@ -550,7 +550,6 @@ class AWSAsyncExecutor:
         self.resource_id = resource_id
         self.execution_id = execution_id
         self.output_bucket = output_bucket
-        self.sync_mode = True if sync_mode else None
 
         # Set tmp_bucket for backward compatibility
         self.tmp_bucket = output_bucket
@@ -1073,7 +1072,7 @@ class AWSAsyncExecutor:
         
         return status_result
     
-    def execute(self, execution_type="lambda", **kwargs):
+    def execute(self, execution_type="lambda", sync_mode=None, **kwargs):
         """
         Unified execution method that automatically uses sync or async mode
         based on whether execution_id was provided at init time.
@@ -1089,14 +1088,8 @@ class AWSAsyncExecutor:
         original_args = kwargs.copy()
         original_args['execution_type'] = execution_type
 
-        # testtest456
-        print('0' * 32)
-        print('0' * 32)
-        print('0' * 32)
-        raise Exception('0')
-
         # Check if we're in sync mode (no execution_id provided)
-        if self.sync_mode:
+        if sync_mode:
             # testtest456
             print('a'*32)
             print('a'*32)

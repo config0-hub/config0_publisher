@@ -1424,9 +1424,13 @@ class ResourceCmdHelper(ResourcePhases):
         if create_remote_state:
             self.create_aws_tf_backend()
         return self._exec_in_aws(method=method)
-
-    def _exec_in_aws(self, method="create", sync=False):
+    
+    def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
+
+        #sync = True if os.environ.get("AWS_EXEC_SYNC") else None
+        # testtest456
+        sync = True
 
         # Always set execution_id for tracking
         self._set_execution_id()
@@ -1438,7 +1442,7 @@ class ResourceCmdHelper(ResourcePhases):
         executor = AWSAsyncExecutor(
             resource_type="terraform",
             resource_id=self.stateful_id,
-            execution_id=self.execution_id,  # Always provide execution_id for tracking
+            execution_id=self.execution_id,
             output_bucket=self.tmp_bucket,
             stateful_id=self.stateful_id,
             method=method,
@@ -1446,17 +1450,33 @@ class ResourceCmdHelper(ResourcePhases):
             app_dir=self.app_dir,
             app_name=self.app_name,
             remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None),
-            build_timeout=self.build_timeout,
-            sync_mode=True
+            build_timeout=self.build_timeout
         )
-        #sync_mode = sync  # Explicitly set sync mode
-
-        #executor.clear_execution()
 
         # Use the appropriate build method and prepare invocation configuration
         if self.build_method == "lambda":
             _awsbuild = Lambdabuild(**cinputargs)
             invocation_config = _awsbuild.pre_trigger()
+
+            # Use the unified execute method with sync parameter
+            results = executor.execute(
+                execution_type="lambda",
+                sync=sync,
+                **invocation_config
+            )
+
+        elif self.build_method == "codebuild":
+            _awsbuild = Codebuild(**cinputargs)
+            inputargs = _awsbuild.pre_trigger()
+
+            # Use the unified execute method with sync parameter
+            results = executor.execute(
+                execution_type="codebuild",
+                sync=sync,
+                **inputargs
+            )
+
+            #executor.clear_execution()
 
             # testtest456
             #print('h0'*32)
@@ -1465,18 +1485,6 @@ class ResourceCmdHelper(ResourcePhases):
             #self.logger.json(invocation_config)
             #print('h2'*32)
 
-            results = executor.exec_lambda(
-                **invocation_config)
-
-            #self.logger.json(results)
-            #print('h3'*32)
-
-        elif self.build_method == "codebuild":
-            _awsbuild = Codebuild(**cinputargs)
-            inputargs = _awsbuild.pre_trigger()
-
-            results = executor.exec_codebuild(**inputargs)
-            
         else:
             return False
 
