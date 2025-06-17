@@ -1498,6 +1498,10 @@ class ResourceCmdHelper(ResourcePhases):
 
         if not sync_mode:
             if results.get("done"):
+                # testtest456
+                print('b0' * 32)
+                self.logger.json(results)
+                print('b1' * 32)
                 results = results["results"]
             elif results.get("in_progress"):
                 return { "cinputargs": cinputargs,
