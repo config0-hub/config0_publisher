@@ -1431,9 +1431,8 @@ class ResourceCmdHelper(ResourcePhases):
     def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
 
-        #sync_mode = True if os.environ.get("AWS_EXEC_SYNC") else None
+        sync_mode = True if _env_vars.get("SYNC_MODE") in ["True", "TRUE", "true"] else None
         # testtest456
-        #sync_mode = True
         sync_mode = False
 
         # Always set execution_id for tracking
