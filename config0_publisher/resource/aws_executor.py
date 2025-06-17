@@ -905,6 +905,7 @@ class AWSAsyncExecutor:
                             'build_status': build_status,
                             'project_name': project_name,
                             'start_time': build_data.get('startTime'),
+                            'done': True,
                             'end_time': build_data.get('endTime'),
                             'phases': build_phases
                         }
