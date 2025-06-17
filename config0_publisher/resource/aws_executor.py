@@ -600,7 +600,7 @@ class AWSAsyncExecutor:
         try:
             # Always write the individual invocation record
             s3_client = boto3.client('s3')
-            invocation_key = f"executions/{execution_id}/invocations/{record_id}.json"
+            invocation_key = f"executions/invocations/{execution_id}/{record_id}.json"
             
             _s3_put_object(s3_client,
                           self.output_bucket,
@@ -611,7 +611,7 @@ class AWSAsyncExecutor:
             # Now update the summary history with limited entries
             try:
                 # Try to read existing summary history
-                history_key = f"executions/{execution_id}/invocation_history.json"
+                history_key = f"executions/invocations/{execution_id}/invocation_history.json"
                 history = _s3_get_object(s3_client, self.output_bucket, history_key)
                 
                 if isinstance(history, dict) and 'invocations' in history:
