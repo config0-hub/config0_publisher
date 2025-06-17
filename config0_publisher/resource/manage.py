@@ -1490,6 +1490,12 @@ class ResourceCmdHelper(ResourcePhases):
         #self.logger.json(invocation_config)
         #print('h2'*32)
 
+        if method == "destroy":
+            try:
+                os.chdir(self.cwd)
+            except (FileNotFoundError, PermissionError) as e:
+                os.chdir("/tmp")
+
         if not sync_mode:
             if results.get("done"):
                 results = results["results"]
@@ -1499,12 +1505,6 @@ class ResourceCmdHelper(ResourcePhases):
 
         if not isinstance(results, dict):
             results = to_json(results)
-
-        if method == "destroy":
-            try:
-                os.chdir(self.cwd)
-            except (FileNotFoundError, PermissionError) as e:
-                os.chdir("/tmp")
 
         if "tf_status" in results:
             if results.get("tf_status") in [ "False", False]:
@@ -1570,6 +1570,7 @@ class ResourceCmdHelper(ResourcePhases):
         self.logger.debug("e1"*32)
 
         #if tf_results.get("phases") and results.get("in_progress") and tf_results.get("status") is True:
+
         if tf_results.get("phases") and tf_results.get("status") is True:
             self.logger.debug("e2" * 32)
             self.write_phases_to_json_file(tf_results)

@@ -1117,9 +1117,16 @@ class AWSAsyncExecutor:
 
             if status_result.get("done"):
                 # testtest456
+                print('a1' * 32)
+                print(json.dumps(status_result,indent=2))
+                print('a1' * 32)
+                # testtest456
                 #self.clear_execution()
                 return status_result["results"]
             elif "body" in result:
+                print('a2' * 32)
+                print(json.dumps(result,indent=2))
+                print('a2' * 32)
                 return result["body"]
             else:
                 return result
