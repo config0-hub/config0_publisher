@@ -1502,7 +1502,8 @@ class ResourceCmdHelper(ResourcePhases):
                 print('b0' * 32)
                 self.logger.json(results)
                 print('b1' * 32)
-                results = results["results"]
+                if "results" in results:
+                    results = results["results"]
             elif results.get("in_progress"):
                 return { "cinputargs": cinputargs,
                          "results": results }
