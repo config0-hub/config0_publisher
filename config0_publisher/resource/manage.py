@@ -1433,7 +1433,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         sync_mode = True if os.environ.get("SYNC_MODE") in ["True", "TRUE", "true"] else None
         # testtest456
-        sync_mode = False
+        #sync_mode = False
 
         # Always set execution_id for tracking
         self._set_execution_id()
