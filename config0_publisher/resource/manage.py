@@ -136,7 +136,7 @@ class ResourceCmdHelper(ResourcePhases):
         self.execution_id = os.environ.get("EXECUTION_ID", None)
 
         if not self.execution_id:
-            raise Exception("5432 execution id not set")
+            raise Exception("5432-2 execution id not set")
             self.execution_id = kwargs.get("execution_id",id_generator2())
 
         if not self.stateful_id:
