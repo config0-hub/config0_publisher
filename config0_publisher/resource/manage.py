@@ -1576,7 +1576,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         #if tf_results.get("phases") and results.get("in_progress") and tf_results.get("status") is True:
 
-        if tf_results.get("phases") and (not tf_results.get("done") or not tf_results.get("tf_status")):
+        if tf_results.get("phases"):
             self.logger.debug("e2" * 32)
             self.write_phases_to_json_file(tf_results)
             return tf_results
