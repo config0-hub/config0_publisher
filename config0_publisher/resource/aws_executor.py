@@ -115,7 +115,6 @@ def get_execution_status(execution_id=None, output_bucket=None):
     Returns:
         dict: Status information for the execution
     """
-
     # Initialize result structure
     result = {
         "execution_id": execution_id,
@@ -200,6 +199,9 @@ def aws_executor(execution_type="lambda"):
         @functools.wraps(func)
        
         def wrapper(self, **kwargs):
+
+            init = None
+
             # Store original args
             original_args = kwargs.copy()
 
@@ -280,6 +282,7 @@ def aws_executor(execution_type="lambda"):
 
             s3_client = boto3.client('s3')
             s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(time.time()))
+            init = True
 
             # Execute based on type
             if execution_type.lower() == "lambda":
@@ -333,11 +336,12 @@ def aws_executor(execution_type="lambda"):
                     # For Event invocation type, 202 Accepted is expected
                     if status_code != 202:
                         logger.error(f"Lambda invocation failed with status code: {status_code}")
-                        
+
                         # Clean up initiated marker
                         _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                         
                         return {
+                            'init': init,
                             'status': False,
                             'execution_id': self.execution_id,
                             'output_bucket': self.output_bucket,
@@ -429,6 +433,7 @@ def aws_executor(execution_type="lambda"):
                         _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                         
                         return {
+                            'init': init,
                             'status': False,
                             'execution_id': self.execution_id,
                             'output_bucket': self.output_bucket,
@@ -439,6 +444,7 @@ def aws_executor(execution_type="lambda"):
                     # Add build ID to payload
                     payload['build_id'] = build_id
                     s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
+                    init = True
 
                 except Exception as e:
                     logger.error(f"CodeBuild start failed with exception: {str(e)}")
@@ -447,6 +453,7 @@ def aws_executor(execution_type="lambda"):
                     _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
                     
                     return {
+                        'init': init,
                         'status': False,
                         'execution_id': self.execution_id,
                         'output_bucket': self.output_bucket,
@@ -457,7 +464,6 @@ def aws_executor(execution_type="lambda"):
             else:
                 # Clean up initiated marker
                 _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
-                
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
             
             # Prepare result with tracking information
@@ -481,6 +487,7 @@ def aws_executor(execution_type="lambda"):
                            content_type='application/json')
 
             #result['output'] = f"Initiated {execution_type} execution with ID: {self.execution_id}"
+            # testtest456
             result['init'] = True
 
             # Add build ID for CodeBuild if available
@@ -494,7 +501,8 @@ def aws_executor(execution_type="lambda"):
                     self._record_invocation(f'{execution_type}_async', False, original_args, result)
                 except Exception as e:
                     logger.warning(f"Failed to record invocation: {str(e)}")
-            
+
+            result["init"] = init
             return result
         return wrapper
     return decorator
