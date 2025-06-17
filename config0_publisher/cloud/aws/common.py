@@ -73,6 +73,7 @@ class AWSCommonConn(SetClassVarsHelper):
         self.execution_id = os.environ.get("EXECUTION_ID", None)
 
         if not self.execution_id:
+            raise Exception("5432 execution id not set")
             self.execution_id = kwargs.get("execution_id",
                                            f'{id_generator2()}/{str(int(time()))}')
 
