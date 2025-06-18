@@ -608,7 +608,7 @@ class AWSAsyncExecutor:
         try:
             # Always write the individual invocation record
             s3_client = boto3.client('s3')
-            invocation_key = f"executions/invocations/{execution_id}/{record_id}.json"
+            invocation_key = f"executions/{execution_id}/invocations/{record_id}.json"
             
             _s3_put_object(s3_client,
                           self.output_bucket,
@@ -619,7 +619,7 @@ class AWSAsyncExecutor:
             # Now update the summary history with limited entries
             try:
                 # Try to read existing summary history
-                history_key = f"executions/invocations/{execution_id}/invocation_history.json"
+                history_key = f"executions/{execution_id}/invocation_history.json"
                 history = _s3_get_object(s3_client, self.output_bucket, history_key)
                 
                 if isinstance(history, dict) and 'invocations' in history:
@@ -1084,6 +1084,216 @@ class AWSAsyncExecutor:
         self._record_invocation('status_check', True, {'execution_id': self.execution_id}, status_result)
         
         return status_result
+
+    def get_codebuild_status(self, build_id=None):
+        """
+        Get the status of a CodeBuild project run.
+        
+        Args:
+            build_id (str, optional): The build ID to check. If not provided, 
+                                     will try to retrieve from status information.
+                                     
+        Returns:
+            dict: Status information for the CodeBuild run
+        """
+        # Get execution status if we have an execution ID
+        status_info = None
+        if self.execution_id and self.output_bucket:
+            status_info = self.check_execution_status()
+            
+        # If build_id was not provided, try to get it from status
+        if not build_id and status_info and 'status' in status_info:
+            build_id = status_info['status'].get('build_id')
+            
+        # If we still don't have a build_id, return error
+        if not build_id:
+            return {
+                'status': False,
+                'error': 'No build ID provided or found in execution status'
+            }
+            
+        # Determine region to use
+        codebuild_region = getattr(self, 'aws_region', 'us-east-1')
+        
+        # Initialize CodeBuild client
+        codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
+        
+        try:
+            # Get build status
+            build_info = codebuild_client.batch_get_builds(ids=[build_id])
+            
+            if 'builds' in build_info and len(build_info['builds']) > 0:
+                build_data = build_info['builds'][0]
+                build_status = build_data.get('buildStatus')
+                
+                # Prepare result
+                result = {
+                    'status': True,
+                    'build_id': build_id,
+                    'build_status': build_status,
+                    'project_name': build_data.get('projectName'),
+                    'start_time': build_data.get('startTime'),
+                    'end_time': build_data.get('endTime'),
+                    'current_phase': build_data.get('currentPhase'),
+                    'build_complete': build_status in ['SUCCEEDED', 'FAILED', 'FAULT', 'TIMED_OUT', 'STOPPED'],
+                    'phases': build_data.get('phases', [])
+                }
+                
+                # Record this as a followup check
+                self._record_invocation('codebuild_status', True, {'build_id': build_id}, result)
+                
+                return result
+            else:
+                error_result = {
+                    'status': False,
+                    'error': f'Build ID {build_id} not found'
+                }
+                
+                # Record this as a followup check
+                self._record_invocation('codebuild_status', True, {'build_id': build_id}, error_result)
+                
+                return error_result
+                
+        except Exception as e:
+            error_result = {
+                'status': False,
+                'error': f'Error getting CodeBuild status: {str(e)}'
+            }
+            
+            # Record this as a followup check
+            self._record_invocation('codebuild_status', True, {'build_id': build_id}, error_result)
+            
+            return error_result
+
+    def get_codebuild_logs(self, build_id=None):
+        """
+        Get the logs from a CodeBuild project run.
+        
+        Args:
+            build_id (str, optional): The build ID to get logs for. If not provided, 
+                                     will try to retrieve from status information.
+                                     
+        Returns:
+            dict: Log information for the CodeBuild run
+        """
+        # Get execution status if we have an execution ID
+        status_info = None
+        if self.execution_id and self.output_bucket:
+            status_info = self.check_execution_status()
+            
+        # If build_id was not provided, try to get it from status
+        if not build_id and status_info and 'status' in status_info:
+            build_id = status_info['status'].get('build_id')
+            
+        # If we still don't have a build_id, return error
+        if not build_id:
+            return {
+                'status': False,
+                'error': 'No build ID provided or found in execution status'
+            }
+            
+        # Determine region to use
+        codebuild_region = getattr(self, 'aws_region', 'us-east-1')
+        
+        # Initialize CodeBuild client
+        codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
+        
+        try:
+            # Get build information to find log locations
+            build_info = codebuild_client.batch_get_builds(ids=[build_id])
+            
+            if 'builds' in build_info and len(build_info['builds']) > 0:
+                build_data = build_info['builds'][0]
+                logs_info = build_data.get('logs', {})
+                
+                # Initialize result with build info
+                result = {
+                    'status': True,
+                    'build_id': build_id,
+                    'build_status': build_data.get('buildStatus'),
+                    'project_name': build_data.get('projectName')
+                }
+                
+                # If CloudWatch logs are available, get them
+                if logs_info.get('cloudWatchLogs', {}).get('logGroup') and logs_info.get('cloudWatchLogs', {}).get('logStream'):
+                    log_group = logs_info['cloudWatchLogs']['logGroup']
+                    log_stream = logs_info['cloudWatchLogs']['logStream']
+                    
+                    try:
+                        logs_client = boto3.client('logs', region_name=codebuild_region)
+                        
+                        # Get all log events, handling pagination
+                        log_events = []
+                        next_token = None
+                        
+                        while True:
+                            if next_token:
+                                log_response = logs_client.get_log_events(
+                                    logGroupName=log_group,
+                                    logStreamName=log_stream,
+                                    nextToken=next_token
+                                )
+                            else:
+                                log_response = logs_client.get_log_events(
+                                    logGroupName=log_group,
+                                    logStreamName=log_stream
+                                )
+                                
+                            log_events.extend(log_response.get('events', []))
+                            
+                            if next_token == log_response.get('nextForwardToken'):
+                                break  # No more logs
+                            
+                            next_token = log_response.get('nextForwardToken')
+                            
+                            # Safety check to prevent infinite loops
+                            if len(log_events) > 10000:  # Limit to 10,000 log events
+                                break
+                        
+                        # Format logs in the result
+                        result['log_group'] = log_group
+                        result['log_stream'] = log_stream
+                        result['log_events'] = [{
+                            'timestamp': event['timestamp'],
+                            'message': event['message']
+                        } for event in log_events]
+                        result['logs'] = '\n'.join([event['message'] for event in log_events])
+                        
+                    except Exception as log_e:
+                        result['logs_error'] = str(log_e)
+                        
+                elif logs_info.get('s3Logs', {}).get('location'):
+                    # S3 logs are available
+                    result['s3_logs_location'] = logs_info['s3Logs']['location']
+                    
+                else:
+                    result['logs_error'] = 'No logs available for this build'
+                
+                # Record this as a followup check
+                self._record_invocation('codebuild_logs', True, {'build_id': build_id}, result)
+                
+                return result
+            else:
+                error_result = {
+                    'status': False,
+                    'error': f'Build ID {build_id} not found'
+                }
+                
+                # Record this as a followup check
+                self._record_invocation('codebuild_logs', True, {'build_id': build_id}, error_result)
+                
+                return error_result
+                
+        except Exception as e:
+            error_result = {
+                'status': False,
+                'error': f'Error getting CodeBuild logs: {str(e)}'
+            }
+            
+            # Record this as a followup check
+            self._record_invocation('codebuild_logs', True, {'build_id': build_id}, error_result)
+            
+            return error_result
     
     def execute(self, execution_type="lambda", sync_mode=None, **kwargs):
         """
@@ -1092,6 +1302,7 @@ class AWSAsyncExecutor:
         
         Args:
             execution_type (str): "lambda" or "codebuild"
+            sync_mode (bool, optional): If True, forces synchronous execution
             **kwargs: Parameters for the execution
             
         Returns:
