@@ -158,7 +158,7 @@ class Codebuild(CodebuildParams):
         post_build_contents = '''
   post_build:
     commands:
-      - date + %s > done
+      - date +%s > done
       - echo "Uploading done to S3 bucket..."
       - aws s3 cp done ${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done
 '''
