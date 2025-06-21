@@ -259,7 +259,7 @@ def aws_executor(execution_type="lambda"):
             # ref 5634623
             if existing_run.get("done"):
                 # testtest456
-                raise Exception('j8')
+                #raise Exception('j8')
                 self.clear_execution()
                 return existing_run["results"]
 
