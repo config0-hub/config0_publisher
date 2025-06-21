@@ -465,15 +465,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return
 
-    def retrieve(self, **kwargs):
-        self.phase_result = self.new_phase("retrieve")
+    def retrieve(self, build_id=None):
 
-        wait_int = kwargs.get("interval", 10)
-        retries = kwargs.get("retries", 12)
-
-        if not self.check(wait_int=wait_int,
-                          retries=retries):
-            return
+        if build_id:
+            self.build_id = build_id
 
         return self._retrieve()
 

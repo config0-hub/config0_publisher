@@ -79,11 +79,7 @@ phases:
         return self.codebuild_helper.results
 
     def retrieve(self,**inputargs):
-
-        #self.codebuild_helper = CodebuildResourceHelper(execution_id_path=self.execution_id_path,
-        #                                                **self.phases_info)
         self.codebuild_helper.retrieve(**inputargs)
-
         return self.codebuild_helper.results
 
     def run(self,**inputargs):
