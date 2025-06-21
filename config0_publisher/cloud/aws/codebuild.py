@@ -82,6 +82,13 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _get_build_status(self, build_ids):
         results = {}
 
+        # testtest456
+        print('j'*32)
+        print('j'*32)
+        print(build_ids)
+        print('j'*32)
+        print('j'*32)
+
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
@@ -459,21 +466,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         return
 
     def retrieve(self, **kwargs):
-        """
-        {
-          "inputargs": {
-              "interval": 10,
-              "retries": 12
-          },
-              "name": "retrieve",
-              "timewait": 3
-        }
-
-        retrieve is the same as _retrieve except
-        there is a check of the build status
-        where the check itself times out
-        """
-
         self.phase_result = self.new_phase("retrieve")
 
         wait_int = kwargs.get("interval", 10)
