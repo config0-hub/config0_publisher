@@ -915,7 +915,8 @@ class AWSAsyncExecutor:
                         codebuild_log_info = self.get_codebuild_logs(build_id)
                         if codebuild_log_info.get("status") and codebuild_log_info.get("logs"):
                             print(codebuild_log_info["logs"])
-                            raise Exception('a')
+                        print(codebuild_log_info)
+                        raise Exception('z'*32)
 
                         # Record the final result - this is a followup
                         self._record_invocation('codebuild_direct', True, {'build_id': build_id}, result)
