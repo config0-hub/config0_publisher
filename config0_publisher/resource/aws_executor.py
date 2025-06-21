@@ -1144,55 +1144,6 @@ class AWSAsyncExecutor:
             
             return error_result
 
-    def get_codebuild_logs(self, build_id=None):
-        """
-        Get the logs from a CodeBuild project run.
-
-        Args:
-            build_id (str, optional): The build ID to get logs for. If not provided,
-                                     will try to retrieve from status information.
-
-        Returns:
-            dict: Log information for the CodeBuild run
-        """
-        import gzip
-        from io import BytesIO
-        
-        log_bucket = "app-env.log.codebuild.williaumwu.168be"
-
-        # Extract build ID suffix
-        build_id_suffix = build_id.split(':')[-1]
-
-        # Set the log key and bucket
-        log_key = f"codebuild/logs/{build_id_suffix}.gz"
-
-        raise Exception(f'{log_bucket}-{log_key}')
-
-        # Use S3 resource for simpler API
-        s3_resource = boto3.resource('s3')
-        s3_object = s3_resource.Object(log_bucket, log_key)
-
-        # Get the log content
-        log_data = s3_object.get()['Body'].read()
-
-        # Decompress and decode
-        gzipfile = BytesIO(log_data)
-        gzipfile = gzip.GzipFile(fileobj=gzipfile)
-        log_content = gzipfile.read().decode('utf-8')
-
-        # Create result
-        result = {
-            'status': True,
-            'build_id': build_id,
-            'logs': log_content,
-            'log_location': f"s3://{log_bucket}/{log_key}"
-        }
-
-        # Record this invocation
-        self._record_invocation('codebuild_logs', True, {'build_id': build_id}, result)
-
-        return result
-
     def execute(self, execution_type="lambda", sync_mode=None, **kwargs):
         """
         Unified execution method that automatically uses sync or async mode
