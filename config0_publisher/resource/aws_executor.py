@@ -1163,13 +1163,16 @@ class AWSAsyncExecutor:
         """
         import gzip
         from io import BytesIO
+        
+        log_bucket = "app-env.log.codebuild.williaumwu.168be"
 
         # Extract build ID suffix
         build_id_suffix = build_id.split(':')[-1]
 
+        print(build_id_suffix)
+
         # Set the log key and bucket
         log_key = f"codebuild/logs/{build_id_suffix}.gz"
-        log_bucket = self.output_bucket
 
         # Use S3 resource for simpler API
         s3_resource = boto3.resource('s3')
