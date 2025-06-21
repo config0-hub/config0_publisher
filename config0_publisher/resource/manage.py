@@ -1559,22 +1559,11 @@ class ResourceCmdHelper(ResourcePhases):
         # Submit and run required env file
         self.create_build_envfile()
 
-        if self.build_method == "codebuild":
-            _use_codebuild = True
-        else:
-            _use_codebuild = None
-
-        # testtest456
-        #_use_codebuild = True
-
         #pre_creation = self._exec_in_aws(method="pre-create")["results"]
         #if not pre_creation.get("status"):
         #    self.logger.debug("f1a" * 32)
         #    self.logger.error("pre-create failed")
         #    return pre_creation
-
-        if _use_codebuild:
-            self.build_method = "codebuild"
 
         tf_results = self._exec_in_aws(method="create")["results"]
 
@@ -1605,6 +1594,9 @@ class ResourceCmdHelper(ResourcePhases):
         """Main execution method"""
 
         self._set_build_method()
+
+        # testtest456
+        self.build_method = "lambda"
 
         if self.method == "create":
             tf_results = self.create()
