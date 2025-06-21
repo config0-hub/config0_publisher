@@ -1324,7 +1324,7 @@ class AWSAsyncExecutor:
 
             status_result = self.check_execution_status()
 
-            self.logger.json(status_result)
+            print(status_result)
             raise Exception('a1')
 
 
