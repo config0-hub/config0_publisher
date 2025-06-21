@@ -1313,6 +1313,7 @@ class AWSAsyncExecutor:
         if sync_mode:
             # testtest456
             print('a0'*32)
+            raise Exception('a0')
             if execution_type.lower() == "lambda":
                 # Direct execution will handle recording
                 result = self._direct_lambda_execution(**kwargs)
