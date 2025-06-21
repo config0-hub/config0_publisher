@@ -139,6 +139,12 @@ class Codebuild(CodebuildParams):
   build:
     on-failure: ABORT
     commands:
+    
+  post_build:
+    commands:
+      - date +%s > done
+      - echo "Uploading done to S3 bucket..."
+      - aws s3 cp done $OUTPUT_BUCKET/executions/$EXECUTION_ID/done
 '''
 
         # codebuild is limited to create,apply, and destroy
