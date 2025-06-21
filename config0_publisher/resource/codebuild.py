@@ -160,7 +160,7 @@ class Codebuild(CodebuildParams):
     commands:
       - date +%s > done
       - echo "Uploading done to S3 bucket..."
-      - aws s3 cp done ${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done
+      - aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done
 '''
         return contents + post_build_contents
 
