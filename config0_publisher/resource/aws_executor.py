@@ -1169,10 +1169,10 @@ class AWSAsyncExecutor:
         # Extract build ID suffix
         build_id_suffix = build_id.split(':')[-1]
 
-        print(build_id_suffix)
-
         # Set the log key and bucket
         log_key = f"codebuild/logs/{build_id_suffix}.gz"
+
+        raise Exception(f'{log_bucket}-{log_key}')
 
         # Use S3 resource for simpler API
         s3_resource = boto3.resource('s3')
