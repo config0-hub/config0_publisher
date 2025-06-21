@@ -1327,6 +1327,7 @@ class AWSAsyncExecutor:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
             status_result = self.check_execution_status()
+            self.clear_execution()
 
             if status_result.get("done"):
                 # testtest456
@@ -1334,7 +1335,6 @@ class AWSAsyncExecutor:
                 print(json.dumps(status_result,indent=2))
                 print('a1' * 32)
                 # testtest456
-                self.clear_execution()
                 return status_result["results"]
             elif "body" in result:
                 print('a2' * 32)
