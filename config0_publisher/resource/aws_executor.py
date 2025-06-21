@@ -258,7 +258,7 @@ def aws_executor(execution_type="lambda"):
 
             # ref 5634623
             if existing_run.get("done"):
-                raise Exception('j8')
+                #raise Exception('j8')
                 # testtest456
                 self.clear_execution()
                 return existing_run["results"]
@@ -984,39 +984,34 @@ class AWSAsyncExecutor:
             
         logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
         
-        try:
-            # Delete entire execution directory from S3
-            s3_client = boto3.client('s3')
-            execution_prefix = f"executions/{self.execution_id}/"
-            
-            logger.info(f"Deleting execution directory for {self.execution_id}")
-            
-            # List all objects with the execution prefix
-            paginator = s3_client.get_paginator('list_objects_v2')
-            objects_to_delete = []
-            
-            # Collect all objects with the execution prefix
-            for page in paginator.paginate(Bucket=self.output_bucket, Prefix=execution_prefix):
-                if 'Contents' in page:
-                    for obj in page['Contents']:
-                        objects_to_delete.append({'Key': obj['Key']})
-            
-            # Delete all objects if any were found
-            if objects_to_delete:
-                s3_client.delete_objects(
-                    Bucket=self.output_bucket,
-                    Delete={'Objects': objects_to_delete}
-                )
-                logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
-                return len(objects_to_delete)
-            else:
-                logger.info(f"No existing objects found for execution {self.execution_id}")
-                return 0
-                
-        except Exception as e:
-            logger.error(f"Failed to delete execution directory: {str(e)}")
-            return -1
-    
+        # Delete entire execution directory from S3
+        s3_client = boto3.client('s3')
+        execution_prefix = f"executions/{self.execution_id}/"
+
+        logger.info(f"Deleting execution directory for {self.execution_id}")
+
+        # List all objects with the execution prefix
+        paginator = s3_client.get_paginator('list_objects_v2')
+        objects_to_delete = []
+
+        # Collect all objects with the execution prefix
+        for page in paginator.paginate(Bucket=self.output_bucket, Prefix=execution_prefix):
+            if 'Contents' in page:
+                for obj in page['Contents']:
+                    objects_to_delete.append({'Key': obj['Key']})
+
+        # Delete all objects if any were found
+        if objects_to_delete:
+            s3_client.delete_objects(
+                Bucket=self.output_bucket,
+                Delete={'Objects': objects_to_delete}
+            )
+            logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
+            return len(objects_to_delete)
+        else:
+            logger.info(f"No existing objects found for execution {self.execution_id}")
+            return 0
+
     @aws_executor(execution_type="lambda")
     def exec_lambda(self, **kwargs):
         """
