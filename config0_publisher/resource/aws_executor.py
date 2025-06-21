@@ -259,7 +259,7 @@ def aws_executor(execution_type="lambda"):
             # ref 5634623
             if existing_run.get("done"):
                 # testtest456
-                #self.clear_execution()
+                self.clear_execution()
                 return existing_run["results"]
 
             if existing_run.get("status"):
@@ -487,8 +487,6 @@ def aws_executor(execution_type="lambda"):
                            content_type='application/json')
 
             #result['output'] = f"Initiated {execution_type} execution with ID: {self.execution_id}"
-            # testtest456
-            result['init'] = True
 
             # Add build ID for CodeBuild if available
             if execution_type.lower() == "codebuild" and 'build_id' in locals():
@@ -499,10 +497,9 @@ def aws_executor(execution_type="lambda"):
                 try:
                     # This is an initial invocation, not a followup
                     self._record_invocation(f'{execution_type}_async', False, original_args, result)
+                    result["init"] = init
                 except Exception as e:
                     logger.warning(f"Failed to record invocation: {str(e)}")
-
-            result["init"] = init
             return result
         return wrapper
     return decorator
@@ -566,7 +563,7 @@ class AWSAsyncExecutor:
         # Set tmp_bucket for backward compatibility
         self.tmp_bucket = output_bucket
 
-    def _record_invocation(self, invocation_type, is_followup, args, result):
+    def _record_invocation(self, invocation_type, is_followup, args, result, done=False):
         """
         Record an invocation to S3
         
@@ -575,7 +572,7 @@ class AWSAsyncExecutor:
             is_followup (bool): Whether this is a follow-up status check
             args (dict): Arguments passed to the execution method
             result (dict): Result returned from the execution
-            
+
         Returns:
             bool: True if recording was successful, False otherwise
         """
@@ -590,11 +587,15 @@ class AWSAsyncExecutor:
         record = {
             'record_id': record_id,
             'timestamp': int(time.time()),
+            'checkin': int(time.time()),
             'invocation_type': invocation_type,
             'is_followup': is_followup,
             'arguments': args.copy() if args else {},  # Make a copy to avoid reference issues
             'result': result
         }
+
+        if done:
+            record["done"] = True
         
         # Get the correct execution ID - either from self or from args
         execution_id = self.execution_id
@@ -1333,7 +1334,7 @@ class AWSAsyncExecutor:
                 print(json.dumps(status_result,indent=2))
                 print('a1' * 32)
                 # testtest456
-                #self.clear_execution()
+                self.clear_execution()
                 return status_result["results"]
             elif "body" in result:
                 print('a2' * 32)
