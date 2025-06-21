@@ -1324,14 +1324,12 @@ class AWSAsyncExecutor:
 
             status_result = self.check_execution_status()
 
-            print(status_result)
+            #print(status_result)
             print(status_result.get("done"))
             print(status_result.get("done"))
             print(status_result.get("done"))
             print(status_result.get("done"))
-            raise Exception('a1')
-
-
+            raise Exception(status_result.get("done"))
             if status_result.get("done"):
                 # testtest456
                 print('a1' * 32)
