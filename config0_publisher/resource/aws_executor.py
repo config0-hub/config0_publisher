@@ -1323,32 +1323,17 @@ class AWSAsyncExecutor:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
             status_result = self.check_execution_status()
+            self.clear_execution()
 
-            #print(status_result)
-            print(status_result.get("done"))
-            print(status_result.get("done"))
-            print(status_result.get("done"))
-            print(status_result.get("done"))
-            raise Exception(status_result.get("done"))
             if status_result.get("done"):
-                # testtest456
-                print('a1' * 32)
-                print(json.dumps(status_result,indent=2))
-                print('a1' * 32)
-                # testtest456
-                raise Exception('k8')
-                self.clear_execution()
                 return status_result["results"]
-            elif "body" in result:
-                print('a2' * 32)
-                print(json.dumps(result,indent=2))
-                print('a2' * 32)
+
+            if "body" in result:
                 return result["body"]
             else:
                 return result
 
         # Otherwise use the async decorated methods
-        result = None
         if execution_type.lower() == "lambda":
             result = self.exec_lambda(**kwargs)
             # Record the execution since decorator can't do it directly
