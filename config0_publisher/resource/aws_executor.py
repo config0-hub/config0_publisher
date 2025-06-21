@@ -1189,13 +1189,14 @@ class AWSAsyncExecutor:
             # Record the execution since decorator can't do it directly
             self._record_invocation('lambda_async', False, original_args, result)
             return result
-        elif execution_type.lower() == "codebuild":
+
+        if execution_type.lower() == "codebuild":
             result = self.exec_codebuild(**kwargs)
             # Record the execution since decorator can't do it directly
             self._record_invocation('codebuild_async', False, original_args, result)
             return result
-        else:
-            raise ValueError(f"Unsupported execution_type: {execution_type}")
+
+        raise ValueError(f"Unsupported execution_type: {execution_type}")
     
     def get_invocation_history(self, execution_id=None):
         """
