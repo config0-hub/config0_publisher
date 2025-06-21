@@ -1313,7 +1313,6 @@ class AWSAsyncExecutor:
         if sync_mode:
             # testtest456
             print('a0'*32)
-            raise Exception('a0')
             if execution_type.lower() == "lambda":
                 # Direct execution will handle recording
                 result = self._direct_lambda_execution(**kwargs)
@@ -1324,6 +1323,10 @@ class AWSAsyncExecutor:
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
 
             status_result = self.check_execution_status()
+
+            self.logger.json(status_result)
+            raise Exception('a1')
+
 
             if status_result.get("done"):
                 # testtest456
