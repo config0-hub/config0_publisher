@@ -1485,6 +1485,8 @@ class ResourceCmdHelper(ResourcePhases):
             print('b0' * 32)
             self.logger.json(results)
             print('b1' * 32)
+            self.logger.json(inputargs)
+            print('b2' * 32)
 
             # testtest456
             if sync_mode:
