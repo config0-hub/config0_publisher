@@ -1505,6 +1505,11 @@ class ResourceCmdHelper(ResourcePhases):
 
         if not sync_mode:
             if results.get("done"):
+                print('b3' * 32)
+                print('b3' * 32)
+                print(results)
+                print('b4' * 32)
+                print('b4' * 32)
                 if "results" in results:
                     results = results["results"]
             elif results.get("in_progress"):
