@@ -1164,22 +1164,6 @@ class AWSAsyncExecutor:
         import gzip
         from io import BytesIO
 
-        # Get execution status if we have an execution ID
-        status_info = None
-        if self.execution_id and self.output_bucket:
-            status_info = self.check_execution_status()
-
-        # If build_id was not provided, try to get it from status
-        if not build_id and status_info and 'status' in status_info:
-            build_id = status_info['status'].get('build_id')
-
-        # If we still don't have a build_id, return error
-        if not build_id:
-            return {
-                'status': False,
-                'error': 'No build ID provided or found in execution status'
-            }
-
         # Extract build ID suffix
         build_id_suffix = build_id.split(':')[-1]
 
