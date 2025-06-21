@@ -139,12 +139,6 @@ class Codebuild(CodebuildParams):
   build:
     on-failure: ABORT
     commands:
-    
-  post_build:
-    commands:
-      - date +%s > done
-      - echo "Uploading done to S3 bucket..."
-      - aws s3 cp done $OUTPUT_BUCKET/executions/$EXECUTION_ID/done
 '''
 
         # codebuild is limited to create,apply, and destroy
@@ -159,7 +153,16 @@ class Codebuild(CodebuildParams):
 
         cmds_values = [list(c.values())[0] for c in cmds]
 
-        return self._add_cmds(contents,cmds_values)
+        contents = self._add_cmds(contents,cmds_values)
+
+        post_build_contents = '''
+  post_build:
+    commands:
+      - date + %s > done
+      - echo "Uploading done to S3 bucket..."
+      - aws s3 cp done $OUTPUT_BUCKET / executions /$EXECUTION_ID / done
+'''
+        return contents + post_build_contents
 
     def get_buildspec(self):
 
