@@ -910,12 +910,6 @@ class AWSAsyncExecutor:
                             'phases': build_phases
                         }
 
-                        #self.get_codebuild_status(build_id)
-                        # testtest456
-                        codebuild_log_info = self.get_codebuild_logs(build_id)
-                        print(codebuild_log_info.get("logs"))
-                        raise Exception("z"*100)
-
                         # Record the final result - this is a followup
                         self._record_invocation('codebuild_direct', True, {'build_id': build_id}, result)
 

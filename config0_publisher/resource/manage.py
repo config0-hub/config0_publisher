@@ -1481,6 +1481,17 @@ class ResourceCmdHelper(ResourcePhases):
                 **inputargs
             )
 
+            # testtest456
+            print('b0' * 32)
+            self.logger.json(results)
+            print('b1' * 32)
+
+            # testtest456
+            if sync_mode:
+                results = _awsbuild.retrieve(**inputargs)
+            else:
+                if results.get("done"):
+                    results = _awsbuild.retrieve(**inputargs)
         else:
             raise Exception("build_method needs be either lambda/codebuild")
 
@@ -1492,10 +1503,6 @@ class ResourceCmdHelper(ResourcePhases):
 
         if not sync_mode:
             if results.get("done"):
-                # testtest456
-                print('b0' * 32)
-                self.logger.json(results)
-                print('b1' * 32)
                 if "results" in results:
                     results = results["results"]
             elif results.get("in_progress"):
