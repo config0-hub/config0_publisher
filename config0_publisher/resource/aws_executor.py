@@ -481,18 +481,16 @@ def aws_executor(execution_type="lambda"):
                 'phases': True
             }
 
+            # Add build ID for CodeBuild if available
+            if execution_type.lower() == "codebuild" and 'build_id' in locals():
+                result['build_id'] = build_id
+
             _s3_put_object(s3_client,
                            self.output_bucket,
                            f"executions/{self.execution_id}/status.json",
                            json.dumps(result),
                            content_type='application/json')
 
-            #result['output'] = f"Initiated {execution_type} execution with ID: {self.execution_id}"
-
-            # Add build ID for CodeBuild if available
-            if execution_type.lower() == "codebuild" and 'build_id' in locals():
-                result['build_id'] = build_id
-            
             # Record this invocation if we have the tracking method
             if hasattr(self, '_record_invocation'):
                 try:
