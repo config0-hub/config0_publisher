@@ -909,26 +909,17 @@ class AWSAsyncExecutor:
                             'end_time': build_data.get('endTime'),
                             'phases': build_phases
                         }
-                        
-                        # Try to get logs
-                        if logs_info.get('cloudWatchLogs', {}).get('logGroup') and logs_info.get('cloudWatchLogs', {}).get('logStream'):
-                            log_group = logs_info['cloudWatchLogs']['logGroup']
-                            log_stream = logs_info['cloudWatchLogs']['logStream']
-                            
-                            try:
-                                logs_client = boto3.client('logs', region_name=codebuild_region)
-                                log_events = logs_client.get_log_events(
-                                    logGroupName=log_group,
-                                    logStreamName=log_stream
-                                )
-                                
-                                log_messages = [event['message'] for event in log_events.get('events', [])]
-                                result['logs'] = '\n'.join(log_messages)
-                            except Exception as log_e:
-                                result['logs_error'] = str(log_e)
-                        
+
+                        #self.get_codebuild_status(build_id)
+                        # testtest456
+                        codebuild_log_info = self.get_codebuild_logs(build_id)
+                        if codebuild_log_info.get("status") and codebuild_log_info.get("logs"):
+                            print(codebuild_log_info["logs"])
+                            raise Exception('a')
+
                         # Record the final result - this is a followup
                         self._record_invocation('codebuild_direct', True, {'build_id': build_id}, result)
+
                         return result
                 
                 # Sleep before checking again
@@ -1309,8 +1300,6 @@ class AWSAsyncExecutor:
 
         # Check if we're in sync mode (no execution_id provided)
         if sync_mode:
-            # testtest456
-            print('a0'*32)
             if execution_type.lower() == "lambda":
                 # Direct execution will handle recording
                 result = self._direct_lambda_execution(**kwargs)

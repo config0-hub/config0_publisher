@@ -1484,14 +1484,6 @@ class ResourceCmdHelper(ResourcePhases):
         else:
             raise Exception("build_method needs be either lambda/codebuild")
 
-        #executor.clear_execution()
-        # testtest456
-        #print('h0'*32)
-        #self.logger.json(cinputargs)
-        #print('h1'*32)
-        #self.logger.json(invocation_config)
-        #print('h2'*32)
-
         if method == "destroy":
             try:
                 os.chdir(self.cwd)
