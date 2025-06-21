@@ -1152,7 +1152,7 @@ class AWSAsyncExecutor:
 
     def get_codebuild_logs(self, build_id=None):
         """
-        Get the logs from a CodeBuild project run from S3.
+        Get the logs from a CodeBuild project run.
 
         Args:
             build_id (str, optional): The build ID to get logs for. If not provided,
@@ -1163,7 +1163,6 @@ class AWSAsyncExecutor:
         """
         import gzip
         from io import BytesIO
-        import traceback
 
         # Get execution status if we have an execution ID
         status_info = None
@@ -1181,92 +1180,35 @@ class AWSAsyncExecutor:
                 'error': 'No build ID provided or found in execution status'
             }
 
-        # Extract build ID suffix (the part after the project name)
+        # Extract build ID suffix
         build_id_suffix = build_id.split(':')[-1]
 
-        # Initialize result
+        # Set the log key and bucket
+        log_key = f"codebuild/logs/{build_id_suffix}.gz"
+        log_bucket = self.output_bucket
+
+        # Use S3 resource for simpler API
+        s3_resource = boto3.resource('s3')
+        s3_object = s3_resource.Object(log_bucket, log_key)
+
+        # Get the log content
+        log_data = s3_object.get()['Body'].read()
+
+        # Decompress and decode
+        gzipfile = BytesIO(log_data)
+        gzipfile = gzip.GzipFile(fileobj=gzipfile)
+        log_content = gzipfile.read().decode('utf-8')
+
+        # Create result
         result = {
             'status': True,
-            'build_id': build_id
+            'build_id': build_id,
+            'logs': log_content,
+            'log_location': f"s3://{log_bucket}/{log_key}"
         }
 
-        # Try to get logs from S3
-        s3_client = boto3.client('s3')
-
-        # First check if we have a logarn from the build status
-        logarn = None
-        try:
-            # Get build info to find log ARN
-            codebuild_region = getattr(self, 'aws_region', 'us-east-1')
-            codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
-            build_info = codebuild_client.batch_get_builds(ids=[build_id])
-
-            if 'builds' in build_info and len(build_info['builds']) > 0:
-                build_data = build_info['builds'][0]
-                logs_info = build_data.get('logs', {})
-
-                # Update result with build status
-                result['build_status'] = build_data.get('buildStatus')
-                result['project_name'] = build_data.get('projectName')
-
-                # Check if the build is complete
-                if build_data.get('buildStatus') in ['SUCCEEDED', 'FAILED', 'FAULT', 'TIMED_OUT', 'STOPPED']:
-                    result['done'] = True
-
-                # Get S3 logs location if available
-                if logs_info.get('s3Logs', {}).get('location'):
-                    logarn = f"arn:aws:s3:::{logs_info['s3Logs']['location']}"
-        except:
-            pass
-
-        # Determine log bucket and path
-        log_bucket = None
-        log_key = None
-
-        if logarn:
-            try:
-                log_elements = logarn.split("/codebuild/logs/")
-                log_key = f"codebuild/logs/{log_elements[1]}"
-                log_bucket = log_elements[0].split("arn:aws:s3:::")[1]
-            except:
-                pass
-
-        # If we couldn't get the log location from the ARN, use default pattern
-        if not log_bucket or not log_key:
-            log_key = f"codebuild/logs/{build_id_suffix}.gz"
-            log_bucket = self.output_bucket
-
-        # Try to get the logs from S3
-        try:
-            # Use S3 resource for simpler API
-            s3_resource = boto3.resource('s3')
-            s3_object = s3_resource.Object(log_bucket, log_key)
-
-            # Get the log content
-            log_data = s3_object.get()['Body'].read()
-
-            # Decompress and decode
-            gzipfile = BytesIO(log_data)
-            gzipfile = gzip.GzipFile(fileobj=gzipfile)
-            log_content = gzipfile.read().decode('utf-8')
-
-            # Add to result
-            result['logs'] = log_content
-            result['log_location'] = f"s3://{log_bucket}/{log_key}"
-
-            print(f"Retrieved log: s3://{log_bucket}/{log_key}")
-
-        except Exception as e:
-            # Get the full traceback
-            error_trace = traceback.format_exc()
-            result['status'] = False
-            result['error'] = f"Failed to get log: s3://{log_bucket}/{log_key}"
-            result['error_detail'] = str(e)
-            result['traceback'] = error_trace
-
         # Record this invocation
-        done = result.get('done', False)
-        self._record_invocation('codebuild_logs', True, {'build_id': build_id}, result, done=done)
+        self._record_invocation('codebuild_logs', True, {'build_id': build_id}, result)
 
         return result
 
