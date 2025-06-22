@@ -128,7 +128,7 @@ class Codebuild(CodebuildParams):
 
         contents = '''
   pre_build:
-    on-failure: ABORT
+    on-failure: CONTINUE
     commands:
 '''
         return self._add_cmds(contents,cmds_values)
@@ -137,7 +137,7 @@ class Codebuild(CodebuildParams):
 
         contents = '''
   build:
-    on-failure: ABORT
+    when: onSuccess
     commands:
 '''
 
