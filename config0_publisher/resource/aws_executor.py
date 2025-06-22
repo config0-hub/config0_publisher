@@ -487,7 +487,7 @@ def aws_executor(execution_type="lambda"):
             _s3_put_object(s3_client,
                            self.output_bucket,
                            f"executions/{self.execution_id}/expire_at",
-                           Body=str(build_expire_at))
+                           str(build_expire_at))
 
             # Record this invocation if we have the tracking method
             if hasattr(self, '_record_invocation'):
