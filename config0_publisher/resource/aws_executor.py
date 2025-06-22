@@ -153,6 +153,7 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
         return result
 
     status_key = f"executions/{execution_id}/status.json"
+    result["status"] = _s3_get_object(s3_client, output_bucket, status_key)
     try:
         result["status"] = _s3_get_object(s3_client, output_bucket, status_key)
         if not result.get("status"):
