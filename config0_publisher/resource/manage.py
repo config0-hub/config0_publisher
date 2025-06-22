@@ -1496,8 +1496,10 @@ class ResourceCmdHelper(ResourcePhases):
                     retrieved_results = _awsbuild.retrieve(build_id=results["status"]["build_id"])
                     retrieved_results["done"] = True
                     # testtest456
+                    print('b3' * 32)
                     print(retrieved_results["status"])
                     print(retrieved_results["build_status"])
+                    print('b3' * 32)
                     return {
                         "results": retrieved_results
                     }
