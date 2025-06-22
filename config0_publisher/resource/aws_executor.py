@@ -104,7 +104,7 @@ def _s3_get_object(s3_client, bucket, key):
         print(f"Error fetching object: {e}")
         return False
 
-def get_execution_status(execution_id=None, output_bucket=None):
+def get_execution_status(execution_type, execution_id=None, output_bucket=None):
     """
     Get the status of an execution from S3 using initiated and done markers.
 
@@ -171,13 +171,12 @@ def get_execution_status(execution_id=None, output_bucket=None):
     except:
        result["done"] = False
 
-    if result.get("done"):
+    # only lambda will have this result.json
+    if result.get("done") and execution_type == "lambda":
         result_key = f"executions/{execution_id}/result.json"
         result["results"] = _s3_get_object(s3_client,
                                            output_bucket,
                                            result_key)
-                                           # testtest456
-                                           #result["status"]["result_key"])
         return result
 
     return result
@@ -245,7 +244,7 @@ def aws_executor(execution_type="lambda"):
             
             # If still no timeout, use defaults based on execution_type
             if not max_execution_time:
-                if execution_type.lower() == "lambda":
+                if execution_type == "lambda":
                     max_execution_time = 900  # 15 minutes default for Lambda
                     logger.debug(f"Using default Lambda timeout: {max_execution_time}s")
                 else:  # codebuild or anything else
@@ -254,7 +253,7 @@ def aws_executor(execution_type="lambda"):
             
             # Calculate build expiration time
             build_expire_at = int(time.time()) + int(max_execution_time)
-            existing_run = self.check_execution_status()
+            existing_run = self.check_execution_status(execution_type)
 
             # ref 5634623
             if existing_run.get("done"):
@@ -286,7 +285,7 @@ def aws_executor(execution_type="lambda"):
             init = True
 
             # Execute based on type
-            if execution_type.lower() == "lambda":
+            if execution_type == "lambda":
                 # Get Lambda function details - only use FunctionName from invocation_config
                 function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
                 lambda_region = getattr(self, 'lambda_region', 'us-east-1')
@@ -364,7 +363,7 @@ def aws_executor(execution_type="lambda"):
                         'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
                     }
                     
-            elif execution_type.lower() == "codebuild":
+            elif execution_type == "codebuild":
                 # Start with all the original parameters from the Codebuild class
                 build_params = dict(kwargs)
                 
@@ -482,7 +481,7 @@ def aws_executor(execution_type="lambda"):
             }
 
             # Add build ID for CodeBuild if available
-            if execution_type.lower() == "codebuild" and 'build_id' in locals():
+            if execution_type == "codebuild" and 'build_id' in locals():
                 result['build_id'] = build_id
 
             _s3_put_object(s3_client,
@@ -1047,7 +1046,7 @@ class AWSAsyncExecutor:
         """
         pass  # Implementation handled by decorator or bypassed in sync mode
     
-    def check_execution_status(self):
+    def check_execution_status(self,execution_type="lambda"):
         """
         Check the status of an execution.
         
@@ -1057,7 +1056,7 @@ class AWSAsyncExecutor:
         if not self.execution_id or not self.output_bucket:
             return {}
             
-        status_result = get_execution_status(self.execution_id, self.output_bucket)
+        status_result = get_execution_status(execution_type, self.execution_id, self.output_bucket)
         
         # Record this as a followup check
         self._record_invocation('status_check', True, {'execution_id': self.execution_id}, status_result)
@@ -1078,7 +1077,7 @@ class AWSAsyncExecutor:
         # Get execution status if we have an execution ID
         status_info = None
         if self.execution_id and self.output_bucket:
-            status_info = self.check_execution_status()
+            status_info = self.check_execution_status("codebuild")
             
         # If build_id was not provided, try to get it from status
         if not build_id and status_info and 'status' in status_info:
@@ -1096,53 +1095,64 @@ class AWSAsyncExecutor:
         
         # Initialize CodeBuild client
         codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
-        
-        try:
-            # Get build status
-            build_info = codebuild_client.batch_get_builds(ids=[build_id])
-            
-            if 'builds' in build_info and len(build_info['builds']) > 0:
-                build_data = build_info['builds'][0]
-                build_status = build_data.get('buildStatus')
-                
-                # Prepare result
-                result = {
-                    'status': True,
-                    'build_id': build_id,
-                    'build_status': build_status,
-                    'project_name': build_data.get('projectName'),
-                    'start_time': build_data.get('startTime'),
-                    'end_time': build_data.get('endTime'),
-                    'current_phase': build_data.get('currentPhase'),
-                    'build_complete': build_status in ['SUCCEEDED', 'FAILED', 'FAULT', 'TIMED_OUT', 'STOPPED'],
-                    'phases': build_data.get('phases', [])
-                }
-                
-                # Record this as a followup check
-                self._record_invocation('codebuild_status', True, {'build_id': build_id}, result)
-                
-                return result
-            else:
-                error_result = {
-                    'status': False,
-                    'error': f'Build ID {build_id} not found'
-                }
-                
-                # Record this as a followup check
-                self._record_invocation('codebuild_status', True, {'build_id': build_id}, error_result)
-                
-                return error_result
-                
-        except Exception as e:
+
+        # Get build status
+        build_info = codebuild_client.batch_get_builds(ids=[build_id])
+
+        if 'builds' in build_info and len(build_info['builds']) > 0:
+            build_data = build_info['builds'][0]
+            build_status = build_data.get('buildStatus')
+
+            # Prepare result
+            result = {
+                'status': True,
+                'build_id': build_id,
+                'build_status': build_status,
+                'project_name': build_data.get('projectName'),
+                'start_time': build_data.get('startTime'),
+                'end_time': build_data.get('endTime'),
+                'current_phase': build_data.get('currentPhase'),
+                'build_complete': build_status in ['SUCCEEDED', 'FAILED', 'FAULT', 'TIMED_OUT', 'STOPPED'],
+                'phases': build_data.get('phases', [])
+            }
+
+            # Record this as a followup check
+            self._record_invocation('codebuild_status', True, {'build_id': build_id}, result)
+
+            return result
+        else:
             error_result = {
                 'status': False,
-                'error': f'Error getting CodeBuild status: {str(e)}'
+                'error': f'Build ID {build_id} not found'
             }
-            
+
             # Record this as a followup check
             self._record_invocation('codebuild_status', True, {'build_id': build_id}, error_result)
-            
+
             return error_result
+
+    def _execute_sync(self,execution_type="lambda",**kwargs):
+
+        if execution_type == "lambda":
+            # Direct execution will handle recording
+            result = self._direct_lambda_execution(**kwargs)
+        elif execution_type == "codebuild":
+            # Direct execution will handle recording
+            result = self._direct_codebuild_execution(**kwargs)
+        else:
+            raise ValueError(f"Unsupported execution_type: {execution_type}")
+
+        status_result = self.check_execution_status(execution_type)
+
+        if status_result.get("done"):
+            self.clear_execution()
+            return status_result["results"]
+
+        if "body" in result:
+            return result["body"]
+        else:
+            return result
+
 
     def execute(self, execution_type="lambda", sync_mode=None, **kwargs):
         """
@@ -1157,47 +1167,31 @@ class AWSAsyncExecutor:
         Returns:
             dict: Execution result or tracking information
         """
+
+        # sync or traditional execution
+        if sync_mode:
+            return self._execute_sync(execution_type,**kwargs)
+
         # Store original args for history
         original_args = kwargs.copy()
         original_args['execution_type'] = execution_type
 
-        # Check if we're in sync mode (no execution_id provided)
-        if sync_mode:
-            if execution_type.lower() == "lambda":
-                # Direct execution will handle recording
-                result = self._direct_lambda_execution(**kwargs)
-            elif execution_type.lower() == "codebuild":
-                # Direct execution will handle recording
-                result = self._direct_codebuild_execution(**kwargs)
-            else:
-                raise ValueError(f"Unsupported execution_type: {execution_type}")
-
-            status_result = self.check_execution_status()
-            self.clear_execution()
-
-            if status_result.get("done"):
-                return status_result["results"]
-
-            if "body" in result:
-                return result["body"]
-            else:
-                return result
-
         # Otherwise use the async decorated methods
-        if execution_type.lower() == "lambda":
+        if execution_type == "lambda":
             result = self.exec_lambda(**kwargs)
-            # Record the execution since decorator can't do it directly
-            self._record_invocation('lambda_async', False, original_args, result)
-            return result
-
-        if execution_type.lower() == "codebuild":
+        elif execution_type == "codebuild":
             result = self.exec_codebuild(**kwargs)
-            # Record the execution since decorator can't do it directly
-            self._record_invocation('codebuild_async', False, original_args, result)
-            return result
+        else:
+            raise ValueError(f"Unsupported execution_type: {execution_type}")
 
-        raise ValueError(f"Unsupported execution_type: {execution_type}")
-    
+        # Record the execution since decorator can't do it directly
+        self._record_invocation(f'{execution_type}_async',
+                                False,
+                                original_args,
+                                result)
+
+        return result
+
     def get_invocation_history(self, execution_id=None):
         """
         Get the invocation history for a specific execution ID from S3

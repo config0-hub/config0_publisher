@@ -19,6 +19,7 @@ Environment Variables:
     CODEBUILD_COMPUTE_TYPE: Compute resources for builds
 """
 
+import os
 import re
 import gzip
 import traceback
@@ -54,7 +55,7 @@ class CodebuildResourceHelper(AWSCommonConn):
     def __init__(self, **kwargs):
         self.buildspec = kwargs.get("buildspec")
         self.build_id = None
-        self.project_name = None
+        self.project_name = os.environ.get("CODEBUILD_PROJECT", "config0-iac")
         self.logarn = None
 
         if "set_env_vars" in kwargs:
@@ -83,11 +84,9 @@ class CodebuildResourceHelper(AWSCommonConn):
         results = {}
 
         # testtest456
-        print('j'*32)
-        print('j'*32)
+        print('j4'*32)
         print(build_ids)
-        print('j'*32)
-        print('j'*32)
+        print('j4'*32)
 
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
@@ -354,45 +353,6 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return env_vars
 
-    def get_available_projects(self, max_queue_size=5):
-        response = self.codebuild_client.list_projects()
-        projects = [p for p in response['projects'] if self.codebuild_basename in p]
-        results = {}
-        for project in projects:
-            self.logger.debug(f"evaluating codebuild project {project}")
-
-            response = self.codebuild_client.list_builds_for_project(projectName=project,
-                                                                     sortOrder='ASCENDING')
-
-            if not response["ids"]:
-                results[project] = 0
-                continue
-
-            build_statues = self._get_build_status(response["ids"])
-
-            current_build_ids = []
-
-            for build_id, build_status in build_statues.items():
-                if build_status == "IN_PROGRESS":
-                    current_build_ids.append(build_id)
-                    continue
-
-            if not current_build_ids:
-                results[project] = 0
-                continue
-
-            build_count = len(current_build_ids)
-
-            self.logger.debug(f"Project: {project}, Build Count: {build_count}")
-
-            if build_count < max_queue_size:
-                results[project] = build_count
-
-        if not results:
-            return
-
-        return sorted(results, key=lambda x: results[x])
-
     def trigger_build(self, sparse_env_vars=True):
 
         inputargs = self.get_trigger_inputargs(sparse_env_vars=sparse_env_vars)
@@ -423,28 +383,18 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def get_trigger_inputargs(self, sparse_env_vars=True):
 
-        projects = self.get_available_projects()
-        self.project_name = None
-
-        if not projects:
-            self.logger.warn(f"cannot find matching project - using codebuild_basename {self.codebuild_basename}")
-            projects = [self.codebuild_basename]
-
         timeout = max(1, int(self.build_timeout/60))
-
-        for project_name in projects:
-            self.logger.debug_highlight(f"running job on codebuild project {project_name}")
-            env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
-            inputargs = {"projectName": project_name,
-                         "environmentVariablesOverride": env_vars_codebuild_format,
-                         "timeoutInMinutesOverride": timeout,
-                         "imageOverride": self.build_image,
-                         "computeTypeOverride": self.compute_type,
-                         "environmentTypeOverride": self.image_type}
-            if self.buildspec:
-                inputargs["buildspecOverride"] = self.buildspec
-            return inputargs
-        return None
+        self.logger.debug_highlight(f"running job on codebuild project {self.project_name}")
+        env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
+        inputargs = {"projectName": self.project_name,
+                     "environmentVariablesOverride": env_vars_codebuild_format,
+                     "timeoutInMinutesOverride": timeout,
+                     "imageOverride": self.build_image,
+                     "computeTypeOverride": self.compute_type,
+                     "environmentTypeOverride": self.image_type}
+        if self.buildspec:
+            inputargs["buildspecOverride"] = self.buildspec
+        return inputargs
 
     def _submit(self, sparse_env_vars=True):
 
