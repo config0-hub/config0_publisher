@@ -1495,6 +1495,7 @@ class ResourceCmdHelper(ResourcePhases):
                 if results.get("done"):
                     retrieved_results = _awsbuild.retrieve(build_id=results["status"]["build_id"])
                     retrieved_results["done"] = True
+                    retrieved_results["sync_mode"] = False
                     # testtest456
                     print('b3' * 32)
                     print(retrieved_results["status"])
@@ -1587,7 +1588,9 @@ class ResourceCmdHelper(ResourcePhases):
             self.delete_phases_to_json_file()
 
         if tf_results.get("phases") and not tf_results.get("done"):
+            self.logger.debug("f3" * 32)
             self.write_phases_to_json_file(tf_results)
+            self.logger.debug("f4" * 32)
             return tf_results
 
         if tf_results.get("status") or tf_results.get("tf_status"):
@@ -1595,7 +1598,9 @@ class ResourceCmdHelper(ResourcePhases):
             if hasattr(self, "post_create") and callable(self.post_create):
                 self.logger.debug("e4" * 32)
                 self.post_create()
-            
+
+        self.logger.debug("f5" * 32)
+        self.logger.debug("f5" * 32)
         return tf_results
 
     def run(self):
