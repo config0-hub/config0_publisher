@@ -101,6 +101,9 @@ def _s3_get_object(s3_client, bucket, key):
         return content  # Return raw bytes for other content types
 
     except Exception as e:
+        print("#"*32)
+        print(f'# _s3_get_object s3://{bucket}//{key}')
+        print("#"*32)
         print(f"Error fetching object: {e}")
         return False
 
