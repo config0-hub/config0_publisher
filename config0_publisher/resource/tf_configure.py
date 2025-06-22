@@ -64,11 +64,6 @@ class ConfigureTFConfig0Db:
             "APP_DIR": self.app_dir
         }
 
-        # testtest456
-        self.logger.debug('j5'*32)
-        self.logger.json(env_vars)
-        self.logger.debug('j5'*32)
-
         # Create mod params resource arguments and reference
         self.db_values["mod_params"] = {
             "env_vars": env_vars,
@@ -173,20 +168,11 @@ class ConfigureTFConfig0Db:
 
     def _insert_outputs(self):
 
-        # testtest456
-        print('s0'*32)
-        print('s0'*32)
-        print('s0'*32)
-
         try:
             tfstate_values = get_tfstate_file_remote(self.remote_stateful_bucket,
                                                      self.stateful_id)
         except:
             tfstate_values = None
-
-        print('s1'*32)
-        print('s1'*32)
-        print('s1'*32)
 
         if not tfstate_values:
             return
