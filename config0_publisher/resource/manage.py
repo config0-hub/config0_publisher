@@ -1431,7 +1431,7 @@ class ResourceCmdHelper(ResourcePhases):
     def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
 
-        sync_mode = True if os.environ.get("RESOURCE_EXEC_SYNC_MODE") in ["True", "TRUE", "true"] else None
+        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
 
         # Always set execution_id for tracking
         self._set_execution_id()
@@ -1462,7 +1462,7 @@ class ResourceCmdHelper(ResourcePhases):
             # Use the unified execute method with sync parameter
             results = executor.execute(
                 execution_type="lambda",
-                sync_mode=sync_mode,
+                async_mode=async_mode,
                 **invocation_config
             )
 
@@ -1473,7 +1473,7 @@ class ResourceCmdHelper(ResourcePhases):
             # Use the unified execute method with sync parameter
             results = executor.execute(
                 execution_type="codebuild",
-                sync_mode=sync_mode,
+                async_mode=async_mode,
                 **inputargs
             )
 
@@ -1485,13 +1485,13 @@ class ResourceCmdHelper(ResourcePhases):
             print('b2' * 32)
 
             # testtest456
-            if sync_mode:
+            if not async_mode:
                 results = _awsbuild.retrieve(build_id=results["build_id"])
             else:
                 if results.get("done"):
                     results = _awsbuild.retrieve(build_id=results["status"]["build_id"])
                     results["done"] = True
-                    results["sync_mode"] = False
+                    results["async_mode"] = True
         else:
             raise Exception("build_method needs be either lambda/codebuild")
 
@@ -1501,7 +1501,7 @@ class ResourceCmdHelper(ResourcePhases):
             except (FileNotFoundError, PermissionError) as e:
                 os.chdir("/tmp")
 
-        if not sync_mode:
+        if async_mode:
             if results.get("done"):
                 print('b3' * 32)
                 print('b3' * 32)

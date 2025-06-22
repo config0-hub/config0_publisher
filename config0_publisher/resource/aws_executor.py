@@ -542,7 +542,7 @@ class AWSAsyncExecutor:
             resource_id (str): Identifier for the specific resource
             execution_id (str, optional): Execution ID for tracking. Can be used in both sync and async modes.
             output_bucket (str, optional): S3 bucket for execution tracking.
-            sync_mode (bool, optional): Explicitly set sync mode. If None, defaults to execution_id being None.
+            async_mode (bool, optional): Explicitly set async mode. If None, defaults to execution_id being None.
             **kwargs: Additional attributes to configure the execution environment
         """
         # Validate input types
@@ -1156,15 +1156,14 @@ class AWSAsyncExecutor:
         else:
             return result
 
-
-    def execute(self, execution_type="lambda", sync_mode=None, **kwargs):
+    def execute(self, execution_type="lambda", async_mode=None, **kwargs):
         """
         Unified execution method that automatically uses sync or async mode
         based on whether execution_id was provided at init time.
         
         Args:
             execution_type (str): "lambda" or "codebuild"
-            sync_mode (bool, optional): If True, forces synchronous execution
+            async_mode (bool, optional): If True, forces asynchronous execution
             **kwargs: Parameters for the execution
             
         Returns:
@@ -1172,7 +1171,7 @@ class AWSAsyncExecutor:
         """
 
         # sync or traditional execution
-        if sync_mode:
+        if not async_mode:
             return self._execute_sync(execution_type,**kwargs)
 
         # Store original args for history
