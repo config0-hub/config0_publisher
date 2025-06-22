@@ -1493,14 +1493,9 @@ class ResourceCmdHelper(ResourcePhases):
                 results = _awsbuild.retrieve(build_id=results["build_id"])
             else:
                 if results.get("done"):
-                    results = _awsbuild.retrieve(build_id=results["status"]["build_id"])
-                    # testtest456
-                    print('c3' * 32)
-                    print('c3' * 32)
-                    print(results)
-                    print('c4' * 32)
-                    print('c4' * 32)
-                    return results
+                    return {
+                        "results": _awsbuild.retrieve(build_id=results["status"]["build_id"])
+                    }
         else:
             raise Exception("build_method needs be either lambda/codebuild")
 
