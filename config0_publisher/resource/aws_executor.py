@@ -484,6 +484,12 @@ def aws_executor(execution_type="lambda"):
                            json.dumps(result),
                            content_type='application/json')
 
+            _s3_put_object(s3_client,
+                           self.output_bucket,
+                           f"executions/{execution_id}/expire_at",
+                           json.dumps(result),
+                           Body=str(build_expire_at))
+
             # Record this invocation if we have the tracking method
             if hasattr(self, '_record_invocation'):
                 try:
