@@ -97,9 +97,7 @@ def _s3_get_object(s3_client, bucket, key):
         if content_type in ['text/plain', 'application/octet-stream']:
             decoded = content.decode('utf-8').strip()
             return int(decoded) if decoded.lstrip('-+').isdigit() else decoded
-
         return content  # Return raw bytes for other content types
-
     except Exception as e:
         print("#"*32)
         print(f'# _s3_get_object s3://{bucket}//{key}')
@@ -131,49 +129,35 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
 
     # Check for initiated marker
     initiated_key = f"executions/{execution_id}/initiated"
-    try:
-        result["t0"] = int(_s3_get_object(s3_client, output_bucket, initiated_key))
-        if result.get("t0"):
-            result["initiated"] = True
-        else:
-            del result["t0"]
-    except:
-        result["initiated"] = False
-        return result
+    result["t0"] = int(_s3_get_object(s3_client, output_bucket, initiated_key))
+    if result.get("t0"):
+        result["initiated"] = True
+    else:
+        del result["t0"]
 
     if not result.get("initiated"):
         return result
 
     expire_at_key = f"executions/{execution_id}/expire_at"
-    try:
-        expire_at = int(_s3_get_object(s3_client, output_bucket, expire_at_key))
-        if int(time.time()) > expire_at:
-            result["expired"] = True
-    except:
-        result["expired"] = False
+    expire_at = int(_s3_get_object(s3_client, output_bucket, expire_at_key))
+    if int(time.time()) > expire_at:
+        result["expired"] = True
 
     if result.get("expired"):
         return result
 
     status_key = f"executions/{execution_id}/status.json"
     result["status"] = _s3_get_object(s3_client, output_bucket, status_key)
-    try:
-        result["status"] = _s3_get_object(s3_client, output_bucket, status_key)
-        if not result.get("status"):
-            del result["status"]
-    except:
-        result["status"] = False
+    if not result.get("status"):
+        del result["status"]
 
     # Check for done marker
     done_key = f"executions/{execution_id}/done"
-    try:
-       result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
-       if result.get("t1"):
-           result["done"] = True
-       else:
-           del result["t1"]
-    except:
-       result["done"] = False
+    result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
+    if result.get("t1"):
+        result["done"] = True
+    else:
+        del result["t1"]
 
     # only lambda will have this result.json
     if result.get("done") and execution_type == "lambda":
