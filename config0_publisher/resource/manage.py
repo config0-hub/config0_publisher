@@ -1577,6 +1577,13 @@ class ResourceCmdHelper(ResourcePhases):
 
         async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
 
+        print(async_mode)
+        print(async_mode)
+        print(async_mode)
+        print(async_mode)
+        print(async_mode)
+        raise Exception('o5'*32)
+
         if (async_mode or tf_results.get("phases")) and not tf_results.get("done"):
             self.logger.debug("f3" * 32)
             self.write_phases_to_json_file(tf_results)
