@@ -290,7 +290,7 @@ def aws_executor(execution_type="lambda"):
                     payload[attr] = getattr(self, attr)
 
             s3_client = boto3.client('s3')
-            s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(time.time()))
+            s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
             init = True
 
             # Execute based on type
