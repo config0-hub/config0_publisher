@@ -1597,7 +1597,7 @@ class ResourceCmdHelper(ResourcePhases):
         self._set_build_method()
 
         # testtest456
-        self.build_method = "codebuild"
+        self.build_method = "lambda"
 
         if self.method == "create":
             tf_results = self.create()
