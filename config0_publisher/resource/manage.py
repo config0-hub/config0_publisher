@@ -1575,7 +1575,9 @@ class ResourceCmdHelper(ResourcePhases):
             self.logger.debug("f2" * 32)
             self.delete_phases_to_json_file()
 
-        if tf_results.get("phases") and not tf_results.get("done"):
+        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
+
+        if (async_mode or tf_results.get("phases")) and not tf_results.get("done"):
             self.logger.debug("f3" * 32)
             self.write_phases_to_json_file(tf_results)
             self.logger.debug("f4" * 32)
