@@ -1614,7 +1614,7 @@ class ResourceCmdHelper(ResourcePhases):
                 self.write_phases_to_json_file(tf_results)
                 self.logger.debug("o2" * 32)
             self.logger.debug("03" * 32)
-            self.write_resource_to_json_file(self.db_values,
+            self.write_resource_to_json_file(tf_results,
                                              must_exist=True)
 
         elif self.method == "validate":
