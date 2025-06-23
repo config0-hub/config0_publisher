@@ -1609,15 +1609,11 @@ class ResourceCmdHelper(ResourcePhases):
             self.logger.debug("02" * 32)
             print(async_mode)
             print(async_mode)
-            print(async_mode)
-            print(async_mode)
-            print(async_mode)
             if async_mode and not tf_results.get("done"):
                 self.logger.debug("o2" * 32)
                 self.write_phases_to_json_file(tf_results)
                 self.logger.debug("o2" * 32)
             self.logger.debug("03" * 32)
-            raise Exception('05' * 32)
 
         elif self.method == "validate":
             tf_results = self._setup_and_exec_in_aws("validate")
