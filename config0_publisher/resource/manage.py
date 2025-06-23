@@ -1575,18 +1575,7 @@ class ResourceCmdHelper(ResourcePhases):
             self.logger.debug("f2" * 32)
             self.delete_phases_to_json_file()
 
-        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
-
-        self.logger.debug("02" * 32)
-        print(async_mode)
-        print(async_mode)
-        print(async_mode)
-        print(async_mode)
-        print(async_mode)
-        self.logger.debug("03" * 32)
-        raise Exception('05'*32)
-
-        if (async_mode or tf_results.get("phases")) and not tf_results.get("done"):
+        if tf_results.get("phases") and not tf_results.get("done"):
             self.logger.debug("f3" * 32)
             self.write_phases_to_json_file(tf_results)
             self.logger.debug("f4" * 32)
@@ -1614,6 +1603,22 @@ class ResourceCmdHelper(ResourcePhases):
             tf_results = self.create()
         elif self.method == "destroy":
             tf_results = self._setup_and_exec_in_aws("destroy")
+
+            async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
+
+            self.logger.debug("02" * 32)
+            print(async_mode)
+            print(async_mode)
+            print(async_mode)
+            print(async_mode)
+            print(async_mode)
+            if async_mode and not tf_results.get("done"):
+                self.logger.debug("o2" * 32)
+                self.write_phases_to_json_file(tf_results)
+                self.logger.debug("o2" * 32)
+            self.logger.debug("03" * 32)
+            raise Exception('05' * 32)
+
         elif self.method == "validate":
             tf_results = self._setup_and_exec_in_aws("validate")
         elif self.method == "check":
