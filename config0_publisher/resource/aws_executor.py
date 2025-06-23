@@ -83,7 +83,7 @@ def _s3_get_object(s3_client, bucket, key):
     """
     Fetch an object from S3 and return its content.
     - JSON (application/json): Parsed JSON (dict or list).
-    - Plain text (text/plain): Integer if valid, otherwise string.
+    - Plain text (text/plain): Integer if valid, float if valid, otherwise string.
     - Other content types: Raw bytes.
     """
     try:
@@ -92,16 +92,27 @@ def _s3_get_object(s3_client, bucket, key):
         content = response['Body'].read()
 
         if content_type == 'application/json':
-            return json.loads(content.decode('utf-8'))
+            return json.loads(content.decode('utf-8'))  # Parse JSON
         
         if content_type in ['text/plain', 'application/octet-stream']:
             decoded = content.decode('utf-8').strip()
-            return int(decoded) if decoded.lstrip('-+').isdigit() else decoded
-        return content  # Return raw bytes for other content types
+            
+            # First, check if it's a valid float
+            try:
+                value = float(decoded)
+                # If it's a float, return as int if no decimal part, otherwise as float
+                return int(value) if value.is_integer() else value
+            except ValueError:
+                # If not a float, return as a plain string
+                return decoded
+        
+        # For other content types, return raw bytes
+        return content
+    
     except Exception as e:
-        print("#"*32)
-        print(f'# _s3_get_object s3://{bucket}//{key}')
-        print("#"*32)
+        print("#" * 32)
+        print(f'# _s3_get_object s3://{bucket}/{key}')
+        print("#" * 32)
         print(f"Error fetching object: {e}")
         return False
 
