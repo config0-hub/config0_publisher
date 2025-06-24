@@ -1427,6 +1427,7 @@ class ResourceCmdHelper(ResourcePhases):
         async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
 
         # testtest456
+        os.environ["RESOURCE_EXEC_ASYNC_MODE"] = "True"
         async_mode = True
 
         # Always set execution_id for tracking
