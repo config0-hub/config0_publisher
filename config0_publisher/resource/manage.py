@@ -1597,7 +1597,7 @@ class ResourceCmdHelper(ResourcePhases):
         self._set_build_method()
 
         # testtest456
-        self.build_method = "lambda"
+        self.build_method = "codebuild"
         os.environ["RESOURCE_EXEC_ASYNC_MODE"] = "True"
 
         if self.method == "create":
