@@ -83,11 +83,6 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _get_build_status(self, build_ids):
         results = {}
 
-        # testtest456
-        print('j4'*32)
-        print(build_ids)
-        print('j4'*32)
-
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:

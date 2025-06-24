@@ -24,10 +24,8 @@ import jinja2
 import glob
 import json
 import shutil
-import hashlib
 from pathlib import Path
 from copy import deepcopy
-from time import time
 
 from config0_publisher.utilities import id_generator2
 from config0_publisher.loggerly import Config0Logger
@@ -90,12 +88,7 @@ class ResourceCmdHelper(ResourcePhases):
         self.logger = Config0Logger(self.classname)
         self.logger.debug(f"Instantiating {self.classname}")
 
-        # testtest456
-        #SyncToShare.__init__(self)
-
         self.cwd = os.getcwd()
-
-        # this can be over written by the inheriting class
         self.template_dir = None
         self.resources_dir = None
         self.docker_env_file = None
@@ -1477,14 +1470,6 @@ class ResourceCmdHelper(ResourcePhases):
                 **inputargs
             )
 
-            # testtest456
-            print('b0' * 32)
-            self.logger.json(results)
-            print('b1' * 32)
-            self.logger.json(inputargs)
-            print('b2' * 32)
-
-            # testtest456
             if not async_mode:
                 results = _awsbuild.retrieve(build_id=results["build_id"])
             else:
@@ -1564,31 +1549,17 @@ class ResourceCmdHelper(ResourcePhases):
 
         tf_results = self._exec_in_aws(method="create")["results"]
 
-        # testtest456
-        self.logger.debug("e0"*32)
-        self.logger.json(tf_results)
-        self.logger.debug("e1"*32)
-
-        #if tf_results.get("phases") and results.get("in_progress") and tf_results.get("status") is True:
-
         if tf_results.get("done"):
-            self.logger.debug("f2" * 32)
             self.delete_phases_to_json_file()
 
         if tf_results.get("phases") and not tf_results.get("done"):
-            self.logger.debug("f3" * 32)
             self.write_phases_to_json_file(tf_results)
-            self.logger.debug("f4" * 32)
             return tf_results
 
         if tf_results.get("status") or tf_results.get("tf_status"):
-            self.logger.debug("e3" * 32)
             if hasattr(self, "post_create") and callable(self.post_create):
-                self.logger.debug("e4" * 32)
                 self.post_create()
 
-        self.logger.debug("f5" * 32)
-        self.logger.debug("f5" * 32)
         return tf_results
 
     def run(self):
@@ -1599,25 +1570,12 @@ class ResourceCmdHelper(ResourcePhases):
         # testtest456
         self.build_method = "lambda"
         os.environ["RESOURCE_EXEC_ASYNC_MODE"] = "True"
+        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
 
         if self.method == "create":
             tf_results = self.create()
         elif self.method == "destroy":
             tf_results = self._setup_and_exec_in_aws("destroy")
-
-            async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
-
-            self.logger.debug("02" * 32)
-            print(async_mode)
-            print(async_mode)
-            if async_mode and not tf_results.get("done"):
-                self.logger.debug("o2" * 32)
-                self.write_phases_to_json_file(tf_results)
-                self.logger.debug("o2" * 32)
-            elif async_mode and tf_results.get("done"):
-                self.write_resource_to_json_file(tf_results,
-                                                 must_exist=True)
-
         elif self.method == "validate":
             tf_results = self._setup_and_exec_in_aws("validate")
         elif self.method == "check":
@@ -1626,6 +1584,13 @@ class ResourceCmdHelper(ResourcePhases):
             usage()
             print(f'Method "{self.method}" not supported!')
             exit(4)
+
+        if self.method in [ "destroy", "validate", "check"]:
+            if async_mode and not tf_results.get("done"):
+                self.write_phases_to_json_file(tf_results)
+            elif async_mode and tf_results.get("done"):
+                self.write_resource_to_json_file(tf_results,
+                                                 must_exist=True)
 
         # testtest456
         self.logger.debug("t0"*32)

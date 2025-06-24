@@ -256,24 +256,14 @@ def aws_executor(execution_type="lambda"):
 
             # ref 5634623
             if existing_run.get("done"):
-                # testtest456
-                print('j8'*32)
-                print(existing_run)
-                print('j8'*32)
                 self.clear_execution()
                 if "results" in existing_run:
                     return existing_run["results"]
                 return existing_run
 
-            # testtest456
-            print('w0'*32)
-            print(existing_run)
-            print('w1'*32)
             if existing_run.get("status"):
-                print('w2' * 32)
                 existing_run["status"]["in_progress"] = True
                 return existing_run["status"]
-            print('w3' * 32)
 
             # Prepare the payload from kwargs
             payload = {
