@@ -1570,10 +1570,12 @@ class ResourceCmdHelper(ResourcePhases):
 
         self._set_build_method()
 
+        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
+
         # testtest456
         self.build_method = "lambda"
         os.environ["RESOURCE_EXEC_ASYNC_MODE"] = "True"
-        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
+        async_mode = True
 
         if self.method == "create":
             tf_results = self.create()
