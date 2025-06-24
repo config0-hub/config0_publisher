@@ -345,10 +345,7 @@ def aws_executor(execution_type="lambda"):
                     # For Event invocation type, 202 Accepted is expected
                     if status_code != 202:
                         logger.error(f"Lambda invocation failed with status code: {status_code}")
-
-                        # Clean up initiated marker
-                        _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
-                        
+                        self.clear_execution()
                         return {
                             'init': init,
                             'status': False,
@@ -360,10 +357,7 @@ def aws_executor(execution_type="lambda"):
                     
                 except Exception as e:
                     logger.error(f"Lambda invocation failed with exception: {str(e)}")
-                    
-                    # Clean up initiated marker
-                    _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
-                    
+                    self.clear_execution()
                     return {
                         'status': False,
                         'execution_id': self.execution_id,
@@ -457,10 +451,7 @@ def aws_executor(execution_type="lambda"):
 
                 except Exception as e:
                     logger.error(f"CodeBuild start failed with exception: {str(e)}")
-                    
-                    # Clean up initiated marker
-                    _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
-                    
+                    self.clear_execution()
                     return {
                         'init': init,
                         'status': False,
@@ -471,8 +462,7 @@ def aws_executor(execution_type="lambda"):
                     }
                 
             else:
-                # Clean up initiated marker
-                _delete_s3_object(s3_client, self.output_bucket, f"executions/{self.execution_id}/initiated")
+                self.clear_execution()
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
             
             # Prepare result with tracking information
@@ -751,9 +741,10 @@ class AWSAsyncExecutor:
             
             # Check response status
             status_code = response.get('StatusCode')
-            
+
             if status_code != 200:
                 logger.error(f"Lambda invocation failed with status code: {status_code}")
+                self.clear_execution()
                 result = {
                     'status': False,
                     'error': f"Lambda invocation failed with status code: {status_code}",
@@ -784,6 +775,7 @@ class AWSAsyncExecutor:
                 
         except Exception as e:
             logger.error(f"Lambda invocation failed with exception: {str(e)}")
+            self.clear_execution()
             result = {
                 'status': False,
                 'error': f"Lambda invocation failed with exception: {str(e)}",
@@ -957,6 +949,7 @@ class AWSAsyncExecutor:
                 
         except Exception as e:
             logger.error(f"CodeBuild execution failed with exception: {str(e)}")
+            self.clear_execution()
             result = {
                 'status': False,
                 'error': f"CodeBuild execution failed with exception: {str(e)}",
@@ -973,39 +966,42 @@ class AWSAsyncExecutor:
         Returns:
             int: Number of objects deleted, or -1 if an error occurred
         """
-        # Only attempt to clear if we have an execution_id and output_bucket
-        if not self.execution_id or not self.output_bucket:
-            return 0
-            
         logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-        
-        # Delete entire execution directory from S3
-        s3_client = boto3.client('s3')
-        execution_prefix = f"executions/{self.execution_id}/"
 
-        logger.info(f"Deleting execution directory for {self.execution_id}")
+        try:
+            # Only attempt to clear if we have an execution_id and output_bucket
+            if not self.execution_id or not self.output_bucket:
+                return 0
 
-        # List all objects with the execution prefix
-        paginator = s3_client.get_paginator('list_objects_v2')
-        objects_to_delete = []
+            # Delete entire execution directory from S3
+            s3_client = boto3.client('s3')
+            execution_prefix = f"executions/{self.execution_id}/"
 
-        # Collect all objects with the execution prefix
-        for page in paginator.paginate(Bucket=self.output_bucket, Prefix=execution_prefix):
-            if 'Contents' in page:
-                for obj in page['Contents']:
-                    objects_to_delete.append({'Key': obj['Key']})
+            logger.info(f"Deleting execution directory for {self.execution_id}")
 
-        # Delete all objects if any were found
-        if objects_to_delete:
-            s3_client.delete_objects(
-                Bucket=self.output_bucket,
-                Delete={'Objects': objects_to_delete}
-            )
-            logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
-            return len(objects_to_delete)
-        else:
-            logger.info(f"No existing objects found for execution {self.execution_id}")
-            return 0
+            # List all objects with the execution prefix
+            paginator = s3_client.get_paginator('list_objects_v2')
+            objects_to_delete = []
+
+            # Collect all objects with the execution prefix
+            for page in paginator.paginate(Bucket=self.output_bucket, Prefix=execution_prefix):
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+                        objects_to_delete.append({'Key': obj['Key']})
+
+            # Delete all objects if any were found
+            if objects_to_delete:
+                s3_client.delete_objects(
+                    Bucket=self.output_bucket,
+                    Delete={'Objects': objects_to_delete}
+                )
+                logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
+                return len(objects_to_delete)
+            else:
+                logger.info(f"No existing objects found for execution {self.execution_id}")
+                return 0
+        except:
+            logger.error("failed to clear execution s3 buckets")
 
     @aws_executor(execution_type="lambda")
     def exec_lambda(self, **kwargs):
