@@ -1496,6 +1496,10 @@ class ResourceCmdHelper(ResourcePhases):
                 print('b4' * 32)
                 if "results" in results:
                     results = results["results"]
+                if results.get("status") in ["error", False, "False", "false"]:
+                    results["status"] = False
+                elif "return_code" in results and results.get("return_code") != 0:
+                    results["status"] = False
             elif results.get("in_progress"):
                 return { "cinputargs": cinputargs,
                          "results": results }
