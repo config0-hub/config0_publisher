@@ -1424,12 +1424,6 @@ class ResourceCmdHelper(ResourcePhases):
     def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
 
-        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
-
-        # testtest456
-        os.environ["RESOURCE_EXEC_ASYNC_MODE"] = "True"
-        async_mode = True
-
         # Always set execution_id for tracking
         self._set_execution_id()
 
@@ -1571,11 +1565,7 @@ class ResourceCmdHelper(ResourcePhases):
 
         self._set_build_method()
 
-        async_mode = True if os.environ.get("RESOURCE_EXEC_ASYNC_MODE") in ["True", "TRUE", "true"] else None
-
         # testtest456
-        self.build_method = "lambda"
-        os.environ["RESOURCE_EXEC_ASYNC_MODE"] = "True"
         async_mode = True
 
         if self.method == "create":
