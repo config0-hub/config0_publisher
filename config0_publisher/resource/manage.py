@@ -1521,9 +1521,9 @@ class ResourceCmdHelper(ResourcePhases):
                 results["exitcode"] = results["tf_exitcode"]
 
         # testtest456
-        print('b4' * 32)
+        print('c4' * 32)
         print(results)
-        print('b5' * 32)
+        print('c5' * 32)
 
         self.eval_log(results)
         self.eval_failure(results, method)
