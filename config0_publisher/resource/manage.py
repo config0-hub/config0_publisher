@@ -1489,23 +1489,24 @@ class ResourceCmdHelper(ResourcePhases):
 
         if async_mode:
             if results.get("done"):
-                print('b3' * 32)
+                # testtest456
                 print('b3' * 32)
                 print(results)
                 print('b4' * 32)
-                print('b4' * 32)
                 if "results" in results:
                     results = results["results"]
-                if results.get("status") in ["error", False, "False", "false"]:
-                    results["status"] = False
-                elif "return_code" in results and results.get("return_code") != 0:
-                    results["status"] = False
             elif results.get("in_progress"):
                 return { "cinputargs": cinputargs,
                          "results": results }
 
         if not isinstance(results, dict):
             results = to_json(results)
+
+        if results.get("status") in ["error", False, "False", "false"]:
+            results["status"] = False
+        elif "return_code" in results and int(results.get("return_code")) != 0:
+            results["status"] = False
+            results["exitcode"] = int(results["return_code"])
 
         if "tf_status" in results:
             if results.get("tf_status") in [ "False", False]:
@@ -1518,6 +1519,11 @@ class ResourceCmdHelper(ResourcePhases):
                 results["exitcode"] = int(results["tf_exitcode"])
             except:
                 results["exitcode"] = results["tf_exitcode"]
+
+        # testtest456
+        print('b4' * 32)
+        print(results)
+        print('b5' * 32)
 
         self.eval_log(results)
         self.eval_failure(results, method)
