@@ -1424,6 +1424,9 @@ class ResourceCmdHelper(ResourcePhases):
     def _exec_in_aws(self, method="create"):
         """Executes Terraform command in AWS with execution tracking"""
 
+        # testtest456
+        async_mode = True
+
         # Always set execution_id for tracking
         self._set_execution_id()
 
