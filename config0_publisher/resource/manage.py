@@ -126,11 +126,10 @@ class ResourceCmdHelper(ResourcePhases):
         
     def _set_execution_id(self,**kwargs):
 
-        self.execution_id = os.environ.get("EXECUTION_ID", None)
+        self.execution_id = os.environ.get("EXECUTION_ID")
 
         if not self.execution_id:
             raise Exception("5432-2 execution id not set")
-            self.execution_id = kwargs.get("execution_id",id_generator2())
 
         if not self.stateful_id:
             self.execution_id_path = f'logs/unknown/{self.execution_id}'

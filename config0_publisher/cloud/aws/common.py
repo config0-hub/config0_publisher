@@ -70,12 +70,10 @@ class AWSCommonConn(SetClassVarsHelper):
         self.results = kwargs.get("results")
         self.zipfile = None
 
-        self.execution_id = os.environ.get("EXECUTION_ID", None)
+        self.execution_id = os.environ.get("EXECUTION_ID")
 
         if not self.execution_id:
             raise Exception("5432-1 execution id not set")
-            self.execution_id = kwargs.get("execution_id",
-                                           f'{id_generator2()}/{str(int(time()))}')
 
         if not self.results:
             self.results = {
