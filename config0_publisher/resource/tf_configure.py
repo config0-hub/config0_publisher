@@ -177,14 +177,18 @@ class ConfigureTFConfig0Db:
         if not tfstate_values:
             return
 
-        # put outputs in
-        for k,v in tfstate_values["outputs"].items():
+        try:
+            outputs = tfstate_values["outputs"]
+            if not isinstance(outputs,dict):
+                raise Exception('outputs needs to be a dictionary')
+        except:
+            outputs = None
 
-            # already set and exists
-            if self.db_values.get(k):
-                continue
-
-            self.db_values[k] = v['value']
+        if outputs:
+            for k,v in outputs.items():
+                if self.db_values.get(k):
+                    continue
+                self.db_values[k] = v['value']
 
     def post_create(self):
 
