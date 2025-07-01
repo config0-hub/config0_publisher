@@ -178,7 +178,7 @@ class ConfigureTFConfig0Db:
             return
 
         # put outputs in
-        for k,v in tfstate_values["outputs"]:
+        for k,v in tfstate_values["outputs"].items():
 
             # already set and exists
             if self.db_values.get(k):
