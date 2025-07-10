@@ -85,11 +85,18 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _get_build_status(self, build_ids):
         results = {}
 
+        # testtest456
+        self.logger.debug("a"*32)
+        self.logger.debug(build_ids)
+
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
             results[build["id"]] = {"status": build["buildStatus"],
                                    "logarn": build["logs"]["s3LogsArn"]}
+
+        self.logger.json(results)
+        self.logger.debug("b"*32)
 
         return results
 
