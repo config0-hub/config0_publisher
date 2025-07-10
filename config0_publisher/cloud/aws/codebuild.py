@@ -65,7 +65,7 @@ class CodebuildResourceHelper(AWSCommonConn):
                                default_values=self.DEFAULT_CONFIG,
                                **kwargs)
 
-        self.phase_result = {}
+        self.phase_result = {"executed":{}}
 
         # codebuild specific settings and variables
         self.codebuild_client = self.session.client('codebuild')
