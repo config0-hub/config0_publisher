@@ -85,34 +85,30 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _get_build_status(self, build_ids):
         results = {}
 
-        # testtest456
-        self.logger.debug("a"*32)
-        self.logger.debug(build_ids)
-
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
             results[build["id"]] = {"status": build["buildStatus"],
                                    "logarn": build["logs"]["s3LogsArn"]}
 
-        self.logger.json(results)
-        self.logger.debug("b"*32)
-
         return results
 
     def _set_current_build(self):
         _build = self._get_build_status([self.build_id])[self.build_id]
-        self.logarn = _build["logarn"]
+        if not _build:
+            return
 
+        self.logarn = _build["logarn"]
         self.results["build_status"] = _build["status"]
         self.results["inputargs"]["logarn"] = self.logarn
 
     def _check_build_status(self):
         _build = self._get_build_status([self.build_id])[self.build_id]
+        if not _build:
+            return
 
         build_status = _build["status"]
         self.results["build_status"] = build_status
-
         self.logger.debug(f"codebuild status: {build_status}")
 
         if build_status == 'IN_PROGRESS':
