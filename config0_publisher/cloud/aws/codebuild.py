@@ -396,7 +396,7 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _submit(self, sparse_env_vars=True):
 
         if not self.phase_result.get("executed"):
-            self.phase_result["executed"] = {}
+            self.phase_result["executed"] = []
         self.phase_result["executed"].append("trigger_codebuild")
         self.phase_result["status"] = True
         self.results["phases_info"].append(self.phase_result)
