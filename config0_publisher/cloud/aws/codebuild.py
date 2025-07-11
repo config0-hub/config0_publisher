@@ -298,7 +298,7 @@ class CodebuildResourceHelper(AWSCommonConn):
             return env_vars
 
         pattern = r"^CODEBUILD"
-        build_env_vars = self.build_env_vars.items().copy()
+        build_env_vars = self.build_env_vars.copy()
         build_env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
         build_env_vars["EXECUTION_ID"] = self.execution_id
         build_env_vars["OUTPUT_BUCKET_KEY"] = self.execution_id_path
