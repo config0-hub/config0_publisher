@@ -65,8 +65,6 @@ class CodebuildResourceHelper(AWSCommonConn):
                                default_values=self.DEFAULT_CONFIG,
                                **kwargs)
 
-        self.phase_result = {}
-
         # codebuild specific settings and variables
         self.codebuild_client = self.session.client('codebuild')
 
@@ -194,7 +192,6 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             if _time_elapsed > self.build_timeout:
                 failed_message = f"run max time exceeded {self.build_timeout}"
-                self.phase_result["logs"].append(failed_message)
                 self.results["failed_message"] = failed_message
                 self.results["status"] = False
                 self.logger.warn(failed_message)
@@ -206,7 +203,6 @@ class CodebuildResourceHelper(AWSCommonConn):
                 self.results["status_code"] = "timed_out"
                 self.results["status"] = False
                 failed_message = f"build timed out: after {str(self.build_timeout)} seconds."
-                self.phase_result["logs"].append(failed_message)
                 self.results["failed_message"] = failed_message
                 self.logger.warn(failed_message)
                 status = False
@@ -365,19 +361,15 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         _log = f"trigger run on codebuild project: {project_name}, build_id: {self.build_id}, build_expire_at: {self.build_expire_at}"
         self.logger.debug(_log)
-        self.phase_result["logs"].append(_log)
 
         return new_build
 
     def pre_trigger(self, sparse_env_vars=True):
 
-        self.phase_result = self.new_phase("submit")
-
         # we don't want to clobber the intact
         # stateful files from creation
         if self.method == "create":
             self.upload_to_s3_stateful()
-            self.phase_result["executed"].append("upload_to_s3")
 
         return self.get_trigger_inputargs(sparse_env_vars=sparse_env_vars)
 
@@ -395,16 +387,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         if self.buildspec:
             inputargs["buildspecOverride"] = self.buildspec
         return inputargs
-
-    def _submit(self, sparse_env_vars=True):
-
-        if not self.phase_result.get("executed"):
-            self.phase_result["executed"] = []
-        self.phase_result["executed"].append("trigger_codebuild")
-        self.phase_result["status"] = True
-        self.results["phases_info"].append(self.phase_result)
-
-        return self.results
 
     def check(self, wait_int=10, retries=12):
         self._set_current_build()
@@ -437,25 +419,16 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def _retrieve(self):
         self._eval_build()
-        self.phase_result["executed"].append("eval_build")
-
-        if self.s3_stateful_to_share_dir():
-            self.phase_result["executed"].append("s3_share_dir")
-
+        self.s3_stateful_to_share_dir()
         self.clean_output()
 
         if self.output:
             self.results["output"] = self._concat_log()
 
-        self.phase_result["status"] = True
-        self.results["phases_info"].append(self.phase_result)
-
         return self.results
 
-    # this is a single run and not in phases
-    # we use _retrieve instead of retrieve method
     def run(self, sparse_env_vars=True):
-        self._submit(sparse_env_vars=sparse_env_vars)
+        self.trigger_build(sparse_env_vars=sparse_env_vars)
         self._retrieve()
 
         return self.results
