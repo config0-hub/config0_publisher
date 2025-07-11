@@ -336,10 +336,6 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         inputargs = self.get_trigger_inputargs(sparse_env_vars=sparse_env_vars)
 
-        # testtest456
-        self.logger.debug('v'*32)
-        self.logger.json(inputargs)
-        self.logger.debug('w'*32)
         project_name = inputargs["projectName"]
         new_build = self.codebuild_client.start_build(**inputargs)
 
@@ -417,11 +413,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def run(self, sparse_env_vars=True):
 
-        self.logger.debug("a"*32)
-        self.logger.debug("a"*32)
         self.trigger_build(sparse_env_vars=sparse_env_vars)
-        self.logger.debug("b"*32)
-        self.logger.debug("b"*32)
         self._retrieve()
 
         return self.results
