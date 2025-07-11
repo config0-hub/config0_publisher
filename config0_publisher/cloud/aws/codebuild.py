@@ -298,8 +298,13 @@ class CodebuildResourceHelper(AWSCommonConn):
             return env_vars
 
         pattern = r"^CODEBUILD"
+        build_env_vars = self.build_env_vars.items().copy()
+        build_env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
+        build_env_vars["EXECUTION_ID"] = self.execution_id
+        build_env_vars["OUTPUT_BUCKET_KEY"] = self.execution_id_path
+        build_env_vars["BUILD_EXPIRE_AT"] = str(int(self.build_expire_at))
 
-        for _k, _v in self.build_env_vars.items():
+        for _k, _v in build_env_vars.items():
             if not _v:
                 self.logger.debug(f"env var {_k} is empty/None - skipping")
                 continue
@@ -322,38 +327,6 @@ class CodebuildResourceHelper(AWSCommonConn):
             _env_var = {'name': _k,
                          'value': _v,
                          'type': 'PLAINTEXT'}
-
-            env_vars.append(_env_var)
-
-        if "OUTPUT_BUCKET" not in env_vars:
-
-            _env_var = {'name': "OUTPUT_BUCKET",
-                        'value': self.tmp_bucket,
-                        'type': 'PLAINTEXT'}
-
-            env_vars.append(_env_var)
-
-        if "EXECUTION_ID" not in env_vars:
-
-            _env_var = {'name': "EXECUTION_ID",
-                        'value': self.execution_id,
-                        'type': 'PLAINTEXT'}
-
-            env_vars.append(_env_var)
-
-        if "OUTPUT_BUCKET_KEY" not in env_vars:
-
-            _env_var = {'name': "OUTPUT_BUCKET_KEY",
-                        'value': self.execution_id_path,
-                        'type': 'PLAINTEXT'}
-
-            env_vars.append(_env_var)
-
-        if "BUILD_EXPIRE_AT" not in env_vars:
-
-            _env_var = {'name': "BUILD_EXPIRE_AT",
-                        'value': str(int(self.build_expire_at)),
-                        'type': 'PLAINTEXT'}
 
             env_vars.append(_env_var)
 
