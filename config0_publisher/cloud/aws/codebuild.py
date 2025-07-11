@@ -325,27 +325,37 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             env_vars.append(_env_var)
 
-        _env_var = {'name': "OUTPUT_BUCKET",
-                    'value': self.tmp_bucket,
-                    'type': 'PLAINTEXT'}
+        if "OUTPUT_BUCKET" not in env_vars:
 
-        env_vars.append(_env_var)
+            _env_var = {'name': "OUTPUT_BUCKET",
+                        'value': self.tmp_bucket,
+                        'type': 'PLAINTEXT'}
 
-        _env_var = {'name': "EXECUTION_ID",
-                    'value': self.execution_id,
-                    'type': 'PLAINTEXT'}
+            env_vars.append(_env_var)
 
-        env_vars.append(_env_var)
+        if "EXECUTION_ID" not in env_vars:
 
-        _env_var = {'name': "OUTPUT_BUCKET_KEY",
-                    'value': self.execution_id_path,
-                    'type': 'PLAINTEXT'}
+            _env_var = {'name': "EXECUTION_ID",
+                        'value': self.execution_id,
+                        'type': 'PLAINTEXT'}
 
-        env_vars.append(_env_var)
+            env_vars.append(_env_var)
 
-        _env_var = {'name': "BUILD_EXPIRE_AT",
-                    'value': str(int(self.build_expire_at)),
-                    'type': 'PLAINTEXT'}
+        if "OUTPUT_BUCKET_KEY" not in env_vars:
+
+            _env_var = {'name': "OUTPUT_BUCKET_KEY",
+                        'value': self.execution_id_path,
+                        'type': 'PLAINTEXT'}
+
+            env_vars.append(_env_var)
+
+        if "BUILD_EXPIRE_AT" not in env_vars:
+
+            _env_var = {'name': "BUILD_EXPIRE_AT",
+                        'value': str(int(self.build_expire_at)),
+                        'type': 'PLAINTEXT'}
+
+            env_vars.append(_env_var)
 
         return env_vars
 
