@@ -17,7 +17,7 @@ class TFCmdOnAWS(TFAppHelper):
         self.envfile = kwargs["envfile"]  # e.g. build_env_vars.env
 
         # if initial apply, then if apply fails, it will automatically destroy
-        self.initial_apply = os.environ.get("CONFIG0_INITIAL_APPLY")
+        self.initial_apply = kwargs.get("initial_apply")
 
         self.tf_bucket_path = kwargs["tf_bucket_path"]
         self.run_share_dir = kwargs["run_share_dir"]

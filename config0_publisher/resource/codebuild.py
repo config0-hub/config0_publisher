@@ -103,6 +103,7 @@ class Codebuild(CodebuildParams):
                                  envfile="build_env_vars.env",
                                  binary=self.binary,
                                  version=self.version,
+                                 initial_apply=kwargs.get("initial_apply"),
                                  tf_bucket_path=self.tf_bucket_path,
                                  arch="linux_amd64"
                                  )
