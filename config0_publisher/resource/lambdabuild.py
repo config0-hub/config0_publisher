@@ -70,19 +70,13 @@ class LambdaParams(TFAwsBaseBuildParams):
 
         # get results from phase json file
         # which should be set
-        self.lambda_helper = LambdaResourceHelper(execution_id_path=self.execution_id_path,
-                                                  **self.phases_info)
+        self.lambda_helper = LambdaResourceHelper(execution_id_path=self.execution_id_path)
         self.lambda_helper.retrieve(**inputargs)
         return self.lambda_helper.results
 
     def upload_to_s3(self,**inputargs):
 
-        if not hasattr(self,"submit"):
-            self.phase_result = self.new_phase("submit")
-
         self.lambda_helper.upload_to_s3(**inputargs)
-        self.phase_result["executed"].append("upload_to_s3")
-
         return self.lambda_helper.results
 
     def pre_trigger(self,**inputargs):

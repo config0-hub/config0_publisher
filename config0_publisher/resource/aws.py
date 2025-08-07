@@ -14,7 +14,6 @@ class TFAwsBaseBuildParams(object):
                                             1800))
 
         self.aws_region = kwargs.get("aws_region")
-        self.phases_info = kwargs.get("phases_info")
         self.build_env_vars = kwargs.get("build_env_vars")
         self.ssm_name = kwargs.get("ssm_name")
         self.remote_stateful_bucket = kwargs.get("remote_stateful_bucket")

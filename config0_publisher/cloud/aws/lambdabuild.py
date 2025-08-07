@@ -129,8 +129,6 @@ class LambdaResourceHelper(AWSCommonConn):
 
     def pre_trigger(self):
 
-        self.phase_result = self.new_phase("submit")
-
         # we don't want to clobber the intact
         # stateful files from creation
         if self.method in ["create", "pre-create"]:

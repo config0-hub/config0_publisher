@@ -328,7 +328,6 @@ class AWSCommonConn(SetClassVarsHelper):
         else:
             _log = f"zip file uploaded to {s3_dst}"
             self.logger.debug_highlight(_log)
-            self.phase_result["logs"].append(_log)
 
         return status
 
