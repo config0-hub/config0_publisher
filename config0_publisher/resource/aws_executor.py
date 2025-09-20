@@ -207,7 +207,7 @@ def aws_executor(execution_type="lambda"):
 
             # Initialize logger
             logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-            logger.debug(f"Starting {execution_type} execution with {func.__name__}")
+            logger.debug(f"Starting {execution_type} execution with {func.__name__} within decorator")
 
             # Get resource identifiers
             resource_type = getattr(self, 'resource_type', 'unknown')
@@ -229,12 +229,11 @@ def aws_executor(execution_type="lambda"):
                 
             # If not found in build_env_vars, try environment variables
             if not max_execution_time:
-                if os.environ.get('BUILD_TIMEOUT'):
-                    try:
-                        max_execution_time = int(os.environ.get('BUILD_TIMEOUT'))
-                        logger.debug(f"Using timeout from env BUILD_TIMEOUT: {max_execution_time}s")
-                    except (ValueError, TypeError):
-                        pass
+                try:
+                    max_execution_time = int(os.environ.get('BUILD_TIMEOUT'))
+                    logger.debug(f"Using timeout from env BUILD_TIMEOUT: {max_execution_time}s")
+                except (ValueError, TypeError):
+                    pass
 
             # Finally, allow explicit override
             if kwargs.get('max_execution_time'):
@@ -256,12 +255,14 @@ def aws_executor(execution_type="lambda"):
 
             # ref 5634623
             if existing_run.get("done"):
+                logger.debug("existing run is done, clearing execution")
                 self.clear_execution()
                 if "results" in existing_run:
                     return existing_run["results"]
                 return existing_run
 
             if existing_run.get("status"):
+                logger.debug("existing run in progress, returning status")
                 existing_run["status"]["in_progress"] = True
                 return existing_run["status"]
 
@@ -281,6 +282,7 @@ def aws_executor(execution_type="lambda"):
 
             s3_client = boto3.client('s3')
             s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
+            logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
             init = True
 
             # Execute based on type
@@ -288,53 +290,50 @@ def aws_executor(execution_type="lambda"):
                 # Get Lambda function details - only use FunctionName from invocation_config
                 function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
                 lambda_region = getattr(self, 'lambda_region', 'us-east-1')
+                logger.debug(f"Invoking Lambda function {function_name} in region {lambda_region}")
                 
-                # Initialize Lambda client with specific region for Lambda
-                lambda_client = boto3.client('lambda', region_name=lambda_region)
-                
-                try:
-                    # Check if this is a pre-configured payload from Lambdabuild
-                    if kwargs.get('Payload'):
-                        # If it's a string, assume it's already JSON formatted
-                        if isinstance(kwargs['Payload'], str):
-                            try:
-                                payload_obj = json.loads(kwargs['Payload'])
-                                # Ensure payload is a dict
-                                if not isinstance(payload_obj, dict):
-                                    payload_obj = {}
-                            except:
-                                payload_obj = {}
-                        else:
-                            # If it's already a dict, use it directly
-                            payload_obj = kwargs['Payload']
-                            
-                        # Add tracking info if not already present
-                        payload_obj['execution_id'] = self.execution_id
-                        payload_obj['output_bucket'] = self.output_bucket
-                            
-                        lambda_payload = json.dumps(payload_obj)
+                # Check if this is a pre-configured payload from Lambdabuild
+                if kwargs.get('Payload'):
+                    # If it's a string, assume it's already JSON formatted
+                    if isinstance(kwargs['Payload'], str):
+                        try:
+                            payload_obj = json.loads(kwargs['Payload'])
+                        except:
+                            payload_obj = {}
+                        # Ensure payload is a dict
+                        if not isinstance(payload_obj, dict):
+                            payload_obj = {}
                     else:
-                        # Use our standard payload format
-                        lambda_payload = json.dumps(payload)
-                    
-                    # Prepare Lambda invocation parameters - always use Event mode
-                    lambda_params = {
-                        'FunctionName': function_name,
-                        'InvocationType': 'Event',  # Always async
-                        'Payload': lambda_payload
-                    }
-                    
-                    # LogType is omitted as it's not needed for Event invocations
-                    
-                    # Invoke Lambda function
+                        # If it's already a dict, use it directly
+                        payload_obj = kwargs['Payload']
+
+                    # Add tracking info if not already present
+                    payload_obj['execution_id'] = self.execution_id
+                    payload_obj['output_bucket'] = self.output_bucket
+
+                    lambda_payload = json.dumps(payload_obj)
+                else:
+                    # Use our standard payload format
+                    lambda_payload = json.dumps(payload)
+
+                # Prepare Lambda invocation parameters - always use Event mode
+                lambda_params = {
+                    'FunctionName': function_name,
+                    'InvocationType': 'Event',  # Always async
+                    'Payload': lambda_payload
+                }
+                # LogType is omitted as it's not needed for Event invocations
+
+                try:
+                    # Initialize Lambda client with specific region for Lambda
+                    lambda_client = boto3.client('lambda', region_name=lambda_region)
                     response = lambda_client.invoke(**lambda_params)
-                    
-                    # Check response status
                     status_code = response.get('StatusCode')
-                    
+                    logger.debug(f"Lambda invocation with status code: {status_code}")
+
                     # For Event invocation type, 202 Accepted is expected
                     if status_code != 202:
-                        logger.error(f"Lambda invocation failed with status code: {status_code}")
+                        logger.error(f'Lambda invocation failed with with lambda_params: {lambda_params} and status code: {status_code}')
                         self.clear_execution()
                         return {
                             'init': init,
@@ -344,9 +343,10 @@ def aws_executor(execution_type="lambda"):
                             'error': f"Lambda invocation failed with status code: {status_code}",
                             'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
                         }
-                    
+
                 except Exception as e:
-                    logger.error(f"Lambda invocation failed with exception: {str(e)}")
+                    logger.error(
+                        f'Lambda invocation failed with with lambda_params: {lambda_params} with exception: {str(e)}')
                     self.clear_execution()
                     return {
                         'status': False,
