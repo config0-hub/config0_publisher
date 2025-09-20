@@ -329,10 +329,7 @@ def aws_executor(execution_type="lambda"):
                     lambda_client = boto3.client('lambda', region_name=lambda_region)
                     response = lambda_client.invoke(**lambda_params)
                     status_code = response.get('StatusCode')
-                    logger.debug(f"Lambda invocation with status code: {status_code}")
-
-                    # testing
-                    logger.debug(f"lambda response: {(response)}")
+                    logger.debug(f"Lambda invocated with {lambda_params} status code: {status_code}")
 
                     # For Event invocation type, 202 Accepted is expected
                     if status_code != 202:
