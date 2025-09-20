@@ -536,6 +536,8 @@ class AWSAsyncExecutor:
             async_mode (bool, optional): Explicitly set async mode. If None, defaults to execution_id being None.
             **kwargs: Additional attributes to configure the execution environment
         """
+        self.logger = Config0Logger("AWSAsyncExecutor", logcategory="cloudprovider")
+
         # Validate input types
         if not isinstance(resource_type, str):
             raise TypeError(f"resource_type must be a string, got {type(resource_type).__name__}")
@@ -554,6 +556,7 @@ class AWSAsyncExecutor:
 
         # Set tmp_bucket for backward compatibility
         self.tmp_bucket = output_bucket
+
 
     def _record_invocation(self, invocation_type, is_followup, args, result, done=False):
         """
@@ -672,8 +675,7 @@ class AWSAsyncExecutor:
         # Store original args for history
         original_args = kwargs.copy()
         
-        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-        logger.debug("Executing Lambda function in synchronous mode")
+        self.logger.debug("Executing Lambda function in synchronous mode")
         
         # Get Lambda function details
         function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
@@ -733,7 +735,7 @@ class AWSAsyncExecutor:
             status_code = response.get('StatusCode')
 
             if status_code != 200:
-                logger.error(f"Lambda invocation failed with status code: {status_code}")
+                self.logger.error(f"Lambda invocation failed with status code: {status_code}")
                 self.clear_execution()
                 result = {
                     'status': False,
@@ -764,7 +766,7 @@ class AWSAsyncExecutor:
                 return result
                 
         except Exception as e:
-            logger.error(f"Lambda invocation failed with exception: {str(e)}")
+            self.logger.error(f"Lambda invocation failed with exception: {str(e)}")
             self.clear_execution()
             result = {
                 'status': False,
@@ -782,8 +784,7 @@ class AWSAsyncExecutor:
         # Store original args for history
         original_args = kwargs.copy()
         
-        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
-        logger.debug("Starting CodeBuild project in synchronous mode")
+        self.logger.debug("Starting CodeBuild project in synchronous mode")
         
         # Start with all the original parameters
         build_params = dict(kwargs)
@@ -853,7 +854,7 @@ class AWSAsyncExecutor:
             build_id = build.get('id')
             
             if not build_id:
-                logger.error("Failed to start CodeBuild project")
+                self.logger.error("Failed to start CodeBuild project")
                 result = {
                     'status': False,
                     'error': "Failed to start CodeBuild project",
@@ -863,7 +864,7 @@ class AWSAsyncExecutor:
                 self._record_invocation('codebuild_direct', False, original_args, result)
                 return result
             
-            logger.debug(f"CodeBuild project started with build ID: {build_id}")
+            self.logger.debug(f"CodeBuild project started with build ID: {build_id}")
             
             # Record the build start - not a followup
             start_result = {
@@ -938,7 +939,7 @@ class AWSAsyncExecutor:
             return timeout_result
                 
         except Exception as e:
-            logger.error(f"CodeBuild execution failed with exception: {str(e)}")
+            self.logger.error(f"CodeBuild execution failed with exception: {str(e)}")
             self.clear_execution()
             result = {
                 'status': False,
@@ -956,7 +957,6 @@ class AWSAsyncExecutor:
         Returns:
             int: Number of objects deleted, or -1 if an error occurred
         """
-        logger = Config0Logger("AWSExecutor", logcategory="cloudprovider")
 
         try:
             # Only attempt to clear if we have an execution_id and output_bucket
@@ -967,7 +967,7 @@ class AWSAsyncExecutor:
             s3_client = boto3.client('s3')
             execution_prefix = f"executions/{self.execution_id}/"
 
-            logger.info(f"Deleting execution directory for {self.execution_id}")
+            self.logger.info(f"Deleting execution directory for {self.execution_id}")
 
             # List all objects with the execution prefix
             paginator = s3_client.get_paginator('list_objects_v2')
@@ -985,23 +985,23 @@ class AWSAsyncExecutor:
                     Bucket=self.output_bucket,
                     Delete={'Objects': objects_to_delete}
                 )
-                logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
+                self.logger.info(f"Deleted {len(objects_to_delete)} objects from execution directory")
                 return len(objects_to_delete)
             else:
-                logger.info(f"No existing objects found for execution {self.execution_id}")
+                self.logger.info(f"No existing objects found for execution {self.execution_id}")
                 return 0
         except:
-            logger.error("failed to clear execution s3 buckets")
+            self.logger.error("failed to clear execution s3 buckets")
 
     @aws_executor(execution_type="lambda")
     def exec_lambda(self, **kwargs):
         """
         Execute infrastructure operation through AWS Lambda.
-        
+
         Executes the operation via AWS Lambda. If execution_id is provided at init time,
         this will use asynchronous execution with S3 tracking. Otherwise, it will
         execute synchronously and return the result directly.
-        
+
         Args:
             **kwargs: Operation parameters including:
                 - method: Operation method (create, destroy, etc.)
@@ -1015,8 +1015,8 @@ class AWSAsyncExecutor:
         Returns:
             dict: Execution result or tracking information depending on execution mode
         """
-        pass  # Implementation handled by decorator or bypassed in sync mode
-    
+        self.logger.warn(f"exec_lambda should be handled by decorator or bypassed in sync mode")
+
     @aws_executor(execution_type="codebuild")
     def exec_codebuild(self, **kwargs):
         """
@@ -1044,8 +1044,8 @@ class AWSAsyncExecutor:
         Returns:
             dict: Execution result or tracking information depending on execution mode
         """
-        pass  # Implementation handled by decorator or bypassed in sync mode
-    
+        self.logger.warn(f"exec_codebuild should be handled by decorator or bypassed in sync mode")
+
     def check_execution_status(self,execution_type="lambda"):
         """
         Check the status of an execution.
@@ -1177,7 +1177,10 @@ class AWSAsyncExecutor:
 
         # Otherwise use the async decorated methods
         if execution_type == "lambda":
+            # testtest456
+            print("a"*32)
             result = self.exec_lambda(**kwargs)
+            print("b"*32)
         elif execution_type == "codebuild":
             result = self.exec_codebuild(**kwargs)
         else:
