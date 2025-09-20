@@ -1015,14 +1015,7 @@ class AWSAsyncExecutor:
         Returns:
             dict: Execution result or tracking information depending on execution mode
         """
-        # testtest456
-        self.logger.debug('j0'*32)
-        self.logger.debug('j0'*32)
-        self.logger.debug('j0'*32)
         self.logger.warn(f"exec_lambda should be handled by decorator or bypassed in sync mode")
-        self.logger.debug('j1'*32)
-        self.logger.debug('j1'*32)
-        self.logger.debug('j1'*32)
 
     @aws_executor(execution_type="codebuild")
     def exec_codebuild(self, **kwargs):
@@ -1184,10 +1177,7 @@ class AWSAsyncExecutor:
 
         # Otherwise use the async decorated methods
         if execution_type == "lambda":
-            # testtest456
-            print("a"*32)
             result = self.exec_lambda(**kwargs)
-            print("b"*32)
         elif execution_type == "codebuild":
             result = self.exec_codebuild(**kwargs)
         else:
