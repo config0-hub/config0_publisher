@@ -331,6 +331,9 @@ def aws_executor(execution_type="lambda"):
                     status_code = response.get('StatusCode')
                     logger.debug(f"Lambda invocation with status code: {status_code}")
 
+                    # testing
+                    logger.debug(f"lambda response: {json.dumps(response)}")
+
                     # For Event invocation type, 202 Accepted is expected
                     if status_code != 202:
                         logger.error(f'Lambda invocation failed with with lambda_params: {lambda_params} and status code: {status_code}')
