@@ -44,14 +44,6 @@ class DataClassOsEnvVars:
             setattr(self, k.lower(), str(os.environ[k]))
 
 
-def dict_to_classobj(values):
-    return DataClassKwargs(kwargs=values)
-
-
-def os_environ_to_classobj(keys):
-    return DataClassOsEnvVars(keys=keys)
-
-
 class SetClassVarsHelper:
 
     def __init__(self, set_env_vars=None, kwargs=None, env_vars=None, default_values=None, set_default_null=None):
