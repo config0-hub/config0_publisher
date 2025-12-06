@@ -35,7 +35,6 @@ from config0_publisher.utilities import to_json
 from config0_publisher.utilities import to_jsonfile
 from config0_publisher.utilities import get_hash
 from config0_publisher.utilities import eval_str_to_join
-from config0_publisher.shellouts import execute4
 from config0_publisher.shellouts import execute3
 from config0_publisher.serialization import create_envfile
 from config0_publisher.templating import list_template_files
@@ -1019,10 +1018,6 @@ class ResourceCmdHelper(ResourcePhases):
     @staticmethod
     def execute2(cmd, **kwargs):
         return execute3(cmd, **kwargs)
-
-    @staticmethod
-    def execute4(cmd, **kwargs):
-        return execute4(cmd, **kwargs)
 
     def cmd_failed(self, **kwargs):
         failed_message = kwargs.get("failed_message")
