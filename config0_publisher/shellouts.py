@@ -87,26 +87,6 @@ def execute3(cmd, **kwargs):
 def execute2(cmd, **kwargs):
     return execute3(cmd, **kwargs)
 
-def execute3a(cmd, **kwargs):
-
-    shellout_exe = ShellOutExecute(cmd,
-                                   unbuffered=None,
-                                   **kwargs)
-
-    shellout_exe.execute3a()
-
-    if kwargs.get("print_out"):
-        shellout_exe.print_out()
-
-    if kwargs.get("exit_error"):
-        exit(shellout_exe.results["exitcode"])
-
-    return shellout_exe.results
-
-def execute4(cmd, **kwargs):
-
-    return execute3a(cmd, **kwargs)
-
 def execute5(cmd, **kwargs):
 
     shellout_exe = ShellOutExecute(cmd,
@@ -497,18 +477,6 @@ class ShellOutExecute(object):
             return int(exitcode)
         except:
             return exitcode
-
-    def execute3a(self):
-
-        if os.environ.get("JIFFY_ENHANCED_LOG"):
-            self.logger.debug_highlight("ShellOutExecute:::method: execute3a")
-
-        self.results["exitcode"] = self.system(direct_return=True)
-        self.results["output"] = open(self.logfile, "r").read()
-        self._eval_execute()
-        self._cleanup_system_exe()
-
-        return self.results
 
     def execute5(self):
 
