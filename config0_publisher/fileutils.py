@@ -60,62 +60,35 @@ def count_files_targz(file_path: str) -> int:
     return count
 
 def pyzip(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_empty: bool = True) -> Optional[str]:
-
     if not filename.endswith('.zip'):
         filename += '.zip'
-    
+
     zip_path = os.path.join(dst, filename)
-    
+
     # Ensure destination directory exists
-    try:
-        os.makedirs(dst, exist_ok=True)
-    except Exception as e:
-        error_msg = f"ref 34534263246/pyzip: Failed to create destination directory: {str(e)}"
-        print(error_msg)
-        if exit_error:
-            raise Exception(error_msg)
-        return False
-    
+    os.makedirs(dst, exist_ok=True)
+
     if os.path.exists(src):
-        try:
-            # Create a ZipFile object
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                files_added = 0
-                # Check if src is a file or directory
-                if os.path.isfile(src):
-                    # If src is a file, just add it to the zip
-                    arcname = os.path.basename(src)
-                    zipf.write(src, arcname)
-                    files_added += 1
-                else:
-                    # Walk through the directory
-                    for root, _, files in os.walk(src):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            # Calculate path relative to src
-                            arcname = os.path.relpath(file_path, src)
-                            # Add file to zip
-                            zipf.write(file_path, arcname)
-                            files_added += 1
-        except zipfile.BadZipFile as e:
-            error_msg = f"ref 34534263246/pyzip: Bad zip file: {str(e)}"
-            print(error_msg)
-            if exit_error:
-                raise Exception(error_msg)
-            return False
-        except PermissionError as e:
-            error_msg = f"ref 34534263246/pyzip: Permission denied: {str(e)}"
-            print(error_msg)
-            if exit_error:
-                raise Exception(error_msg)
-            return False
-        except Exception as e:
-            error_msg = f"ref 34534263246/pyzip: zip-ing failed: {str(e)}"
-            print(f"{error_msg}\n{traceback.format_exc()}")
-            if exit_error:
-                raise Exception(error_msg)
-            return False
-            
+        # Create a ZipFile object
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            files_added = 0
+            # Check if src is a file or directory
+            if os.path.isfile(src):
+                # If src is a file, just add it to the zip
+                arcname = os.path.basename(src)
+                zipf.write(src, arcname)
+                files_added += 1
+            else:
+                # Walk through the directory
+                for root, _, files in os.walk(src):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        # Calculate path relative to src
+                        arcname = os.path.relpath(file_path, src)
+                        # Add file to zip
+                        zipf.write(file_path, arcname)
+                        files_added += 1
+
         # Check if zip file was created and is not empty
         if not os.path.exists(zip_path):
             error_msg = f"ref 34534263246/pyzip: zip file was not created at {zip_path}"
@@ -123,7 +96,7 @@ def pyzip(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_e
             if exit_error:
                 raise Exception(error_msg)
             return False
-            
+
         # Check if the zip file is empty (either no files added or zero file size)
         if files_added == 0 or os.path.getsize(zip_path) == 0:
             warning_msg = f"WARNING: ref 34534263246/pyzip: The created zip file appears to be empty: {zip_path}"

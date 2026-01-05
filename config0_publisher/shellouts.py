@@ -261,9 +261,13 @@ class ShellOutExecute(object):
             return
 
         try:
+            self.logger.debug("--- Shell command output start ---")
             self.logger.debug(output)
+            self.logger.debug("--- Shell command output end ---")
         except:
+            print("--- Shell command output start ---")
             print(output)
+            print("--- Shell command output end ---")
 
     def _convert_output_to_json(self):
 
@@ -371,11 +375,21 @@ class ShellOutExecute(object):
             if exitcode is None:
                 continue
 
-            _last_lines = process.stdout.readlines()
+            # Process has exited - wait for it to fully complete to ensure all buffered output is flushed
+            process.wait()
 
-            if _last_lines:
-                for _last_line in _last_lines:
-                    self._eval_log_line(_last_line, lines)
+            # Read all remaining buffered output
+            # Use readlines() to ensure we get everything, even if readline() returned empty earlier
+            # This handles the case where output was buffered and not immediately available when readline() was called
+            try:
+                _last_lines = process.stdout.readlines()
+                if _last_lines:
+                    for _last_line in _last_lines:
+                        self._eval_log_line(_last_line, lines)
+            except (ValueError, OSError):
+                # Pipe is closed, no more data available
+                pass
+
             break
 
         if self.logfile_handle:
