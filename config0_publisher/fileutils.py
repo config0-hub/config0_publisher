@@ -60,10 +60,14 @@ def count_files_targz(file_path: str) -> int:
     return count
 
 def pyzip(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_empty: bool = True) -> Optional[str]:
+    # testtest456
+    print("x0" * 32)
     if not filename.endswith('.zip'):
         filename += '.zip'
 
     zip_path = os.path.join(dst, filename)
+    print("x1" * 32)
+    raise Exception("x2"*32)
 
     # Ensure destination directory exists
     os.makedirs(dst, exist_ok=True)
@@ -76,6 +80,7 @@ def pyzip(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_e
             if os.path.isfile(src):
                 # If src is a file, just add it to the zip
                 arcname = os.path.basename(src)
+                print(f'adding file {src} as {arcname}')
                 zipf.write(src, arcname)
                 files_added += 1
             else:
@@ -86,6 +91,7 @@ def pyzip(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_e
                         # Calculate path relative to src
                         arcname = os.path.relpath(file_path, src)
                         # Add file to zip
+                        print(f'adding file {src} as {arcname}')
                         zipf.write(file_path, arcname)
                         files_added += 1
 
