@@ -67,14 +67,17 @@ def pyzip(src: str, dst: str, filename: str, exit_error: bool = True, raise_on_e
 
     zip_path = os.path.join(dst, filename)
     print("x1" * 32)
-    raise Exception("x2"*32)
 
     # Ensure destination directory exists
     os.makedirs(dst, exist_ok=True)
 
+    print("x2" * 32)
+
     if os.path.exists(src):
+        print("x3" * 32)
         # Create a ZipFile object
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            print("x4" * 32)
             files_added = 0
             # Check if src is a file or directory
             if os.path.isfile(src):
