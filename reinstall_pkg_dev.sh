@@ -1,4 +1,4 @@
-export PYTHON_DIR=${PYTHON_DIR:=/usr/local/lib/python3.9/dist-packages}
+export PYTHON_DIR=${PYTHON_DIR:=/usr/local/lib/python3.11/dist-packages}
 export CURRENT_DIR=`pwd`
 export VERSION="0.300"
 
