@@ -78,7 +78,7 @@ class TFCmdOnAWS(TFAppHelper):
             { "load_env_file - load env " : f'if [ -f {self.stateful_dir}/run/{envfile}.enc ]; then cat {self.stateful_dir}/run/{envfile}.enc | base64 -d > {self.stateful_dir}/{self.envfile}; fi' }
         ]
 
-        # testtest456 need to modify this for SSM_NAMES plural
+        # TODO: need to modify this for SSM_NAMES (plural)?
         cmds.extend(self._get_ssm_concat_cmds())
         cmds.append(self._set_src_envfiles_cmd())
 
@@ -165,6 +165,7 @@ class TFCmdOnAWS(TFAppHelper):
 
     def get_tfplan_and_apply(self,destroy_on_failure=None):
 
+        # on initial apply we will destroy infra if create fails
         if self.initial_apply:
             destroy_on_failure = True
 

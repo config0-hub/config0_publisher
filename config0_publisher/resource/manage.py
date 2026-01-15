@@ -169,7 +169,7 @@ class ResourceCmdHelper(ResourcePhases):
         # execute it final time to synchronize class vars set
         self.set_class_vars()
 
-        # testtest456 not sure the below is needed
+        # TODO: not sure the below is needed
         self.syncvars.set()
 
         self._set_env_vars(env_vars=self.syncvars.class_vars)  # synchronize to env variables

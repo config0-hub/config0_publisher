@@ -140,9 +140,6 @@ class Lambdabuild(LambdaParams):
 
         if self.method in ["create","apply"]:
             cmds = self.tfcmds.get_tf_create()
-            #cmds = self.tfcmds.get_tfplan_and_apply()
-        elif self.method == "pre-create":
-            cmds.extend(self.tfcmds.get_tf_pre_create())
         elif self.method == "validate":
             cmds.extend(self.tfcmds.get_tf_chk_drift())
         elif self.method == "check":
@@ -150,7 +147,7 @@ class Lambdabuild(LambdaParams):
         elif self.method == "destroy":
             cmds = self.tfcmds.get_tf_destroy()
         else:
-            raise Exception("method needs to be create/validate/pre-create/check/apply/destroy")
+            raise Exception("method needs to be create/validate/check/apply/destroy")
 
         return cmds
 

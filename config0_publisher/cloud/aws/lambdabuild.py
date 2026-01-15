@@ -131,7 +131,7 @@ class LambdaResourceHelper(AWSCommonConn):
 
         # we don't want to clobber the intact
         # stateful files from creation
-        if self.method in ["create", "pre-create"]:
+        if self.method in ["create"]:
             self.upload_to_s3_stateful()
 
         self.build_timeout = self._get_timeout()
@@ -222,8 +222,6 @@ class LambdaResourceHelper(AWSCommonConn):
             self.results["failed_message"] = "the resources have drifted"
         elif self.results.get("status") is False and self.method == "check":
             self.results["failed_message"] = "the resources failed check"
-        elif self.results.get("status") is False and self.method == "pre-create":
-            self.results["failed_message"] = "the resources failed pre-create"
         elif self.results.get("status") is False and self.method == "apply":
             self.results["failed_message"] = "applying of resources have failed"
         elif self.results.get("status") is False and self.method == "create":

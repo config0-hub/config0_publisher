@@ -173,12 +173,6 @@ class TFConstructor(object):
                                           default=600,
                                           types="int")
 
-        if not hasattr(self.stack, "create_remote_state"):
-            include.append("create_remote_state")
-            self.stack.parse.add_optional(key="create_remote_state",
-                                          default=True,
-                                          types="bool,str")
-
         if not hasattr(self.stack, "drift_protection"):
             include.append("drift_protection")
             self.stack.parse.add_optional(key="drift_protection",
@@ -190,9 +184,6 @@ class TFConstructor(object):
 
         self.stack.parse.tag_key(key="remote_stateful_bucket",
                                  tags="resource,db,execgroup_inputargs,tf_exec_env")
-
-        self.stack.parse.tag_key(key="create_remote_state",
-                                 tags="execgroup_inputargs")
 
         self.stack.parse.tag_key(key="drift_protection",
                                  tags="execgroup_inputargs")
