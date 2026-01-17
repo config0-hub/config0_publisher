@@ -78,12 +78,21 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         Get resource_type and resource_id from env vars or use defaults.
         Returns tuple (resource_type, resource_id).
         """
-        resource_type = os.environ.get("RESOURCE_TYPE", "codebuild_srcfile")
-        resource_id = os.environ.get("RESOURCE_ID", self.stateful_id)
+        resource_type = os.environ.get("RESOURCE_TYPE")
+        resource_id = os.environ.get("RESOURCE_ID")
+
+        if not resource_type:
+            self.logger.debug("RESOURCE_TYPE env var not set, using default 'codebuild_srcfile'")
+            resource_type = "codebuild_srcfile"
+
+        if not resource_id:
+            resource_id = self.stateful_id
+            self.logger.debug(f"RESOURCE_ID env var not set, using stateful_id {self.stateful_id} as resource_id")
+
         if not resource_id:
             raise Exception("RESOURCE_ID env var not set and stateful_id is not available")
+
         self.logger.debug(f"Found RESOURCE_ID env var: {resource_id}, RESOURCE_TYPE: {resource_type}")
-        raise Exception("testtest456")
         return resource_type, resource_id
 
     def _get_fqn_app_dir_path(self):
@@ -203,6 +212,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         # Get execution_id and resource parameters
         execution_id = self._get_execution_id()
         resource_type, resource_id = self._get_resource_type_id()
+        raise Exception("testtest456")
 
         # Set EXECUTION_ID in environment for CodebuildResourceHelper
         # (it needs this from AWSCommonConn.__init__)
