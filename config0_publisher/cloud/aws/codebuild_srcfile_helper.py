@@ -295,7 +295,11 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 # Ensure init or in_progress is set for exit code 135 (phase2complete)
                 if not results.get("init") and not results.get("in_progress"):
                     results["init"] = True
+                self.logger.info(f"Writing phases file with init=True for exit code 135. phases file: {self.config0_phases_json_file}")
                 self.write_phases_to_json_file(results)
+                self.logger.info(f"Phases file written successfully. Results keys: {list(results.keys())}")
+            else:
+                self.logger.warn(f"Not writing phases file - phases={results.get('phases')}, done={results.get('done')}")
             
             return results
 
