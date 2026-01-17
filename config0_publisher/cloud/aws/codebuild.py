@@ -187,13 +187,15 @@ class CodebuildResourceHelper(AWSCommonConn):
             
             # If build is done (not None), process the status codes
             if build_status_result is not None:
-                # Set build status codes and check if processing was successful
+                # Set build status codes - returns True/False if processed, None if not handled
                 status_codes_result = self._set_build_status_codes()
                 # If status codes were processed (returns True/False, not None), break the loop
+                # Both True and False indicate the build was processed, only None means continue waiting
                 if status_codes_result is not None:
                     # Build completed and status was processed
                     # Use the status set by _set_build_status_codes() in self.results["status"]
                     status = self.results.get("status", True)
+                    self.logger.debug(f"Build completed with status: {self.results.get('build_status')}, exit status: {status}")
                     break
 
             # Update current time for elapsed time calculations (inside loop for accuracy)
