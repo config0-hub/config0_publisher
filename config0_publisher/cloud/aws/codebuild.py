@@ -440,8 +440,15 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         # testtest456
         if not self.results.get("status"):
+            self.logger.debug("a"*32)
+            self.logger.debug("a"*32)
+            self.logger.debug("a"*32)
+            self.logger.debug("a"*32)
             exit(9)
 
+        self.logger.debug("b" * 32)
+        self.logger.debug("b" * 32)
+        self.logger.debug("b" * 32)
         exit(0)
 
         return self.results
