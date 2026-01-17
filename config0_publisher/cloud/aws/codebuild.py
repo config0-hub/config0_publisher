@@ -179,15 +179,25 @@ class CodebuildResourceHelper(AWSCommonConn):
     def _eval_build(self):
         self._set_current_build()
 
-        _t1 = int(time())
-
         while True:
             sleep(5)
 
-            if self._check_build_status() and self._set_build_status_codes():
-                status = True
-                break
+            # Check build status explicitly - returns None if IN_PROGRESS, or status string if done
+            build_status_result = self._check_build_status()
+            
+            # If build is done (not None), process the status codes
+            if build_status_result is not None:
+                # Set build status codes and check if processing was successful
+                status_codes_result = self._set_build_status_codes()
+                # If status codes were processed (returns True/False, not None), break the loop
+                if status_codes_result is not None:
+                    # Build completed and status was processed
+                    # Use the status set by _set_build_status_codes() in self.results["status"]
+                    status = self.results.get("status", True)
+                    break
 
+            # Update current time for elapsed time calculations (inside loop for accuracy)
+            _t1 = int(time())
             _time_elapsed = _t1 - self.results["run_t0"]
 
             if _time_elapsed > self.build_timeout:
