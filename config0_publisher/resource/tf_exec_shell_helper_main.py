@@ -136,10 +136,7 @@ class TFExecShellHelperMain(ResourceCmdHelper, Config0SettingsEnvVarHelper, Conf
         if method != "create":
             return
 
-        try:
-            exclude_vars = list(self.tf_configs["tf_vars"].keys())
-        except (KeyError, AttributeError) as e:
-            exclude_vars = self.exclude_tfvars
+        exclude_vars = list(self.tf_configs["tf_vars"].keys())
 
         # Insert TF_VAR_* os vars
         self.insert_os_env_prefix_envs(self.build_env_vars, exclude_vars)
@@ -281,110 +278,36 @@ class TFExecShellHelperMain(ResourceCmdHelper, Config0SettingsEnvVarHelper, Conf
 
         # Use the appropriate build method and prepare invocation configuration
         if self.build_method == "lambda":
-            try:
-                _awsbuild = Lambdabuild(**cinputargs)
-                invocation_config = _awsbuild.pre_trigger()
-            except Exception as e:
-                error_msg = f"Failed to prepare Lambda invocation for method '{method}': {str(e)}"
-                self.logger.error(error_msg)
-                raise Exception(error_msg) from e
+            _awsbuild = Lambdabuild(**cinputargs)
+            invocation_config = _awsbuild.pre_trigger()
 
-            # Use the unified execute method with async parameter
-            try:
-                results = executor.execute(
-                    execution_type="lambda",
-                    async_mode=self.async_mode,
-                    **invocation_config
-                )
-            except Exception as e:
-                error_msg = f"Lambda execution failed for method '{method}' (execution_id: {self.execution_id}): {str(e)}"
-                self.logger.error(error_msg)
-                # Return error result instead of raising to allow caller to handle
-                return {
-                    "cinputargs": cinputargs,
-                    "results": {
-                        "status": False,
-                        "error": error_msg,
-                        "execution_type": "lambda",
-                        "method": method,
-                        "execution_id": self.execution_id
-                    }
-                }
-
-            # Check for error status in results
-            if not isinstance(results, dict):
-                results = to_json(results) if results else {}
-
-            if results.get("status") is False or results.get("error"):
-                error_msg = results.get("error", "Lambda execution returned error status")
-                self.logger.error(f"Lambda execution error: {error_msg}")
-                results["error"] = error_msg
-                results["status"] = False
+            # Use the unified execute method with sync parameter
+            results = executor.execute(
+                execution_type="lambda",
+                async_mode=self.async_mode,
+                **invocation_config
+            )
 
         elif self.build_method == "codebuild":
-            try:
-                _awsbuild = Codebuild(**cinputargs)
-                inputargs = _awsbuild.pre_trigger()
-            except Exception as e:
-                error_msg = f"Failed to prepare CodeBuild invocation for method '{method}': {str(e)}"
-                self.logger.error(error_msg)
-                raise Exception(error_msg) from e
+            _awsbuild = Codebuild(**cinputargs)
+            inputargs = _awsbuild.pre_trigger()
 
-            # Use the unified execute method with async parameter
-            # For async mode, this returns tracking info (status, execution_id, etc.)
-            # For sync mode, this would return final results
-            try:
-                results = executor.execute(
-                    execution_type="codebuild",
-                    async_mode=self.async_mode,
-                    **inputargs
-                )
-            except Exception as e:
-                error_msg = f"CodeBuild execution failed for method '{method}' (execution_id: {self.execution_id}): {str(e)}"
-                self.logger.error(error_msg)
-                # Return error result instead of raising to allow caller to handle
-                return {
-                    "cinputargs": cinputargs,
-                    "results": {
-                        "status": False,
-                        "error": error_msg,
-                        "execution_type": "codebuild",
-                        "method": method,
-                        "execution_id": self.execution_id
-                    }
-                }
+            # Use the unified execute method with sync parameter
+            results = executor.execute(
+                execution_type="codebuild",
+                async_mode=self.async_mode,
+                **inputargs
+            )
 
-            # Check for error status in results
-            if not isinstance(results, dict):
-                results = to_json(results) if results else {}
-
-            if results.get("status") is False or results.get("error"):
-                error_msg = results.get("error", "CodeBuild execution returned error status")
-                self.logger.error(f"CodeBuild execution error: {error_msg}")
-                results["error"] = error_msg
-                results["status"] = False
-
-            # In sync mode, retrieve final results immediately
-            # In async mode, executor.execute() returns tracking info, not final results
-            # The done check and result retrieval should happen via polling/status checks later
             if not self.async_mode:
-                if results.get("build_id"):
-                    try:
-                        results = _awsbuild.retrieve(build_id=results["build_id"])
-                    except Exception as e:
-                        error_msg = f"Failed to retrieve CodeBuild results for build_id {results.get('build_id')}: {str(e)}"
-                        self.logger.error(error_msg)
-                        results = {
-                            "status": False,
-                            "error": error_msg,
-                            "build_id": results.get("build_id")
-                        }
-                else:
-                    self.logger.warn("CodeBuild sync execution did not return build_id")
+                results = _awsbuild.retrieve(build_id=results["build_id"])
+            else:
+                if results.get("done"):
+                    results = _awsbuild.retrieve(build_id=results["status"]["build_id"])
+                    results["done"] = True
+                    results["async_mode"] = True
         else:
-            error_msg = f"Invalid build_method '{self.build_method}'. Must be 'lambda' or 'codebuild'."
-            self.logger.error(error_msg)
-            raise Exception(error_msg)
+            raise Exception("build_method needs be either lambda/codebuild")
 
         if method == "destroy":
             try:
