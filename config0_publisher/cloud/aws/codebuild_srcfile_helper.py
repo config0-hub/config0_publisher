@@ -71,7 +71,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 raise Exception("EXECUTION_ID env var not set and stateful_id is not available")
         else:
             self.logger.debug(f"Found EXECUTION_ID env var: {execution_id}")
-            raise Exception("testtest456")
         return execution_id
 
     def _get_resource_type_id(self):
@@ -83,6 +82,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         resource_id = os.environ.get("RESOURCE_ID", self.stateful_id)
         if not resource_id:
             raise Exception("RESOURCE_ID env var not set and stateful_id is not available")
+        self.logger.debug(f"Found RESOURCE_ID env var: {resource_id}, RESOURCE_TYPE: {resource_type}")
+        raise Exception("testtest456")
         return resource_type, resource_id
 
     def _get_fqn_app_dir_path(self):
