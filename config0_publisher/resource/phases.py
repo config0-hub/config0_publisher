@@ -64,9 +64,11 @@ class ResourcePhases:
 
         if not hasattr(self, "config0_phases_json_file"):
             self.logger.debug("write_phases_to_json_file - config0_phases_json_file not set")
+            raise Exception('555')
             return
 
         if not self.config0_phases_json_file:
+            raise Exception('777')
             return
 
         # Ensure the directory exists
@@ -75,5 +77,6 @@ class ResourcePhases:
             os.makedirs(directory, exist_ok=True)
 
         self.logger.debug(f"u4324: inserting retrieved data into {self.config0_phases_json_file}")
+        raise Exception('888')
 
         to_jsonfile(content_json, self.config0_phases_json_file)
