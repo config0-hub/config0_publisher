@@ -56,17 +56,14 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             }
         )
 
-    def _write_phase2complete(self):
-        pass
-
-    def _read_phase2complete(self):
+    def _upload_phase2complete_to_s3(self):
         pass
 
     def _set_phase2complete(self):
 
-        if self._read_phase2complete():
-            return True
+        # read from s3 to see if file exists
 
+        # if not exists, create new
         self._phase2complete = {
                 "status": None,
                 "build_id": None,
@@ -187,7 +184,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         if self.build_image:
             self.buildparams["build_image"] = self.build_image
 
-        self._phase2complete_file = f"/var/tmp/share/{self.stateful_id}"
         self._set_phase2complete()
 
         return self.buildparams
@@ -224,7 +220,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             self.append_log(codebuild_helper.results["output"])
             del codebuild_helper.results["output"]
 
-        os.remove(self._phase2complete_file)
+        # remove phase2complete file from s3
 
         if codebuild_helper.results.get("status") is False:
             exit(9)
