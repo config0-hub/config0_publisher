@@ -438,4 +438,10 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.trigger_build(sparse_env_vars=sparse_env_vars)
         self._retrieve()
 
+        # testtest456
+        if not self.results.get("status"):
+            exit(9)
+
+        exit(0)
+
         return self.results
