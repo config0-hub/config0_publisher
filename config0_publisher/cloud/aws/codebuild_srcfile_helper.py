@@ -69,6 +69,9 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.warn("EXECUTION_ID env var not found, using stateful_id as execution_id")
             else:
                 raise Exception("EXECUTION_ID env var not set and stateful_id is not available")
+        else:
+            self.logger.debug(f"Found EXECUTION_ID env var: {execution_id}")
+            raise Exception("testtest456")
         return execution_id
 
     def _get_resource_type_id(self):
