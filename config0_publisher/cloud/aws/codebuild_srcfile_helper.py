@@ -20,6 +20,7 @@ import os
 from config0_publisher.loggerly import Config0Logger
 from config0_publisher.resource.manage import ResourceCmdHelper
 from config0_publisher.cloud.aws.codebuild import CodebuildResourceHelper
+from config0_publisher.resource.aws_executor import AWSAsyncExecutor
 from config0_publisher.serialization import b64_decode
 from config0_publisher.fileutils import pyzip
 from config0_publisher.utilities import id_generator2
@@ -56,20 +57,30 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             }
         )
 
-    def _upload_phase2complete_to_s3(self):
-        pass
+    def _get_execution_id(self):
+        """
+        Get execution_id following rmanage.py insert_execution_id() pattern.
+        First check EXECUTION_ID env var, fallback to stateful_id with warning.
+        """
+        execution_id = os.environ.get("EXECUTION_ID")
+        if not execution_id:
+            if self.stateful_id:
+                execution_id = self.stateful_id
+                self.logger.warn("EXECUTION_ID env var not found, using stateful_id as execution_id")
+            else:
+                raise Exception("EXECUTION_ID env var not set and stateful_id is not available")
+        return execution_id
 
-    def _set_phase2complete(self):
-
-        # read from s3 to see if file exists
-
-        # if not exists, create new
-        self._phase2complete = {
-                "status": None,
-                "build_id": None,
-                "stateful": self.stateful_id,
-                "tar_file": None,
-        }
+    def _get_resource_type_id(self):
+        """
+        Get resource_type and resource_id from env vars or use defaults.
+        Returns tuple (resource_type, resource_id).
+        """
+        resource_type = os.environ.get("RESOURCE_TYPE", "codebuild_srcfile")
+        resource_id = os.environ.get("RESOURCE_ID", self.stateful_id)
+        if not resource_id:
+            raise Exception("RESOURCE_ID env var not set and stateful_id is not available")
+        return resource_type, resource_id
 
     def _get_fqn_app_dir_path(self):
         if os.environ.get("CODEBUILD_SRCFILE_DEBUG"):
@@ -145,18 +156,14 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             self.build_env_vars["DOCKER_IMAGE"] = self.docker_image
 
     def _tar_upload_s3(self):
-        if self._phase2complete.get("tar_file") and os.path.exists(self._phase2complete.get("tar_file")):
-            srcfile = self._phase2complete["tar_file"]
-        else:
-            abs_app_dir = self._get_fqn_app_dir_path()
-            temp_filename = f'{id_generator2()}.zip'
-            srcfile = pyzip(
-                abs_app_dir,
-                self.tmpdir,
-                temp_filename,
-                exit_error=True
-            )
-            self._phase2complete["tar_file"] = srcfile
+        abs_app_dir = self._get_fqn_app_dir_path()
+        temp_filename = f'{id_generator2()}.zip'
+        srcfile = pyzip(
+            abs_app_dir,
+            self.tmpdir,
+            temp_filename,
+            exit_error=True
+        )
 
         cmd = (f'aws s3 cp {srcfile} '
                f's3://{self.buildparams["build_env_vars"]["UPLOAD_BUCKET"]}/'
@@ -184,13 +191,34 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         if self.build_image:
             self.buildparams["build_image"] = self.build_image
 
-        self._set_phase2complete()
-
         return self.buildparams
 
     def run(self):
         self._setup()
 
+        # Get execution_id and resource parameters
+        execution_id = self._get_execution_id()
+        resource_type, resource_id = self._get_resource_type_id()
+
+        # Set EXECUTION_ID in environment for CodebuildResourceHelper
+        # (it needs this from AWSCommonConn.__init__)
+        os.environ["EXECUTION_ID"] = execution_id
+
+        # Create AWS Async Executor with current settings
+        executor = AWSAsyncExecutor(
+            resource_type=resource_type,
+            resource_id=resource_id,
+            execution_id=execution_id,
+            output_bucket=self.tmp_bucket,
+            stateful_id=self.stateful_id,
+            build_timeout=self.build_timeout,
+            app_dir=self.app_dir,
+            app_name=self.app_name,
+            remote_stateful_bucket=getattr(self, 'remote_stateful_bucket', None)
+        )
+
+        # Prepare CodeBuild invocation config
+        # We still need CodebuildResourceHelper to prepare the buildparams
         _set_env_vars = {
             "stateful_id": True,
             "tmp_bucket": True,
@@ -207,26 +235,52 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             **self.buildparams
         )
 
-        if self._phase2complete("build_id") and self._phase2complete("status") is None:
-            self.build_id = self._phase2complete["build_id"]
-            self.logger.debug(f"check previous codebuild trigger {self.build_id} ...")
-            codebuild_helper.retrieve(self.build_id,sparse_env_vars=True)
+        # Upload source files to S3 before triggering build
+        self.logger.debug(f"trigger new codebuild ...")
+        self._tar_upload_s3()
+
+        # Get CodeBuild invocation config via pre_trigger
+        inputargs = codebuild_helper.pre_trigger(sparse_env_vars=False)
+
+        # Determine async_mode - check if EXECUTION_ID is set (indicates async tracking)
+        async_mode = bool(os.environ.get("EXECUTION_ID"))
+
+        # Use the unified execute method
+        results = executor.execute(
+            execution_type="codebuild",
+            async_mode=async_mode,
+            **inputargs
+        )
+
+        # Handle results based on async mode
+        if not async_mode:
+            # Sync mode: retrieve build results directly
+            if results.get("build_id"):
+                codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
+                results = codebuild_helper.results
         else:
-            self.logger.debug(f"trigger new codebuild ...")
-            self._tar_upload_s3()
-            codebuild_helper.run(sparse_env_vars=False)
+            # Async mode: check if done or in_progress
+            if results.get("done"):
+                if results.get("status") and results["status"].get("build_id"):
+                    codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
+                    results = codebuild_helper.results
+                    results["done"] = True
+                    results["async_mode"] = True
+            elif results.get("in_progress"):
+                # Return early for async mode - phases_state will be saved by rmanage.py
+                return {"results": results}
 
-        if codebuild_helper.results.get("output"):
-            self.append_log(codebuild_helper.results["output"])
-            del codebuild_helper.results["output"]
+        # Process output logs
+        if results.get("output"):
+            self.append_log(results["output"])
+            del results["output"]
 
-        # remove phase2complete file from s3
-
-        if codebuild_helper.results.get("status") is False:
+        # Check final status
+        if results.get("status") is False:
             exit(9)
 
         exit(0)
 
 if __name__ == "__main__":
-    main = CodebuildSrcFile()
+    main = CodebuildSrcFileHelper()
     main.run()
