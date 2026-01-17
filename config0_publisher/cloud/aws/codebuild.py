@@ -356,9 +356,12 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def trigger_build(self, sparse_env_vars=True):
 
-        inputargs = self.get_trigger_inputargs(sparse_env_vars=sparse_env_vars)
+        inputargs = self.get_trigger_inputargs(
+            sparse_env_vars=sparse_env_vars
+        )
 
         project_name = inputargs["projectName"]
+
         new_build = self.codebuild_client.start_build(**inputargs)
 
         self.build_id = new_build['build']['id']
@@ -405,11 +408,13 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         return
 
-    def retrieve(self, build_id=None):
-
+    def retrieve(self, build_id=None, sparse_env_vars=True):
         if build_id:
+            project_name = self.get_trigger_inputargs(
+                sparse_env_vars=sparse_env_vars)["projectName"]
+            self.results["inputargs"]["build_id"] = self.build_id
+            self.results["inputargs"]["project_name"] = project_name
             self.build_id = build_id
-
         return self._retrieve()
 
     def _concat_log(self):
@@ -464,10 +469,5 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.logger.debug("f"*32)
             self.logger.debug("f"*32)
             raise Exception(f"codebuild failed: {self.build_id}")
-
-        self.logger.debug("h" * 32)
-        self.logger.debug("h" * 32)
-        self.logger.debug("h" * 32)
-        exit(0)
 
         return self.results
