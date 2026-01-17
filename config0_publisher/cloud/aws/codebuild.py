@@ -424,9 +424,17 @@ class CodebuildResourceHelper(AWSCommonConn):
         return _output + '\n' + "\n".join(self.output)
 
     def _retrieve(self):
+        self.logger.debug("c"*32)
+        self.logger.debug("c"*32)
         self._eval_build()
+        self.logger.debug("d"*32)
+        self.logger.debug("d"*32)
         self.s3_stateful_to_share_dir()
+        self.logger.debug("e"*32)
+        self.logger.debug("e"*32)
         self.clean_output()
+        self.logger.debug("f"*32)
+        self.logger.debug("f"*32)
 
         if self.output:
             self.results["output"] = self._concat_log()
@@ -443,7 +451,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logger.debug("b"*32)
         self.logger.debug("b"*32)
         self.logger.debug("b"*32)
-        exit(9)
 
         self._retrieve()
         self.logger.debug("c"*32)
