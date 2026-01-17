@@ -212,7 +212,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         # Get execution_id and resource parameters
         execution_id = self._get_execution_id()
         resource_type, resource_id = self._get_resource_type_id()
-        raise Exception("testtest456")
 
         # Set EXECUTION_ID in environment for CodebuildResourceHelper
         # (it needs this from AWSCommonConn.__init__)
@@ -281,8 +280,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                     results["done"] = True
                     results["async_mode"] = True
             elif results.get("in_progress"):
-                # Return early for async mode - phases_state will be saved by rmanage.py
-                return {"results": results}
+                # Return early for async mode - phases_state will be saved by rmanage.py but need to exit(135)
+                # which will be caught
+                exit(135)
+                #return {"results": results}
 
         # Process output logs
         if results.get("output"):
