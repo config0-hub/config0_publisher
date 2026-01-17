@@ -185,18 +185,26 @@ class CodebuildResourceHelper(AWSCommonConn):
             # Check build status explicitly - returns None if IN_PROGRESS, or status string if done
             build_status_result = self._check_build_status()
             
-            # If build is done (not None), process the status codes
+            # If build is done (not None), break the loop immediately
+            # Key insight: If _check_build_status() returns non-None, the build is DONE
+            # We break as soon as we detect completion, regardless of _set_build_status_codes() return value
             if build_status_result is not None:
-                # Set build status codes - returns True/False if processed, None if not handled
+                # Build is complete - set status codes (for side effects) then break
+                # This ensures proper status codes are set even if _set_build_status_codes() returns None
                 status_codes_result = self._set_build_status_codes()
-                # If status codes were processed (returns True/False, not None), break the loop
-                # Both True and False indicate the build was processed, only None means continue waiting
-                if status_codes_result is not None:
-                    # Build completed and status was processed
-                    # Use the status set by _set_build_status_codes() in self.results["status"]
-                    status = self.results.get("status", True)
-                    self.logger.debug(f"Build completed with status: {self.results.get('build_status')}, exit status: {status}")
-                    break
+                
+                # If status codes weren't processed (unexpected status), log warning but still break
+                if status_codes_result is None:
+                    self.logger.warn(f"Build completed with unexpected status: {build_status_result}, status codes not processed")
+                    # Set default failure status if not already set
+                    if "status" not in self.results or self.results.get("status") is None:
+                        self.results["status"] = False
+                        self.results["failed_message"] = f"Build completed with status {build_status_result} but status codes not processed"
+                
+                # Use the status set by _set_build_status_codes() or fallback to False for unknown statuses
+                status = self.results.get("status", False)
+                self.logger.debug(f"Build completed with status: {self.results.get('build_status')}, exit status: {status}")
+                break
 
             # Update current time for elapsed time calculations (inside loop for accuracy)
             _t1 = int(time())
