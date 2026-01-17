@@ -238,7 +238,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def wait_for_log(self):
         build_id_suffix = self.build_id.split(":")[1]
-        maxtime = 30
+        maxtime = 90  # Increased from 30 to 90 seconds to allow time for CodeBuild to write logs after STOPPED/ABORTED
         t0 = int(time())
 
         while True:
@@ -253,9 +253,11 @@ class CodebuildResourceHelper(AWSCommonConn):
             if results.get("status") is True:
                 return True
 
+            # Don't exit early on errors - keep retrying until timeout
+            # CodeBuild writes logs asynchronously, so NoSuchKey errors are expected initially
+            # for STOPPED/ABORTED builds. Log the warning but continue retrying.
             if results.get("status") is False and results.get("failed_message"):
-                self.logger.warn(results["failed_message"])
-                return False
+                self.logger.debug(f"Log not yet available (attempt {int(_time_elapsed/2) + 1}): {results.get('failed_message', '')[:100]}")
 
             sleep(2)
 
