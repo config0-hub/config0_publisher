@@ -292,6 +292,9 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             
             # Write phases file if phases present and not done (for parent process to read)
             if results.get("phases") and not results.get("done"):
+                # Ensure init or in_progress is set for exit code 135 (phase2complete)
+                if not results.get("init") and not results.get("in_progress"):
+                    results["init"] = True
                 self.write_phases_to_json_file(results)
             
             return results

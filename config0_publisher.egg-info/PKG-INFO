@@ -1,23 +1,18 @@
-Metadata-Version: 2.4
-Name: config0_publisher
+Metadata-Version: 2.1
+Name: config0-publisher
 Version: 0.300
 Summary: The helper package for publishing on config0.com
 Home-page: http://github.com/config0-publish/config0_publisher
 Author: Gary Leong
 Author-email: gary@config0.com
 License: Copyright Config0, Inc 2025
+Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Intended Audience :: Developers
 Classifier: Topic :: Software Development
 Classifier: Topic :: Utilities
 Classifier: Environment :: Console
 Classifier: Operating System :: OS Independent
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: home-page
-Dynamic: license
-Dynamic: summary
 
 The helper package for publishing on config0.com
+
