@@ -80,6 +80,23 @@ class CodebuildResourceHelper(AWSCommonConn):
         if not self.results["inputargs"].get("codebuild_basename"):
             self.results["inputargs"]["codebuild_basename"] = self.codebuild_basename
 
+        self._get_phase2complete()
+
+    def _get_phase2complete(self):
+
+        self._phase2complete_file = f"/var/tmp/share/{self.stateful_id}'
+
+        print(self._phase2complete_file)
+        print(self._phase2complete_file)
+        print(self._phase2complete_file)
+        print(self._phase2complete_file)
+        raise Exception('testtest456')
+
+        self._phase2complete = {
+                "status": None,
+                "build_id": None
+        }
+
     def _get_build_status(self, build_ids):
         results = {}
 
@@ -456,7 +473,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logger.debug("c"*32)
         self.logger.debug("c"*32)
         self.logger.debug("c"*32)
-        exit(9)
 
         # testtest456
         if not self.results.get("status"):
