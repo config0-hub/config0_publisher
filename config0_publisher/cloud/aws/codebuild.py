@@ -438,10 +438,18 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logger.debug("a"*32)
         self.logger.debug("a"*32)
         self.logger.debug("a"*32)
-        exit(9)
 
         self.trigger_build(sparse_env_vars=sparse_env_vars)
+        self.logger.debug("b"*32)
+        self.logger.debug("b"*32)
+        self.logger.debug("b"*32)
+        exit(9)
+
         self._retrieve()
+        self.logger.debug("c"*32)
+        self.logger.debug("c"*32)
+        self.logger.debug("c"*32)
+        exit(9)
 
         # testtest456
         if not self.results.get("status"):
