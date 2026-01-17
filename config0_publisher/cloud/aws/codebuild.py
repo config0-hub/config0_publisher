@@ -435,20 +435,25 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def run(self, sparse_env_vars=True):
 
+        self.logger.debug("a"*32)
+        self.logger.debug("a"*32)
+        self.logger.debug("a"*32)
+        exit(9)
+
         self.trigger_build(sparse_env_vars=sparse_env_vars)
         self._retrieve()
 
         # testtest456
         if not self.results.get("status"):
-            self.logger.debug("a"*32)
-            self.logger.debug("a"*32)
-            self.logger.debug("a"*32)
-            self.logger.debug("a"*32)
+            self.logger.debug("f"*32)
+            self.logger.debug("f"*32)
+            self.logger.debug("f"*32)
+            self.logger.debug("f"*32)
             exit(9)
 
-        self.logger.debug("b" * 32)
-        self.logger.debug("b" * 32)
-        self.logger.debug("b" * 32)
+        self.logger.debug("h" * 32)
+        self.logger.debug("h" * 32)
+        self.logger.debug("h" * 32)
         exit(0)
 
         return self.results
