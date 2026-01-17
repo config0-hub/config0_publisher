@@ -280,6 +280,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                     results["done"] = True
                     results["async_mode"] = True
             elif results.get("in_progress"):
+                self.logger.json(results)
+                raise Exception("testtest456")
                 # Return early for async mode - phases_state will be saved by rmanage.py but need to exit(135)
                 # which will be caught
                 exit(135)
