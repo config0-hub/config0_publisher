@@ -265,27 +265,36 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             **inputargs
         )
 
-        # Handle results based on async mode
-        if not async_mode:
-            # Sync mode: retrieve build results directly
-            if results.get("build_id"):
-                codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
-                results = codebuild_helper.results
-        else:
+        if async_mode:
             # Async mode: check if done or in_progress
+            
+            # Ensure phases JSON file path is set
+            if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
+                self.set_phases_json()
+            
             if results.get("done"):
+                # Handle done case: retrieve results and delete phases file
                 if results.get("status") and results["status"].get("build_id"):
                     codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
                     results = codebuild_helper.results
                     results["done"] = True
                     results["async_mode"] = True
-            elif results.get("in_progress"):
-                self.logger.json(results)
-                raise Exception("testtest456")
-                # Return early for async mode - phases_state will be saved by rmanage.py but need to exit(135)
-                # which will be caught
-                exit(135)
-                #return {"results": results}
+                
+                # Delete phases file when done (cleanup)
+                self.delete_phases_to_json_file()
+            
+            # Write phases file if phases present and not done (for parent process to read)
+            if results.get("phases") and not results.get("done"):
+                self.write_phases_to_json_file(results)
+            
+            return results
+
+        # Sync mode: retrieve build results directly
+        # This not async mode which is not recommended as it is long running
+        # process where file descriptors may not be held open
+        if results.get("build_id"):
+            codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
+            results = codebuild_helper.results
 
         # Process output logs
         if results.get("output"):
