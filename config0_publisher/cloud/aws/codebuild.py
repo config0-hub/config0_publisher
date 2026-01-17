@@ -469,5 +469,11 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.logger.debug("f"*32)
             self.logger.debug("f"*32)
             raise Exception(f"codebuild failed: {self.build_id}")
+            raise Exception(f"codebuild failed: {self.build_id}")
+            raise Exception(f"codebuild failed: {self.build_id}")
+            raise Exception(f"codebuild failed: {self.build_id}")
+            exit(9)
+            exit(9)
+            exit(9)
 
         return self.results
