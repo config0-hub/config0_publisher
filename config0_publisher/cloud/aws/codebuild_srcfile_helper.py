@@ -268,9 +268,16 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         if async_mode:
             # Async mode: check if done or in_progress
             
-            # Ensure phases JSON file path is set
+            # Always refresh phases JSON file path from env var (ensures it's up-to-date)
+            self.set_phases_json()
+            
+            # Validate CONFIG0_PHASES_JSON_FILE env var is set (primary source)
+            if not os.environ.get("CONFIG0_PHASES_JSON_FILE"):
+                self.logger.warn("CONFIG0_PHASES_JSON_FILE env var not set - phases file may not be writable")
+            
+            # Ensure config0_phases_json_file is set before writing
             if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
-                self.set_phases_json()
+                self.logger.warn(f"config0_phases_json_file not set - cannot write phases file. CONFIG0_PHASES_JSON_FILE env var: {os.environ.get('CONFIG0_PHASES_JSON_FILE')}")
             
             if results.get("done"):
                 # Handle done case: retrieve results and delete phases file
