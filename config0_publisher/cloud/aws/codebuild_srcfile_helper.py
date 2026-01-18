@@ -318,8 +318,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             # Ensure config0_phases_json_file is set before writing
             if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
                 self.logger.warn(f"config0_phases_json_file not set - cannot write phases file. CONFIG0_PHASES_JSON_FILE env var: {os.environ.get('CONFIG0_PHASES_JSON_FILE')}")
-            
-            if results.get("done"):
+
+            if results.get("done") or results.get("status") is False:
                 # Handle done case: retrieve results and delete phases file
                 #if results.get("status") and results["status"].get("build_id"):
                 codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
