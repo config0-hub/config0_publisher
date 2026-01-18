@@ -320,8 +320,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.warn(f"config0_phases_json_file not set - cannot write phases file. CONFIG0_PHASES_JSON_FILE env var: {os.environ.get('CONFIG0_PHASES_JSON_FILE')}")
 
             if results.get("done") or results.get("status") is False:
-                # Handle done case: retrieve results and delete phases file
-                #if results.get("status") and results["status"].get("build_id"):
+                self.logger.debug("j0" * 32)
+                self.logger.json(results)
+                self.logger.debug("j1" * 32)
+
                 codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
                 results = codebuild_helper.results
                 results["done"] = True
@@ -330,10 +332,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 # TODO: refactor to avoid duplication
                 # Process output logs
                 if results.get("status") is False:
-                    self.logger.debug("j0"*32)
+                    self.logger.debug("k0"*32)
                     executor.clear_execution()
-                    self.logger.debug("j1"*32)
-                raise Exception("j2"*32)
+                    self.logger.debug("k1"*32)
+                raise Exception("k2"*32)
 
                 if results.get("output"):
                     print(results["output"])
