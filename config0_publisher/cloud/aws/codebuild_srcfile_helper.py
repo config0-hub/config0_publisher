@@ -157,7 +157,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             "  pre_build:",
             "    on-failure: CONTINUE",
             "    commands:",
-            "      - aws s3 cp s3://app-env.tmp.williaumwu.eb6ef/${STATEFUL_ID}/state/src.${STATEFUL_ID}.zip /tmp/${STATEFUL_ID}.zip --quiet",
+            "      - aws s3 cp s3://$UPLOAD_BUCKET/${STATEFUL_ID}/state/src.${STATEFUL_ID}.zip /tmp/${STATEFUL_ID}.zip --quiet",
             "      - mkdir -p /var/tmp/share",
             "      - mkdir -p /var/tmp/share/${STATEFUL_ID}",
             "      - unzip -o /tmp/${STATEFUL_ID}.zip -d /var/tmp/share/${STATEFUL_ID}/",
