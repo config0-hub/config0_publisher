@@ -290,6 +290,7 @@ def aws_executor(execution_type="lambda"):
             if existing_run.get("done"):
                 logger.debug("existing run is done, clearing execution")
                 self.clear_execution()
+                self.logger.json(existing_run)
                 raise Exception("testtest456 - uuuu")
                 if "results" in existing_run:
                     return existing_run["results"]
@@ -1192,7 +1193,6 @@ class AWSAsyncExecutor:
 
         if status_result.get("done"):
             self.clear_execution()
-            raise Exception("testtest456 - vvvv")
             return status_result["results"]
 
         if "body" in result:
