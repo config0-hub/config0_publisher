@@ -185,18 +185,30 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         # Ensure pre_build has on-failure: CONTINUE so post_build runs even if pre_build fails
         # This matches the pattern used in codebuild.py (line 133) to ensure done file is written
         # CodeBuild runs each phase in a separate shell, so traps don't persist across phases
-        has_pre_build = re.search(r'^\s*pre_build:', buildspec_content, re.MULTILINE)
-        if has_pre_build:
-            # Check if pre_build already has on-failure directive by looking for it near pre_build:
-            pre_build_line_pattern = r'(^\s*pre_build:\s*)(?:on-failure:\s*\w+\s*)?(?:when:\s*\w+\s*)?(commands:\s*)'
-            pre_build_match = re.search(pre_build_line_pattern, buildspec_content, re.MULTILINE)
-            if pre_build_match:
-                # Check if on-failure is already set in the matched section
-                full_match_text = pre_build_match.group(0)
-                if 'on-failure:' not in full_match_text:
-                    # Add on-failure: CONTINUE after pre_build: and before commands:
-                    replacement = pre_build_match.group(1) + 'on-failure: CONTINUE\n    ' + pre_build_match.group(2)
-                    buildspec_content = buildspec_content[:pre_build_match.start()] + replacement + buildspec_content[pre_build_match.end():]
+        pre_build_match = re.search(r'^\s*pre_build:', buildspec_content, re.MULTILINE)
+        if pre_build_match:
+            # Find where commands: appears after pre_build: (within next 200 chars to avoid matching wrong section)
+            pre_build_start = pre_build_match.start()
+            search_end = min(pre_build_start + 200, len(buildspec_content))
+            section_after_pre_build = buildspec_content[pre_build_start:search_end]
+            
+            # Check if on-failure is already in this section
+            if 'on-failure:' not in section_after_pre_build:
+                # Find the end of the pre_build: line
+                pre_build_line_end = buildspec_content.find('\n', pre_build_start)
+                if pre_build_line_end > 0:
+                    # Determine indentation by checking the first line after pre_build:
+                    # Look for next non-empty line to determine indentation level
+                    next_lines = buildspec_content[pre_build_line_end + 1:pre_build_line_end + 50]
+                    indent_match = re.search(r'^(\s+)', next_lines, re.MULTILINE)
+                    if indent_match:
+                        indent = indent_match.group(1)
+                    else:
+                        indent = '    '  # Default to 4 spaces if can't determine
+                    
+                    # Insert on-failure: CONTINUE on new line after pre_build:
+                    on_failure_line = f'{indent}on-failure: CONTINUE\n'
+                    buildspec_content = buildspec_content[:pre_build_line_end + 1] + on_failure_line + buildspec_content[pre_build_line_end + 1:]
                     self.logger.info("Added on-failure: CONTINUE to pre_build phase to ensure post_build runs even if pre_build fails")
 
         if has_post_build:
