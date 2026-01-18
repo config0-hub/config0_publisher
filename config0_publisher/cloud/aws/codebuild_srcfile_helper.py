@@ -143,6 +143,15 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             with open(buildspec_file, "r") as file:
                 buildspec_content = file.read()
 
+        self.logger.json(buildspec_content)
+        raise Exception("testtest456")
+
+
+
+
+
+
+
         self.logger.info(f"DEBUG: Original buildspec length: {len(buildspec_content)} characters")
         self.logger.info(f"DEBUG: Original buildspec first 500 chars:\n{buildspec_content[:500]}")
 
