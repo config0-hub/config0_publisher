@@ -143,7 +143,9 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             with open(buildspec_file, "r") as file:
                 buildspec_content = file.read()
 
-        self.logger.json(buildspec_content)
+        self.logger.info("DEBUG: Original buildspec (line by line):")
+        for i, line in enumerate(buildspec_content.splitlines(), 1):
+            self.logger.info(f"DEBUG: Line {i}: {line}")
         raise Exception("testtest456")
 
 
@@ -153,7 +155,13 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
 
 
         self.logger.info(f"DEBUG: Original buildspec length: {len(buildspec_content)} characters")
-        self.logger.info(f"DEBUG: Original buildspec first 500 chars:\n{buildspec_content[:500]}")
+        self.logger.info("DEBUG: Original buildspec (line by line):")
+        try:
+            for i, line in enumerate(buildspec_content.splitlines(), 1):
+                self.logger.info(f"DEBUG: Line {i}: {line}")
+        except Exception as e:
+            self.logger.error(f"DEBUG: Exception printing buildspec: {e}")
+            raise
 
         # Ensure done file is written in post_build phase for async tracking
         buildspec_content = self._ensure_done_file_write(buildspec_content)
