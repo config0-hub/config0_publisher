@@ -320,10 +320,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.warn(f"config0_phases_json_file not set - cannot write phases file. CONFIG0_PHASES_JSON_FILE env var: {os.environ.get('CONFIG0_PHASES_JSON_FILE')}")
 
             if results.get("done") or results.get("status") is False:
-                self.logger.debug("j0" * 32)
-                self.logger.json(results)
-                self.logger.debug("j1" * 32)
-
                 try:
                     build_id = results["status"]["build_id"]
                 except:
@@ -337,9 +333,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 # TODO: refactor to avoid duplication
                 # Process output logs
                 if results.get("status") is False:
-                    self.logger.debug("k0"*32)
                     executor.clear_execution()
-                    self.logger.debug("k1"*32)
 
                 if results.get("output"):
                     print(results["output"])
