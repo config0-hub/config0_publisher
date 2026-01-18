@@ -252,9 +252,9 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
         build_status = _eval_build_status(status_data,clobber=False)
         if result.get("done") or build_status in [True, False]:
             if result.get("done"):
-                print("     ---- execution is done")
+                print("     ----- execution is done")
             elif build_status in [True,False]:
-                print("     ---- build_status is True/False")
+                print("     ----- build_status is True/False")
                 time.sleep(15)  # wait until codebuild is fully stopped
             # Write updated status.json back to S3
             if _eval_build_status(status_data,clobber=True):
@@ -348,6 +348,11 @@ def aws_executor(execution_type="lambda"):
                 self.clear_execution()
                 if "results" in existing_run:
                     return existing_run["results"]
+                return existing_run
+
+            if existing_run.get("status") is False and execution_type == "codebuild":
+                logger.debug("existing codebuild is False")
+                self.clear_execution()
                 return existing_run
 
             if existing_run.get("status"):
