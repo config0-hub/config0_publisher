@@ -179,7 +179,7 @@ def _eval_build_status(status_data):
         break
 
     if build_status_results["status"] is not None:
-        status_data['build_status'] = build_status_results['build_status']
+        status_data['build_status'] = build_status_results['status_code']
         status_data['status'] = build_status_results['status']
 
     return status
