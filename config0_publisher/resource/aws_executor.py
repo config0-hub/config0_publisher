@@ -1125,6 +1125,7 @@ class AWSAsyncExecutor:
         self.logger.debug("e0" * 32)
         self.logger.json(status_info)
         self.logger.debug("e0" * 32)
+        raise Exception("testtest456")
 
         if status_info.get("done"):
             self.clear_execution()
