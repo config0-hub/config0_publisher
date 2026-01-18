@@ -61,13 +61,13 @@ def to_jsonfile(values, filename, exec_dir=None):
         with open(file_path, "w") as file:
             file.write(json.dumps(values))
         status = True
-        print("#"*32)
-        print(f"# Successfully wrote contents to {file_path}")
-        print("#"*32)
+        print("-"*32)
+        print(f"   ----- Successfully wrote contents to {file_path}")
+        print("-"*32)
     except:
-        print("#"*32)
-        print(f"# Failed to write contents to {file_path}")
-        print("#"*32)
+        print("-"*32)
+        print(f"   ----- Failed to write contents to {file_path}")
+        print("-"*32)
         status = False
 
     return status

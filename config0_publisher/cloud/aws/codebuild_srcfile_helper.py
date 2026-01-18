@@ -174,8 +174,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             with open(buildspec_file, "r") as file:
                 buildspec_content = file.read()
 
-        # testtest456
-        buildspec_content = self._get_debug_buildspec()
+        # uncomment to test
+        #buildspec_content = self._get_debug_buildspec()
 
         return buildspec_content
 
