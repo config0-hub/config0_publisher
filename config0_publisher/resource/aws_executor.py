@@ -178,6 +178,36 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
                                            result_key)
         return result
 
+    # For CodeBuild, check actual build status when done file exists
+    if result.get("done") and execution_type == "codebuild" and result.get("status"):
+        status_data = result["status"]
+        build_id = status_data.get("build_id") if isinstance(status_data, dict) else None
+        
+        if build_id:
+            # Get actual CodeBuild build status from API
+            codebuild_region = status_data.get("aws_region", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
+            try:
+                codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
+                build_info = codebuild_client.batch_get_builds(ids=[build_id])
+                
+                if 'builds' in build_info and len(build_info['builds']) > 0:
+                    build_data = build_info['builds'][0]
+                    build_status = build_data.get('buildStatus')
+                    
+                    # Update status.json with actual build status
+                    if isinstance(status_data, dict):
+                        status_data['build_status'] = build_status
+                        status_data['status'] = (build_status == 'SUCCEEDED')
+                        
+                        # Write updated status.json back to S3
+                        _s3_put_object(s3_client, output_bucket, status_key, json.dumps(status_data), content_type='application/json')
+                        
+                        # Update result with corrected status
+                        result["status"] = status_data
+            except Exception as e:
+                # If we can't check CodeBuild status, use status from status.json
+                pass
+
     return result
 
 def aws_executor(execution_type="lambda"):
