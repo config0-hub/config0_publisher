@@ -125,26 +125,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 continue
             print(file)
 
-    def get_buildspec(self):
-        self.logger.info("DEBUG: get_buildspec() called - starting buildspec processing")
-        
-        # get with provided b64 hash
-        if self.buildspec_hash:
-            self.logger.info("Using buildspec from buildspec_hash")
-            buildspec_content = b64_decode(self.buildspec_hash)
-        else:
-            # get repo file and read contents
-            buildspec_file = os.path.join(
-                self._get_fqn_app_dir_path(),
-                "src",
-                self.buildspec_file
-            )
-            self.logger.info(f"Reading buildspec from file: {buildspec_file}")
-            with open(buildspec_file, "r") as file:
-                buildspec_content = file.read()
+    def _get_debug_buildspec(self):
 
-        # testtest456
-        # TEST: Insert hardcoded buildspec for testing
         buildspec_content = [
             "version: 0.2",
             "phases:",
@@ -173,9 +155,30 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             "    commands:",
             "      - date +%s > done",
             "      - echo \"Uploading done to S3 bucket...\"",
-            "      - aws s3 cp done s3://app-env.tmp.williaumwu.eb6ef/executions/${EXECUTION_ID}/done",
+            "      - aws s3 cp done s3://$TMP_BUCKET/executions/${EXECUTION_ID}/done",
         ]
-        buildspec_content = "\n".join(buildspec_content)
+
+        return "\n".join(buildspec_content)
+
+    def get_buildspec(self):
+        self.logger.info("DEBUG: get_buildspec() called - starting buildspec processing")
+        
+        # get with provided b64 hash
+        if self.buildspec_hash:
+            self.logger.info("Using buildspec from buildspec_hash")
+            buildspec_content = b64_decode(self.buildspec_hash)
+        else:
+            # get repo file and read contents
+            buildspec_file = os.path.join(
+                self._get_fqn_app_dir_path(),
+                "src",
+                self.buildspec_file
+            )
+            self.logger.info(f"Reading buildspec from file: {buildspec_file}")
+            with open(buildspec_file, "r") as file:
+                buildspec_content = file.read()
+
+        #buildspec_content = self._get_debug_buildspec()
 
         return buildspec_content
 
