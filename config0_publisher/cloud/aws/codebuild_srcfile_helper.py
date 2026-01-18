@@ -106,16 +106,12 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         )
 
     def list_files_share_dir(self):
-        self.logger.debug("#" * 32)
-        self.logger.debug(f"# share_dir {self.share_dir}")
+        self.logger.debug(f"     ----- share_dir {self.share_dir}")
         self.list_files(self.share_dir)
-        self.logger.debug("#" * 32)
 
     def list_files_exec_dir(self):
-        self.logger.debug("#" * 32)
-        self.logger.debug(f"# exec_dir {self.exec_dir}")
+        self.logger.debug(f"     ----- exec_dir {self.exec_dir}")
         self.list_files(self.exec_dir)
-        self.logger.debug("#" * 32)
 
     @staticmethod
     def list_files(directory):
