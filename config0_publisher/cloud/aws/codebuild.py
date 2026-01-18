@@ -439,29 +439,10 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def run(self, sparse_env_vars=True):
 
-        self.logger.debug("a"*32)
-        self.logger.debug("a"*32)
-        self.logger.debug("a"*32)
         self.trigger_build(sparse_env_vars=sparse_env_vars)
-        self.logger.debug("b"*32)
-        self.logger.debug("b"*32)
-        self.logger.debug("b"*32)
-
         self._retrieve()
-        self.logger.debug("c"*32)
-        self.logger.debug("c"*32)
-        self.logger.debug("c"*32)
 
-        # testtest456
         if not self.results.get("status"):
-            self.logger.debug("d"*32)
-            exit(9)
-            self.logger.debug("e"*32)
-            raise Exception(f"codebuild failed: {self.build_id}")
-            self.logger.debug("f"*32)
-            raise Exception(f"codebuild failed: {self.build_id}")
-            self.logger.debug("g"*32)
-            raise Exception(f"codebuild failed: {self.build_id}")
             exit(9)
 
         return self.results

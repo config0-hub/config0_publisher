@@ -218,9 +218,11 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             exit_error=True
         )
 
-        cmd = (f'aws s3 cp {srcfile} '
-               f's3://{self.buildparams["build_env_vars"]["UPLOAD_BUCKET"]}/'
-               f'{self.stateful_id}/state/src.{self.stateful_id}.zip --quiet')
+        blob_url = f's3://{self.buildparams["build_env_vars"]["UPLOAD_BUCKET"]}/{self.stateful_id}/state/src.{self.stateful_id}.zip'
+        cmd = f'aws s3 cp {srcfile} {blob_url} --quiet'
+
+        self.logger.debug(f"Uploading source files to {blob_url}...")
+        raise Exception("testtest456")
 
         return self.execute(cmd)
 
@@ -289,10 +291,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         )
 
         # Upload source files to S3 before triggering build
-        self.logger.debug(f"trigger new codebuild ...")
         self._tar_upload_s3()
 
         # Get CodeBuild invocation config via pre_trigger
+        self.logger.debug(f"trigger new codebuild ...")
         inputargs = codebuild_helper.pre_trigger(sparse_env_vars=False)
 
         # Determine async_mode - check if EXECUTION_ID is set (indicates async tracking)
