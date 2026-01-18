@@ -330,8 +330,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.debug("i" * 32)
                 self.logger.json(results)
                 self.logger.debug("i" * 32)
-                self.write_phases_to_json_file(results)
-                raise Exception("testtest456")
+                #self.write_phases_to_json_file(results)
+                #raise Exception("testtest456")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
@@ -346,15 +346,13 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.info(f"Phases file written successfully. Results keys: {list(results.keys())}")
             else:
                 self.logger.warn(f"Not writing phases file - phases={results.get('phases')}, done={results.get('done')}")
-            
-            return results
-
-        # Sync mode: retrieve build results directly
-        # This not async mode which is not recommended as it is long running
-        # process where file descriptors may not be held open
-        if results.get("build_id"):
-            codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
-            results = codebuild_helper.results
+        else:
+            # Sync mode: retrieve build results directly
+            # This not async mode which is not recommended as it is long running
+            # process where file descriptors may not be held open
+            if results.get("build_id"):
+                codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
+                results = codebuild_helper.results
 
         # Process output logs
         if results.get("output"):
