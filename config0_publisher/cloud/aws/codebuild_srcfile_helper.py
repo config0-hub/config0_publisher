@@ -143,6 +143,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             with open(buildspec_file, "r") as file:
                 buildspec_content = file.read()
 
+        # testtest456
         # TEST: Insert hardcoded buildspec for testing
         buildspec_content = [
             "version: 0.2",

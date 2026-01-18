@@ -170,9 +170,10 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
     else:
         del result["t1"]
 
+    result_key = f"executions/{execution_id}/result.json"
+
     # only lambda will have this result.json
     if result.get("done") and execution_type == "lambda":
-        result_key = f"executions/{execution_id}/result.json"
         result["results"] = _s3_get_object(s3_client,
                                            output_bucket,
                                            result_key)
@@ -182,7 +183,10 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
     if result.get("done") and execution_type == "codebuild" and result.get("status"):
         status_data = result["status"]
         build_id = status_data.get("build_id") if isinstance(status_data, dict) else None
-        
+        result["results"] = _s3_get_object(s3_client,
+                                           output_bucket,
+                                           result_key)
+
         if build_id:
             # Get actual CodeBuild build status from API
             codebuild_region = status_data.get("aws_region", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
@@ -1086,10 +1090,19 @@ class AWSAsyncExecutor:
         if not self.execution_id or not self.output_bucket:
             return {}
             
-        status_result = get_execution_status(execution_type, self.execution_id, self.output_bucket)
+        status_result = get_execution_status(
+            execution_type,
+            self.execution_id,
+            self.output_bucket
+        )
         
         # Record this as a followup check
-        self._record_invocation('status_check', True, {'execution_id': self.execution_id}, status_result)
+        self._record_invocation(
+            'status_check',
+             True,
+            {'execution_id': self.execution_id},
+            status_result
+        )
         
         return status_result
 
