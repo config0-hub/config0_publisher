@@ -202,10 +202,10 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
     # Initialize result structure
     result = {
         "execution_id": execution_id,
-        "initiated": False,
-        "done": False,
-        "status": False,
-        "expired": False
+        "initiated": None,
+        "done": None,
+        "status": None,
+        "expired": None
     }
 
     s3_client = boto3.client('s3')
