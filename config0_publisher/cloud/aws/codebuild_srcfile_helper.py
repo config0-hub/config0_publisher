@@ -327,12 +327,17 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             
             if results.get("done"):
                 # Handle done case: retrieve results and delete phases file
-                if results.get("status") and results["status"].get("build_id"):
-                    codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
-                    results = codebuild_helper.results
-                    results["done"] = True
-                    results["async_mode"] = True
-                
+                #if results.get("status") and results["status"].get("build_id"):
+                codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
+                results = codebuild_helper.results
+                results["done"] = True
+                results["async_mode"] = True
+
+                self.logger.debug("i" * 32)
+                self.logger.json(results)
+                self.logger.debug("i" * 32)
+                raise Exception("testtest456")
+
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
             
