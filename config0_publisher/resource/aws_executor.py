@@ -118,6 +118,11 @@ def _s3_get_object(s3_client, bucket, key):
 
 def _set_build_status_codes(build_status):
 
+    # testtest456
+    print('g0' * 32)
+    print(build_status)
+    print('g0' * 32)
+
     if build_status == "SUCCEEDED":
         return {
             "status_code": "successful",
@@ -169,9 +174,11 @@ def _eval_build_status(status_data):
         if build_status_results["status"] is None:
             time.sleep(10)
         status = True
+        # testtest456
+        print('g1'*32)
         break
 
-    if build_status_results["status"] is None:
+    if build_status_results["status"] is not None:
         status_data['build_status'] = build_status_results['build_status']
         status_data['status'] = build_status_results['status']
 
