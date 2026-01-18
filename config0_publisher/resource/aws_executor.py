@@ -151,7 +151,7 @@ def _set_build_status_codes(build_status):
         "status": None,
     }
 
-def _eval_build_status(status_data):
+def _eval_build_status(status_data,clobber=False):
 
     build_id = status_data["build_id"]
 
@@ -164,6 +164,10 @@ def _eval_build_status(status_data):
 
     status = None
 
+    if build_status == "IN_PROGRESS":
+        status = "in_progress"
+        return status
+
     for retry in range(30):
         build_status_results = _set_build_status_codes(build_status)
         if build_status_results["status"] is None:
@@ -171,34 +175,12 @@ def _eval_build_status(status_data):
         status = True
         break
 
-    if build_status_results["status"] is not None:
+    if build_status_results["status"] is not None and clobber:
         status_data['build_status'] = build_status_results['status_code']
         status_data['status'] = build_status_results['status']
+        status = False
 
     return status
-
-#try:
-    #    build_info = codebuild_client.batch_get_builds(ids=[build_id])
-
-    #    if 'builds' in build_info and len(build_info['builds']) > 0:
-    #        build_data = build_info['builds'][0]
-    #        build_status = build_data.get('buildStatus')
-
-    #        # Update status.json with actual build status
-    #        if isinstance(status_data, dict):
-    #            status_data['build_status'] = build_status
-    #            status_data['status'] = (build_status == 'SUCCEEDED')
-
-    #            # Write updated status.json back to S3
-    #            _s3_put_object(s3_client, output_bucket, status_key, json.dumps(status_data),
-    #                           content_type='application/json')
-
-    #            # Update result with corrected status
-    #            result["status"] = status_data
-    #except Exception as e:
-    #    # If we can't check CodeBuild status, use status from status.json
-    #    pass
-
 
 def get_execution_status(execution_type, execution_id=None, output_bucket=None):
     """
@@ -265,19 +247,26 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
         result["results"] = results
         return result
 
-    # For CodeBuild, check actual build status when done file exists
-    if result.get("done") and execution_type == "codebuild" and result.get("status"):
+    # For CodeBuild, check actual build status even if done is not written
+    if execution_type == "codebuild":
         status_data = result["status"]
-        # Write updated status.json back to S3
-        if _eval_build_status(status_data):
-            _s3_put_object(
-                s3_client,
-                output_bucket,
-                status_key,
-                json.dumps(status_data),
-                content_type='application/json'
-            )
-            result["status"] = status_data
+        build_status = _eval_build_status(status_data,clobber=False)
+        if result.get("done") or build_status in [True, False]:
+            if result.get("done"):
+                print("execution is done")
+            elif build_status in [True,False]:
+                print("build_status is True/False")
+                time.sleep(15)  # wait until codebuild is fully stopped
+            # Write updated status.json back to S3
+            if _eval_build_status(status_data,clobber=True):
+                _s3_put_object(
+                    s3_client,
+                    output_bucket,
+                    status_key,
+                    json.dumps(status_data),
+                    content_type='application/json'
+                )
+                result["status"] = status_data
 
     return result
 
