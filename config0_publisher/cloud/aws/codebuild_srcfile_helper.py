@@ -130,7 +130,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         
         # get with provided b64 hash
         if self.buildspec_hash:
-            self.logger.info("DEBUG: Using buildspec from buildspec_hash")
+            self.logger.info("Using buildspec from buildspec_hash")
             buildspec_content = b64_decode(self.buildspec_hash)
         else:
             # get repo file and read contents
@@ -139,186 +139,45 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 "src",
                 self.buildspec_file
             )
-            self.logger.info(f"DEBUG: Reading buildspec from file: {buildspec_file}")
+            self.logger.info(f"Reading buildspec from file: {buildspec_file}")
             with open(buildspec_file, "r") as file:
                 buildspec_content = file.read()
 
-        self.logger.info("DEBUG: Original buildspec (line by line):")
-        for i, line in enumerate(buildspec_content.splitlines(), 1):
-            self.logger.info(f"DEBUG: Line {i}: {line}")
-        raise Exception("testtest456")
-
-
-
-
-
-
-
-        self.logger.info(f"DEBUG: Original buildspec length: {len(buildspec_content)} characters")
-        self.logger.info("DEBUG: Original buildspec (line by line):")
-        try:
-            for i, line in enumerate(buildspec_content.splitlines(), 1):
-                self.logger.info(f"DEBUG: Line {i}: {line}")
-        except Exception as e:
-            self.logger.error(f"DEBUG: Exception printing buildspec: {e}")
-            raise
-
-        # Ensure done file is written in post_build phase for async tracking
-        buildspec_content = self._ensure_done_file_write(buildspec_content)
-
-        self.logger.info(f"DEBUG: Modified buildspec length: {len(buildspec_content)} characters")
-        self.logger.info(f"DEBUG: Modified buildspec first 500 chars:\n{buildspec_content[:500]}")
-        
-        # Check if on-failure: CONTINUE was added
-        if 'on-failure: CONTINUE' in buildspec_content:
-            self.logger.info("DEBUG: ✓ on-failure: CONTINUE found in buildspec")
-        else:
-            self.logger.warn("DEBUG: ✗ on-failure: CONTINUE NOT found in buildspec")
-        
-        # Check if done file write was added
-        if 'executions/${EXECUTION_ID}/done' in buildspec_content or 'executions/$EXECUTION_ID/done' in buildspec_content:
-            self.logger.info("DEBUG: ✓ done file write found in buildspec")
-        else:
-            self.logger.warn("DEBUG: ✗ done file write NOT found in buildspec")
-
-        return buildspec_content
-
-    def _ensure_done_file_write(self, buildspec_content):
-        """
-        Ensure the buildspec includes post_build phase that writes the done file to S3.
-        This is required for async execution tracking to detect build completion.
-        The done file is written even if the build fails, allowing proper async tracking.
-        """
-        import re
-        
-        self.logger.info("DEBUG: _ensure_done_file_write() called - checking buildspec")
-        
-        # Check if done file write already exists (normalize $ and ${ for matching)
-        normalized_content = buildspec_content.replace('${', '$VAR{').replace('{', '$VAR{')
-        done_file_patterns = [
-            "executions/$VAR{EXECUTION_ID}/done",
-            "executions/.*?/done",
-            "s3://.*?/executions/.*?/done"
+        # TEST: Insert hardcoded buildspec for testing
+        buildspec_content = [
+            "version: 0.2",
+            "phases:",
+            "  install:",
+            "    on-failure: CONTINUE",
+            "    commands:",
+            "      - echo \"Installing system dependencies...\"",
+            "      - apt-get update && apt-get install -y zip",
+            "",
+            "  pre_build:",
+            "    when: onSuccess",
+            "    commands:",
+            "      - aws s3 cp s3://app-env.tmp.williaumwu.eb6ef/fjshfnavpibegplz/state/src.fjshfnavpibegplz.zip /tmp/fjshfnavpibegplz.zip --quiet",
+            "      - mkdir -p /var/tmp/share",
+            "      - mkdir -p /var/tmp/share/fjshfnavpibegplz",
+            "      - unzip -o /tmp/fjshfnavpibegplz.zip -d /var/tmp/share/fjshfnavpibegplz/",
+            "      - rm -rf /tmp/fjshfnavpibegplz.zip",
+            "",
+            "  build:",
+            "    when: onSuccess",
+            "    commands:",
+            "      - cd /var/tmp/share/fjshfnavpibegplz/",
+            "      - chmod 755 docker-to-lambda.sh",
+            "      - ./docker-to-lambda.sh",
+            "",
+            "  post_build:",
+            "    when: always",
+            "    commands:",
+            "      - date +%s > done",
+            "      - echo \"Uploading done to S3 bucket...\"",
+            "      - aws s3 cp done s3://app-env.tmp.williaumwu.eb6ef/executions/fjshfnavpibegplz/done",
         ]
-        
-        has_done_file_write = any(re.search(pattern, normalized_content, re.IGNORECASE) for pattern in done_file_patterns)
+        buildspec_content = "\n".join(buildspec_content)
 
-        # If done file write already exists, return as-is
-        if has_done_file_write:
-            self.logger.info("DEBUG: Buildspec already contains done file write command - skipping injection")
-            return buildspec_content
-        
-        self.logger.info("DEBUG: Done file write not found - will inject it")
-
-        # Check if post_build phase exists
-        has_post_build = re.search(r'^\s*post_build:', buildspec_content, re.MULTILINE) or re.search(r'^\s*post-build:', buildspec_content, re.MULTILINE)
-
-        # Done file write commands using environment variable placeholders
-        # Use ${OUTPUT_BUCKET} and ${EXECUTION_ID} which will be resolved in CodeBuild environment
-        # Write done file in post_build phase (runs after build phase completes, regardless of success/failure)
-        # Note: post_build runs even if build fails, but NOT if pre_build fails (unless pre_build has on-failure: CONTINUE)
-        done_file_commands = '''  post_build:
-    commands:
-      - date +%s > done || echo "$(date +%s)" > done
-      - echo "Uploading done file to S3..."
-      - aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done || true
-'''
-        
-        # Ensure pre_build has on-failure: CONTINUE so post_build runs even if pre_build fails
-        # This matches the pattern used in codebuild.py (line 133) to ensure done file is written
-        # CodeBuild runs each phase in a separate shell, so traps don't persist across phases
-        # Also remove/replace 'when: onSuccess' if present, as it may not be recognized in all contexts
-        pre_build_match = re.search(r'^\s*pre_build:', buildspec_content, re.MULTILINE)
-        if pre_build_match:
-            self.logger.info(f"DEBUG: Found pre_build: at position {pre_build_match.start()}")
-            # Find where commands: appears after pre_build: (within next 200 chars to avoid matching wrong section)
-            pre_build_start = pre_build_match.start()
-            search_end = min(pre_build_start + 200, len(buildspec_content))
-            section_after_pre_build = buildspec_content[pre_build_start:search_end]
-            
-            self.logger.info(f"DEBUG: Section after pre_build (first 300 chars):\n{section_after_pre_build[:300]}")
-            
-            # Check if on-failure is already in this section
-            if 'on-failure:' not in section_after_pre_build:
-                self.logger.info("DEBUG: on-failure: not found in pre_build - will add it")
-                # Find the end of the pre_build: line
-                pre_build_line_end = buildspec_content.find('\n', pre_build_start)
-                if pre_build_line_end > 0:
-                    # Determine indentation by checking the first line after pre_build:
-                    # Look for next non-empty line to determine indentation level
-                    next_lines = buildspec_content[pre_build_line_end + 1:pre_build_line_end + 50]
-                    indent_match = re.search(r'^(\s+)', next_lines, re.MULTILINE)
-                    if indent_match:
-                        indent = indent_match.group(1)
-                        self.logger.info(f"DEBUG: Detected indentation: '{indent}' (length: {len(indent)})")
-                    else:
-                        indent = '    '  # Default to 4 spaces if can't determine
-                        self.logger.info(f"DEBUG: Using default indentation: '{indent}' (length: {len(indent)})")
-                    
-                    # Check if 'when: onSuccess' is present - if so, replace it with on-failure: CONTINUE
-                    # Otherwise, insert on-failure: CONTINUE after pre_build: line
-                    when_match = re.search(r'^(\s+)when:\s*onSuccess\s*$', next_lines, re.MULTILINE)
-                    if when_match:
-                        # Replace 'when: onSuccess' with 'on-failure: CONTINUE'
-                        when_line_pos = pre_build_line_end + 1 + when_match.start()
-                        when_line_end = buildspec_content.find('\n', when_line_pos)
-                        if when_line_end > 0:
-                            buildspec_content = buildspec_content[:when_line_pos] + f'{indent}on-failure: CONTINUE\n' + buildspec_content[when_line_end + 1:]
-                            self.logger.info(f"DEBUG: ✓ Replaced 'when: onSuccess' with 'on-failure: CONTINUE' in pre_build")
-                        else:
-                            # Fallback: insert on-failure after pre_build line
-                            on_failure_line = f'{indent}on-failure: CONTINUE\n'
-                            buildspec_content = buildspec_content[:pre_build_line_end + 1] + on_failure_line + buildspec_content[pre_build_line_end + 1:]
-                            self.logger.info(f"DEBUG: ✓ Added on-failure: CONTINUE to pre_build phase")
-                    else:
-                        # Insert on-failure: CONTINUE on new line after pre_build:
-                        on_failure_line = f'{indent}on-failure: CONTINUE\n'
-                        self.logger.info(f"DEBUG: Inserting line: '{on_failure_line.rstrip()}' after pre_build:")
-                        buildspec_content = buildspec_content[:pre_build_line_end + 1] + on_failure_line + buildspec_content[pre_build_line_end + 1:]
-                        self.logger.info("DEBUG: ✓ Added on-failure: CONTINUE to pre_build phase")
-                else:
-                    self.logger.warn("DEBUG: Could not find newline after pre_build:")
-            else:
-                self.logger.info("DEBUG: on-failure: already present in pre_build - skipping")
-        else:
-            self.logger.warn("DEBUG: pre_build: phase not found in buildspec")
-        
-        # Add a debug command in install phase to verify buildspec is being used
-        # This will appear in CodeBuild logs and prove our modifications are applied
-        install_match = re.search(r'^\s*install:\s*', buildspec_content, re.MULTILINE)
-        if install_match:
-            install_start = install_match.start()
-            commands_pos = buildspec_content.find('commands:', install_start, install_start + 100)
-            if commands_pos > 0:
-                commands_line_end = buildspec_content.find('\n', commands_pos)
-                if commands_line_end > 0:
-                    debug_command = '      - echo "DEBUG: Buildspec modified by codebuild_srcfile_helper.py - on-failure: CONTINUE should be in pre_build"\n'
-                    buildspec_content = buildspec_content[:commands_line_end + 1] + debug_command + buildspec_content[commands_line_end + 1:]
-                    self.logger.info("DEBUG: ✓ Added debug command to install phase")
-
-        if has_post_build:
-            # If post_build exists, append the done file write command to it
-            # Find the end of post_build commands section (before next phase or end of phases)
-            # Match post_build section until next phase or end
-            pattern = r'(post_build:\s*commands:\s*(?:^\s+-.*?\n)+?)(?=\n\s*\w+:|$)'
-            match = re.search(pattern, buildspec_content, re.MULTILINE)
-            if match:
-                # Append done file commands to existing post_build commands
-                existing_commands = match.group(1).rstrip()
-                done_commands_to_add = '''      - date +%s > done || echo "$(date +%s)" > done
-      - echo "Uploading done file to S3..."
-      - aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done || true
-'''
-                replacement = existing_commands + "\n" + done_commands_to_add
-                buildspec_content = buildspec_content[:match.start()] + replacement + buildspec_content[match.end():]
-            else:
-                # Fallback: append at end of file if pattern doesn't match
-                buildspec_content = buildspec_content.rstrip() + "\n" + done_file_commands
-        else:
-            # If post_build doesn't exist, append it at the end
-            buildspec_content = buildspec_content.rstrip() + "\n" + done_file_commands
-
-        self.logger.info("Injected done file write into buildspec post_build phase (runs on both success and failure)")
         return buildspec_content
 
     def _set_build_env_vars(self):
