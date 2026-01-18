@@ -162,6 +162,10 @@ def _eval_build_status(status_data,clobber=False):
     build_data = codebuild_client.batch_get_builds(ids=[build_id])['builds'][0]
     build_status = build_data.get('buildStatus')
 
+    print("#"*32)
+    print(f"# build status for build_id {build_id}: {build_status}")
+    print("#"*32)
+
     status = None
 
     if build_status == "IN_PROGRESS":
