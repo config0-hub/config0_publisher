@@ -160,6 +160,13 @@ def _eval_build_status(status_data,clobber=False):
     build_data = codebuild_client.batch_get_builds(ids=[build_id])['builds'][0]
     build_status = build_data.get('buildStatus')
     print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    print(f"   ---- build status for build_id {build_id}: {build_status} -------")
+    raise
 
     status = None
 
