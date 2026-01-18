@@ -257,7 +257,7 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
                 print("     ----- build_status is True/False")
                 time.sleep(15)  # wait until codebuild is fully stopped
             # Write updated status.json back to S3
-            if _eval_build_status(status_data,clobber=True):
+            if _eval_build_status(status_data,clobber=True) in [True,False]:
                 _s3_put_object(
                     s3_client,
                     output_bucket,

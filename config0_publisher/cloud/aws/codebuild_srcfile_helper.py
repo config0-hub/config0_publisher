@@ -335,7 +335,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                     self.logger.debug("k0"*32)
                     executor.clear_execution()
                     self.logger.debug("k1"*32)
-                raise Exception("k2"*32)
 
                 if results.get("output"):
                     print(results["output"])
