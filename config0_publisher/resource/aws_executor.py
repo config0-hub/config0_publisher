@@ -110,8 +110,8 @@ def _s3_get_object(s3_client, bucket, key):
         return content
     
     except Exception as e:
-        print(f'# _s3_get_object s3://{bucket}/{key}')
-        print(f"Error fetching object: {e}")
+        print(f'    ----- _s3_get_object s3://{bucket}/{key}')
+        print(f"    ----- Error fetching object: {e}")
         return False
 
 def _set_build_status_codes(build_status):
@@ -252,9 +252,9 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
         build_status = _eval_build_status(status_data,clobber=False)
         if result.get("done") or build_status in [True, False]:
             if result.get("done"):
-                print("     ----- execution is done")
+                print("     ---- execution is done")
             elif build_status in [True,False]:
-                print("     ----- build_status is True/False")
+                print("     ---- build_status is True/False")
                 time.sleep(15)  # wait until codebuild is fully stopped
             # Write updated status.json back to S3
             if _eval_build_status(status_data,clobber=True):
