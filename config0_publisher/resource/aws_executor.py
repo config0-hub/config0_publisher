@@ -352,6 +352,7 @@ def aws_executor(execution_type="lambda"):
 
             if existing_run.get("status") is False and execution_type == "codebuild":
                 logger.debug("existing codebuild is False")
+                # clear execution is handled downstream
                 #self.clear_execution()
                 return existing_run
 
