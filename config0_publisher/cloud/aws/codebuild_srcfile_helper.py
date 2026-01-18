@@ -330,6 +330,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 # TODO: refactor to avoid duplication
                 # Process output logs
                 if results.get("output") and results.get("status") is False:
+                    executor.clear_execution()
                     print(results["output"])
 
                 # Delete phases file when done (cleanup)
