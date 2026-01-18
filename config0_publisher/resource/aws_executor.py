@@ -1103,12 +1103,6 @@ class AWSAsyncExecutor:
             status_result
         )
 
-        # testtest456
-        self.logger.debug("e0f - b " * 32)
-        self.logger.json(status_result)
-        self.logger.debug("e0f - b " * 32)
-        raise Exception("testtest456")
-
         return status_result
 
     def get_codebuild_status(self, build_id=None):
@@ -1126,7 +1120,15 @@ class AWSAsyncExecutor:
         status_info = None
         if self.execution_id and self.output_bucket:
             status_info = self.check_execution_status("codebuild")
-            
+
+        # testtest456
+        self.logger.debug("e0" * 32)
+        self.logger.json(status_info)
+        self.logger.debug("e0" * 32)
+
+        if status_info.get("done"):
+            self.clear_execution()
+
         # If build_id was not provided, try to get it from status
         if not build_id and status_info and 'status' in status_info:
             build_id = status_info['status'].get('build_id')
