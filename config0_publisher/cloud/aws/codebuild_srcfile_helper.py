@@ -336,7 +336,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.debug("i" * 32)
                 self.logger.json(results)
                 self.logger.debug("i" * 32)
-                raise Exception("testtest456")
+                #raise Exception("testtest456")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
