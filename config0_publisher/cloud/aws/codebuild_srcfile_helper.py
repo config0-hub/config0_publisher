@@ -210,6 +210,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         # Ensure pre_build has on-failure: CONTINUE so post_build runs even if pre_build fails
         # This matches the pattern used in codebuild.py (line 133) to ensure done file is written
         # CodeBuild runs each phase in a separate shell, so traps don't persist across phases
+        # Also remove/replace 'when: onSuccess' if present, as it may not be recognized in all contexts
         pre_build_match = re.search(r'^\s*pre_build:', buildspec_content, re.MULTILINE)
         if pre_build_match:
             self.logger.info(f"DEBUG: Found pre_build: at position {pre_build_match.start()}")
@@ -237,17 +238,46 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                         indent = '    '  # Default to 4 spaces if can't determine
                         self.logger.info(f"DEBUG: Using default indentation: '{indent}' (length: {len(indent)})")
                     
-                    # Insert on-failure: CONTINUE on new line after pre_build:
-                    on_failure_line = f'{indent}on-failure: CONTINUE\n'
-                    self.logger.info(f"DEBUG: Inserting line: '{on_failure_line.rstrip()}' after pre_build:")
-                    buildspec_content = buildspec_content[:pre_build_line_end + 1] + on_failure_line + buildspec_content[pre_build_line_end + 1:]
-                    self.logger.info("DEBUG: ✓ Added on-failure: CONTINUE to pre_build phase")
+                    # Check if 'when: onSuccess' is present - if so, replace it with on-failure: CONTINUE
+                    # Otherwise, insert on-failure: CONTINUE after pre_build: line
+                    when_match = re.search(r'^(\s+)when:\s*onSuccess\s*$', next_lines, re.MULTILINE)
+                    if when_match:
+                        # Replace 'when: onSuccess' with 'on-failure: CONTINUE'
+                        when_line_pos = pre_build_line_end + 1 + when_match.start()
+                        when_line_end = buildspec_content.find('\n', when_line_pos)
+                        if when_line_end > 0:
+                            buildspec_content = buildspec_content[:when_line_pos] + f'{indent}on-failure: CONTINUE\n' + buildspec_content[when_line_end + 1:]
+                            self.logger.info(f"DEBUG: ✓ Replaced 'when: onSuccess' with 'on-failure: CONTINUE' in pre_build")
+                        else:
+                            # Fallback: insert on-failure after pre_build line
+                            on_failure_line = f'{indent}on-failure: CONTINUE\n'
+                            buildspec_content = buildspec_content[:pre_build_line_end + 1] + on_failure_line + buildspec_content[pre_build_line_end + 1:]
+                            self.logger.info(f"DEBUG: ✓ Added on-failure: CONTINUE to pre_build phase")
+                    else:
+                        # Insert on-failure: CONTINUE on new line after pre_build:
+                        on_failure_line = f'{indent}on-failure: CONTINUE\n'
+                        self.logger.info(f"DEBUG: Inserting line: '{on_failure_line.rstrip()}' after pre_build:")
+                        buildspec_content = buildspec_content[:pre_build_line_end + 1] + on_failure_line + buildspec_content[pre_build_line_end + 1:]
+                        self.logger.info("DEBUG: ✓ Added on-failure: CONTINUE to pre_build phase")
                 else:
                     self.logger.warn("DEBUG: Could not find newline after pre_build:")
             else:
                 self.logger.info("DEBUG: on-failure: already present in pre_build - skipping")
         else:
             self.logger.warn("DEBUG: pre_build: phase not found in buildspec")
+        
+        # Add a debug command in install phase to verify buildspec is being used
+        # This will appear in CodeBuild logs and prove our modifications are applied
+        install_match = re.search(r'^\s*install:\s*', buildspec_content, re.MULTILINE)
+        if install_match:
+            install_start = install_match.start()
+            commands_pos = buildspec_content.find('commands:', install_start, install_start + 100)
+            if commands_pos > 0:
+                commands_line_end = buildspec_content.find('\n', commands_pos)
+                if commands_line_end > 0:
+                    debug_command = '      - echo "DEBUG: Buildspec modified by codebuild_srcfile_helper.py - on-failure: CONTINUE should be in pre_build"\n'
+                    buildspec_content = buildspec_content[:commands_line_end + 1] + debug_command + buildspec_content[commands_line_end + 1:]
+                    self.logger.info("DEBUG: ✓ Added debug command to install phase")
 
         if has_post_build:
             # If post_build exists, append the done file write command to it
