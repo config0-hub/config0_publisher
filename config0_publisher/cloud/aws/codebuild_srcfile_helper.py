@@ -305,12 +305,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             **inputargs
         )
 
-        if results.get("done"):
-            self.logger.debug("h"*32)
-            self.logger.json(results)
-            self.logger.debug("h"*32)
-            #raise Exception("testtest456")
-
         if async_mode:
             # Async mode: check if done or in_progress
             
@@ -336,7 +330,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.debug("i" * 32)
                 self.logger.json(results)
                 self.logger.debug("i" * 32)
-                #raise Exception("testtest456")
+                self.write_phases_to_json_file(results)
+                raise Exception("testtest456")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
