@@ -329,7 +329,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 except:
                     build_id = results["build_id"]
 
-                codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
+                codebuild_helper.retrieve(build_id=build_id, sparse_env_vars=True)
                 results = codebuild_helper.results
                 results["done"] = True
                 results["async_mode"] = True
