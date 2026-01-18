@@ -116,6 +116,90 @@ def _s3_get_object(s3_client, bucket, key):
         print(f"Error fetching object: {e}")
         return False
 
+def _set_build_status_codes(build_status):
+
+    if build_status == "SUCCEEDED":
+        return {
+            "status_code": "successful",
+            "status": True,
+        }
+
+    failed_message = f"codebuild failed with build status {build_status}"
+
+    FAILED_STATUSES = {
+        "FAILED",
+        "FAULT",
+        "STOPPED",
+        "FAILED_WITH_ABORT",
+    }
+
+    if build_status in FAILED_STATUSES:
+        return {
+            "failed_message": failed_message,
+            "status_code": "failed",
+            "status": False,
+        }
+
+    if build_status == "TIMED_OUT":
+        return {
+            "failed_message": failed_message,
+            "status_code": "timed_out",
+            "status": False,
+        }
+
+    return {
+        "status": None,
+    }
+
+def _eval_build_status(status_data):
+
+    build_id = status_data["build_id"]
+
+    # Get actual CodeBuild build status from API
+    codebuild_client = boto3.client('codebuild',
+                                    region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
+
+    build_data = codebuild_client.batch_get_builds(ids=[build_id])['builds'][0]
+    build_status = build_data.get('buildStatus')
+
+    status = None
+
+    for retry in range(30):
+        build_status_results = _set_build_status_codes(build_status)
+        if build_status_results["status"] is None:
+            time.sleep(10)
+        status = True
+        break
+
+    if build_status_results["status"] is None:
+        status_data['build_status'] = build_status_results['build_status']
+        status_data['status'] = build_status_results['status']
+
+    return status
+
+#try:
+    #    build_info = codebuild_client.batch_get_builds(ids=[build_id])
+
+    #    if 'builds' in build_info and len(build_info['builds']) > 0:
+    #        build_data = build_info['builds'][0]
+    #        build_status = build_data.get('buildStatus')
+
+    #        # Update status.json with actual build status
+    #        if isinstance(status_data, dict):
+    #            status_data['build_status'] = build_status
+    #            status_data['status'] = (build_status == 'SUCCEEDED')
+
+    #            # Write updated status.json back to S3
+    #            _s3_put_object(s3_client, output_bucket, status_key, json.dumps(status_data),
+    #                           content_type='application/json')
+
+    #            # Update result with corrected status
+    #            result["status"] = status_data
+    #except Exception as e:
+    #    # If we can't check CodeBuild status, use status from status.json
+    #    pass
+
+
 def get_execution_status(execution_type, execution_id=None, output_bucket=None):
     """
     Get the status of an execution from S3 using initiated and done markers.
@@ -172,46 +256,30 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
 
     result_key = f"executions/{execution_id}/result.json"
 
+    results = _s3_get_object(s3_client,
+                             output_bucket,
+                             result_key)
+
     # only lambda will have this result.json
     if result.get("done") and execution_type == "lambda":
-        result["results"] = _s3_get_object(s3_client,
-                                           output_bucket,
-                                           result_key)
-
-    return result
+        result["results"] = results
+        return result
 
     # For CodeBuild, check actual build status when done file exists
-    #if result.get("done") and execution_type == "codebuild" and result.get("status"):
-    #    status_data = result["status"]
-    #    build_id = status_data.get("build_id") if isinstance(status_data, dict) else None
-    #    result["results"] = _s3_get_object(s3_client,
-    #                                       output_bucket,
-    #                                       result_key)
+    if result.get("done") and execution_type == "codebuild" and result.get("status"):
+        status_data = result["status"]
+        # Write updated status.json back to S3
+        if _eval_build_status(status_data):
+            _s3_put_object(
+                s3_client,
+                output_bucket,
+                status_key,
+                json.dumps(status_data),
+                content_type='application/json'
+            )
+            result["status"] = status_data
 
-    #    if build_id:
-    #        # Get actual CodeBuild build status from API
-    #        codebuild_region = status_data.get("aws_region", os.environ.get("AWS_DEFAULT_REGION", "us-east-1"))
-    #        try:
-    #            codebuild_client = boto3.client('codebuild', region_name=codebuild_region)
-    #            build_info = codebuild_client.batch_get_builds(ids=[build_id])
-    #
-    #            if 'builds' in build_info and len(build_info['builds']) > 0:
-    #                build_data = build_info['builds'][0]
-    #                build_status = build_data.get('buildStatus')
-    #
-    #                # Update status.json with actual build status
-    #                if isinstance(status_data, dict):
-    #                    status_data['build_status'] = build_status
-    #                    status_data['status'] = (build_status == 'SUCCEEDED')
-    #
-    #                    # Write updated status.json back to S3
-    #                    _s3_put_object(s3_client, output_bucket, status_key, json.dumps(status_data), content_type='application/json')
-    #
-    #                    # Update result with corrected status
-    #                    result["status"] = status_data
-    #        except Exception as e:
-    #            # If we can't check CodeBuild status, use status from status.json
-    #            pass
+    return result
 
 def aws_executor(execution_type="lambda"):
     """
@@ -1233,11 +1301,6 @@ class AWSAsyncExecutor:
                                 False,
                                 original_args,
                                 result)
-
-
-        if result.get("done"):
-            self.logger.json(result)
-            raise Exception("testtest456 - uuuu")
 
         return result
 

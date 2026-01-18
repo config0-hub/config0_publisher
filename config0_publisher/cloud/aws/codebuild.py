@@ -442,7 +442,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logger.debug("a"*32)
         self.logger.debug("a"*32)
         self.logger.debug("a"*32)
-
         self.trigger_build(sparse_env_vars=sparse_env_vars)
         self.logger.debug("b"*32)
         self.logger.debug("b"*32)

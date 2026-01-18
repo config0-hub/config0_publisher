@@ -305,6 +305,12 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             **inputargs
         )
 
+        if results.get("done"):
+            self.logger.debug("h"*32)
+            self.logger.json(results)
+            self.logger.debug("h"*32)
+            raise Exception("testtest456")
+
         if async_mode:
             # Async mode: check if done or in_progress
             
