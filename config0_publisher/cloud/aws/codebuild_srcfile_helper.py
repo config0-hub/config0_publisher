@@ -182,29 +182,22 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
       - aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done || true
 '''
         
-        # Add a trap handler in install or pre_build phase to write done file on EXIT
-        # This ensures done file is written even if pre_build fails (since post_build won't run)
-        trap_handler_command = '''      - |
-        trap 'date +%s > done 2>/dev/null || echo "$(date +%s)" > done; aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done 2>/dev/null || true' EXIT'''
-        
-        # Inject trap handler into install phase (runs first, so trap is set early)
-        has_install = re.search(r'^\s*install:', buildspec_content, re.MULTILINE)
-        if has_install:
-            # Find install phase and add trap as first command
-            install_pattern = r'(install:\s*commands:\s*)'
-            install_match = re.search(install_pattern, buildspec_content, re.MULTILINE)
-            if install_match:
-                # Add trap handler as first command in install phase
-                buildspec_content = buildspec_content[:install_match.end()] + "\n" + trap_handler_command + "\n" + buildspec_content[install_match.end():]
-        else:
-            # If no install phase, add trap to pre_build phase
-            has_pre_build = re.search(r'^\s*pre_build:', buildspec_content, re.MULTILINE)
-            if has_pre_build:
-                pre_build_pattern = r'(pre_build:\s*commands:\s*)'
-                pre_build_match = re.search(pre_build_pattern, buildspec_content, re.MULTILINE)
-                if pre_build_match:
-                    # Add trap handler as first command in pre_build phase
-                    buildspec_content = buildspec_content[:pre_build_match.end()] + "\n" + trap_handler_command + "\n" + buildspec_content[pre_build_match.end():]
+        # Ensure pre_build has on-failure: CONTINUE so post_build runs even if pre_build fails
+        # This matches the pattern used in codebuild.py (line 133) to ensure done file is written
+        # CodeBuild runs each phase in a separate shell, so traps don't persist across phases
+        has_pre_build = re.search(r'^\s*pre_build:', buildspec_content, re.MULTILINE)
+        if has_pre_build:
+            # Check if pre_build already has on-failure directive by looking for it near pre_build:
+            pre_build_line_pattern = r'(^\s*pre_build:\s*)(?:on-failure:\s*\w+\s*)?(?:when:\s*\w+\s*)?(commands:\s*)'
+            pre_build_match = re.search(pre_build_line_pattern, buildspec_content, re.MULTILINE)
+            if pre_build_match:
+                # Check if on-failure is already set in the matched section
+                full_match_text = pre_build_match.group(0)
+                if 'on-failure:' not in full_match_text:
+                    # Add on-failure: CONTINUE after pre_build: and before commands:
+                    replacement = pre_build_match.group(1) + 'on-failure: CONTINUE\n    ' + pre_build_match.group(2)
+                    buildspec_content = buildspec_content[:pre_build_match.start()] + replacement + buildspec_content[pre_build_match.end():]
+                    self.logger.info("Added on-failure: CONTINUE to pre_build phase to ensure post_build runs even if pre_build fails")
 
         if has_post_build:
             # If post_build exists, append the done file write command to it
