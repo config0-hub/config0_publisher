@@ -330,7 +330,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 # TODO: refactor to avoid duplication
                 # Process output logs
                 if results.get("status") is False:
+                    self.logger.debug("j0"*32)
                     executor.clear_execution()
+                    self.logger.debug("j1"*32)
+                raise Exception("j2"*32)
 
                 if results.get("output"):
                     print(results["output"])
