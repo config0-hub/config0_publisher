@@ -159,10 +159,7 @@ def _eval_build_status(status_data,clobber=False):
 
     build_data = codebuild_client.batch_get_builds(ids=[build_id])['builds'][0]
     build_status = build_data.get('buildStatus')
-
-    print("    ----------------------------------------------------------------------")
     print(f"   ---- build status for build_id {build_id}: {build_status} -------")
-    print("    ----------------------------------------------------------------------")
 
     status = None
 
@@ -255,9 +252,9 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
         build_status = _eval_build_status(status_data,clobber=False)
         if result.get("done") or build_status in [True, False]:
             if result.get("done"):
-                print("execution is done")
+                print("     ----- execution is done")
             elif build_status in [True,False]:
-                print("build_status is True/False")
+                print("     ----- build_status is True/False")
                 time.sleep(15)  # wait until codebuild is fully stopped
             # Write updated status.json back to S3
             if _eval_build_status(status_data,clobber=True):
