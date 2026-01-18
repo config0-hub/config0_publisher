@@ -1102,7 +1102,13 @@ class AWSAsyncExecutor:
             {'execution_id': self.execution_id},
             status_result
         )
-        
+
+        # testtest456
+        self.logger.debug("e0f - b " * 32)
+        self.logger.json(status_result)
+        self.logger.debug("e0f - b " * 32)
+        raise Exception("testtest456")
+
         return status_result
 
     def get_codebuild_status(self, build_id=None):
