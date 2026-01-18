@@ -327,10 +327,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 results["done"] = True
                 results["async_mode"] = True
 
+                # TODO: refactor to avoid duplication
                 # Process output logs
-                if results.get("output"):
+                if results.get("output") and results.get("status") is False:
                     print(results["output"])
-                #raise Exception("testtest456")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
