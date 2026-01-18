@@ -128,19 +128,82 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
     def get_buildspec(self):
         # get with provided b64 hash
         if self.buildspec_hash:
-            return b64_decode(self.buildspec_hash)
+            buildspec_content = b64_decode(self.buildspec_hash)
+        else:
+            # get repo file and read contents
+            buildspec_file = os.path.join(
+                self._get_fqn_app_dir_path(),
+                "src",
+                self.buildspec_file
+            )
 
-        # get repo file and read contents
-        buildspec_file = os.path.join(
-            self._get_fqn_app_dir_path(),
-            "src",
-            self.buildspec_file
-        )
+            with open(buildspec_file, "r") as file:
+                buildspec_content = file.read()
 
-        with open(buildspec_file, "r") as file:
-            file_contents = file.read()
+        # Ensure done file is written in post_build phase for async tracking
+        buildspec_content = self._ensure_done_file_write(buildspec_content)
 
-        return file_contents
+        return buildspec_content
+
+    def _ensure_done_file_write(self, buildspec_content):
+        """
+        Ensure the buildspec includes post_build phase that writes the done file to S3.
+        This is required for async execution tracking to detect build completion.
+        The done file is written even if the build fails, allowing proper async tracking.
+        """
+        import re
+        
+        # Check if done file write already exists (normalize $ and ${ for matching)
+        normalized_content = buildspec_content.replace('${', '$VAR{').replace('{', '$VAR{')
+        done_file_patterns = [
+            "executions/$VAR{EXECUTION_ID}/done",
+            "executions/.*?/done",
+            "s3://.*?/executions/.*?/done"
+        ]
+        
+        has_done_file_write = any(re.search(pattern, normalized_content, re.IGNORECASE) for pattern in done_file_patterns)
+
+        # If done file write already exists, return as-is
+        if has_done_file_write:
+            self.logger.debug("Buildspec already contains done file write command")
+            return buildspec_content
+
+        # Check if post_build phase exists
+        has_post_build = re.search(r'^\s*post_build:', buildspec_content, re.MULTILINE) or re.search(r'^\s*post-build:', buildspec_content, re.MULTILINE)
+
+        # Done file write commands using environment variable placeholders
+        # Use ${OUTPUT_BUCKET} and ${EXECUTION_ID} which will be resolved in CodeBuild environment
+        done_file_commands = '''  post_build:
+    commands:
+      - date +%s > done || echo "$(date +%s)" > done
+      - echo "Uploading done file to S3..."
+      - aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done || true
+'''
+
+        if has_post_build:
+            # If post_build exists, append the done file write command to it
+            # Find the end of post_build commands section (before next phase or end of phases)
+            # Match post_build section until next phase or end
+            pattern = r'(post_build:\s*commands:\s*(?:^\s+-.*?\n)+?)(?=\n\s*\w+:|$)'
+            match = re.search(pattern, buildspec_content, re.MULTILINE)
+            if match:
+                # Append done file commands to existing post_build commands
+                existing_commands = match.group(1).rstrip()
+                done_commands_to_add = '''      - date +%s > done || echo "$(date +%s)" > done
+      - echo "Uploading done file to S3..."
+      - aws s3 cp done s3://${OUTPUT_BUCKET}/executions/${EXECUTION_ID}/done || true
+'''
+                replacement = existing_commands + "\n" + done_commands_to_add
+                buildspec_content = buildspec_content[:match.start()] + replacement + buildspec_content[match.end():]
+            else:
+                # Fallback: append at end of file if pattern doesn't match
+                buildspec_content = buildspec_content.rstrip() + "\n" + done_file_commands
+        else:
+            # If post_build doesn't exist, append it at the end
+            buildspec_content = buildspec_content.rstrip() + "\n" + done_file_commands
+
+        self.logger.info("Injected done file write into buildspec post_build phase (runs on both success and failure)")
+        return buildspec_content
 
     def _set_build_env_vars(self):
         if not self.build_env_vars:
@@ -158,6 +221,9 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         self.build_env_vars["RUN_SHARE_DIR"] = self.run_share_dir
         self.build_env_vars["TMP_BUCKET"] = self.tmp_bucket
         self.build_env_vars["LOG_BUCKET"] = self.log_bucket
+        
+        # Set OUTPUT_BUCKET for done file write (used in buildspec post_build phase)
+        self.build_env_vars["OUTPUT_BUCKET"] = self.tmp_bucket
 
         # Set upload bucket
         if self.remote_stateful_bucket:
