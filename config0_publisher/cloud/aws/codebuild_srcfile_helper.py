@@ -220,9 +220,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
 
         blob_url = f's3://{self.buildparams["build_env_vars"]["UPLOAD_BUCKET"]}/{self.stateful_id}/state/src.{self.stateful_id}.zip'
         cmd = f'aws s3 cp {srcfile} {blob_url} --quiet'
-
         self.logger.debug(f"Uploading source files to {blob_url}...")
-        raise Exception("testtest456")
 
         return self.execute(cmd)
 
