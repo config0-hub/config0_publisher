@@ -324,6 +324,11 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 self.logger.json(results)
                 self.logger.debug("j1" * 32)
 
+                try:
+                    build_id = results["status"]["build_id"]
+                except:
+                    build_id = results["build_id"]
+
                 codebuild_helper.retrieve(build_id=results["status"]["build_id"], sparse_env_vars=True)
                 results = codebuild_helper.results
                 results["done"] = True
