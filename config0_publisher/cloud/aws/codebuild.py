@@ -301,8 +301,8 @@ class CodebuildResourceHelper(AWSCommonConn):
                     )
             except Exception as e:
                 msg = traceback.format_exc()
-                failed_message = f"failed to call CloudWatch get_log_events API: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
-                self.logger.debug(failed_message)
+                failed_message = f"FAILED: CloudWatch get_log_events API call failed - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
+                self.logger.warn(failed_message)
                 return None
             
             # Process response
@@ -312,8 +312,8 @@ class CodebuildResourceHelper(AWSCommonConn):
                     log_lines.append(event['message'])
             except Exception as e:
                 msg = traceback.format_exc()
-                failed_message = f"failed to process CloudWatch log events: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
-                self.logger.debug(failed_message)
+                failed_message = f"FAILED: Error processing CloudWatch log events - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
+                self.logger.warn(failed_message)
                 return None
             
             next_token = response.get('nextForwardToken')
@@ -329,12 +329,15 @@ class CodebuildResourceHelper(AWSCommonConn):
         # Build final log string
         try:
             log = ''.join(log_lines)
-            self.logger.debug(f"retrieved log from CloudWatch: {log_group}/{log_stream} ({len(log_lines)} lines)")
+            if log:
+                self.logger.debug_highlight(f"SUCCESS: Retrieved {len(log_lines)} log lines from CloudWatch - log_group={log_group}, log_stream={log_stream}")
+            else:
+                self.logger.warn(f"WARNING: CloudWatch log stream exists but contains no log events - log_group={log_group}, log_stream={log_stream}")
             return log
         except Exception as e:
             msg = traceback.format_exc()
-            failed_message = f"failed to join CloudWatch log lines: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
-            self.logger.debug(failed_message)
+            failed_message = f"FAILED: Error joining CloudWatch log lines - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
+            self.logger.warn(failed_message)
             return None
 
     def _set_log(self, build_id_suffix):
@@ -393,17 +396,20 @@ class CodebuildResourceHelper(AWSCommonConn):
             
         # Fallback to CloudWatch Logs if available
         if self.cloudwatch_log_group and self.cloudwatch_log_stream:
-            self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: {self.cloudwatch_log_group}/{self.cloudwatch_log_stream}")
+            self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: log_group={self.cloudwatch_log_group}, log_stream={self.cloudwatch_log_stream}")
             log = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
             if log:
                 self.output = log
+                self.logger.debug_highlight(f"SUCCESS: Retrieved logs from CloudWatch fallback for build {build_id_suffix}")
                 return {"status": True}
             else:
                 # CloudWatch also failed
+                self.logger.warn(f"FAILED: CloudWatch fallback also failed for build {build_id_suffix}")
                 return {"status": False,
                         "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback also failed."}
         else:
             # No CloudWatch info available
+            self.logger.debug(f"No CloudWatch log info available (group={self.cloudwatch_log_group}, stream={self.cloudwatch_log_stream})")
             return {"status": False,
                     "failed_message": s3_failed_message}
 
