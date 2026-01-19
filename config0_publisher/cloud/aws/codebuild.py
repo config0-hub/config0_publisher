@@ -57,6 +57,8 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.build_id = None
         self.project_name = os.environ.get("CODEBUILD_PROJECT", "config0-iac")
         self.logarn = None
+        self.cloudwatch_log_group = None
+        self.cloudwatch_log_stream = None
 
         if "set_env_vars" in kwargs:
             kwargs["set_env_vars"] = self.ENV_VARS
@@ -67,6 +69,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         # codebuild specific settings and variables
         self.codebuild_client = self.session.client('codebuild')
+        self.logs_client = self.session.client('logs')
 
         if not self.results["inputargs"].get("build_image"):
             self.results["inputargs"]["build_image"] = self.build_image
@@ -86,8 +89,13 @@ class CodebuildResourceHelper(AWSCommonConn):
         builds = self.codebuild_client.batch_get_builds(ids=build_ids)['builds']
 
         for build in builds:
-            results[build["id"]] = {"status": build["buildStatus"],
-                                   "logarn": build["logs"]["s3LogsArn"]}
+            logs_info = build.get("logs", {})
+            results[build["id"]] = {
+                "status": build["buildStatus"],
+                "logarn": logs_info.get("s3LogsArn"),
+                "cloudwatch_log_group": logs_info.get("groupName"),
+                "cloudwatch_log_stream": logs_info.get("streamName")
+            }
 
         return results
 
@@ -97,6 +105,8 @@ class CodebuildResourceHelper(AWSCommonConn):
             return
 
         self.logarn = _build["logarn"]
+        self.cloudwatch_log_group = _build.get("cloudwatch_log_group")
+        self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
         self.results["build_status"] = _build["status"]
         self.results["inputargs"]["logarn"] = self.logarn
 
@@ -107,6 +117,13 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         build_status = _build["status"]
         self.results["build_status"] = build_status
+        
+        # Update CloudWatch log info if available (may not be set initially)
+        if not self.cloudwatch_log_group and _build.get("cloudwatch_log_group"):
+            self.cloudwatch_log_group = _build.get("cloudwatch_log_group")
+        if not self.cloudwatch_log_stream and _build.get("cloudwatch_log_stream"):
+            self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
+        
         self.logger.debug(f"codebuild status: {build_status}")
 
         if build_status == 'IN_PROGRESS':
@@ -238,7 +255,7 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def wait_for_log(self):
         build_id_suffix = self.build_id.split(":")[1]
-        maxtime = 90  # Increased from 30 to 90 seconds to allow time for CodeBuild to write logs after STOPPED/ABORTED
+        maxtime = 30  # Reduced from 90 to 30 seconds - CloudWatch logs available immediately as fallback
         t0 = int(time())
 
         while True:
@@ -261,6 +278,51 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             sleep(2)
 
+    def _get_log_from_cloudwatch(self, log_group, log_stream):
+        """Retrieve logs from CloudWatch Logs as fallback when S3 logs are unavailable."""
+        try:
+            log_lines = []
+            next_token = None
+            
+            while True:
+                if next_token:
+                    response = self.logs_client.get_log_events(
+                        logGroupName=log_group,
+                        logStreamName=log_stream,
+                        startFromHead=True,
+                        nextToken=next_token
+                    )
+                else:
+                    response = self.logs_client.get_log_events(
+                        logGroupName=log_group,
+                        logStreamName=log_stream,
+                        startFromHead=True
+                    )
+                
+                events = response.get('events', [])
+                for event in events:
+                    log_lines.append(event['message'])
+                
+                next_token = response.get('nextForwardToken')
+                # If we got the same token back, we've reached the end
+                if not next_token or (response.get('nextBackwardToken') == next_token):
+                    break
+                    
+                # Safety check to avoid infinite loops
+                if len(log_lines) > 100000:  # Limit to 100k lines
+                    self.logger.warn("CloudWatch log retrieval hit 100k line limit")
+                    break
+            
+            log = ''.join(log_lines)
+            self.logger.debug(f"retrieved log from CloudWatch: {log_group}/{log_stream} ({len(log_lines)} lines)")
+            return log
+            
+        except Exception as e:
+            msg = traceback.format_exc()
+            failed_message = f"failed to get log from CloudWatch: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
+            self.logger.debug(failed_message)
+            return None
+
     def _set_log(self, build_id_suffix):
         if self.output:
             return {"status": True}
@@ -275,24 +337,38 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         _dstfile = f'/tmp/{build_id_suffix}.gz'
 
+        # Try S3 first
         try:
             obj = self.s3.Object(_log_bucket,
                                 _logname)
 
             _read = obj.get()['Body'].read()
-        except:
-            msg = traceback.format_exc()
-            failed_message = f"failed to get log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{msg}"
-            return {"status": False,
-                    "failed_message": failed_message}
-
-        self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
-        gzipfile = BytesIO(_read)
-        gzipfile = gzip.GzipFile(fileobj=gzipfile)
-        log = gzipfile.read().decode('utf-8')
-        self.output = log
-
-        return {"status": True}
+            self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
+            gzipfile = BytesIO(_read)
+            gzipfile = gzip.GzipFile(fileobj=gzipfile)
+            log = gzipfile.read().decode('utf-8')
+            self.output = log
+            return {"status": True}
+        except Exception as e:
+            s3_error_msg = traceback.format_exc()
+            s3_failed_message = f"failed to get log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
+            self.logger.debug(s3_failed_message)
+            
+            # Fallback to CloudWatch Logs if available
+            if self.cloudwatch_log_group and self.cloudwatch_log_stream:
+                self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: {self.cloudwatch_log_group}/{self.cloudwatch_log_stream}")
+                log = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
+                if log:
+                    self.output = log
+                    return {"status": True}
+                else:
+                    # CloudWatch also failed
+                    return {"status": False,
+                            "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback also failed."}
+            else:
+                # No CloudWatch info available
+                return {"status": False,
+                        "failed_message": s3_failed_message}
 
     def _set_build_summary(self):
         if self.results["status_code"] == "successful":
