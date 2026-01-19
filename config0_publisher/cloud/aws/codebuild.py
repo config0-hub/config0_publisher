@@ -280,11 +280,12 @@ class CodebuildResourceHelper(AWSCommonConn):
 
     def _get_log_from_cloudwatch(self, log_group, log_stream):
         """Retrieve logs from CloudWatch Logs as fallback when S3 logs are unavailable."""
-        try:
-            log_lines = []
-            next_token = None
-            
-            while True:
+        log_lines = []
+        next_token = None
+        
+        while True:
+            # Make API call to get log events
+            try:
                 if next_token:
                     response = self.logs_client.get_log_events(
                         logGroupName=log_group,
@@ -298,28 +299,41 @@ class CodebuildResourceHelper(AWSCommonConn):
                         logStreamName=log_stream,
                         startFromHead=True
                     )
-                
+            except Exception as e:
+                msg = traceback.format_exc()
+                failed_message = f"failed to call CloudWatch get_log_events API: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
+                self.logger.debug(failed_message)
+                return None
+            
+            # Process response
+            try:
                 events = response.get('events', [])
                 for event in events:
                     log_lines.append(event['message'])
-                
-                next_token = response.get('nextForwardToken')
-                # If we got the same token back, we've reached the end
-                if not next_token or (response.get('nextBackwardToken') == next_token):
-                    break
-                    
-                # Safety check to avoid infinite loops
-                if len(log_lines) > 100000:  # Limit to 100k lines
-                    self.logger.warn("CloudWatch log retrieval hit 100k line limit")
-                    break
+            except Exception as e:
+                msg = traceback.format_exc()
+                failed_message = f"failed to process CloudWatch log events: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
+                self.logger.debug(failed_message)
+                return None
             
+            next_token = response.get('nextForwardToken')
+            # If we got the same token back, we've reached the end
+            if not next_token or (response.get('nextBackwardToken') == next_token):
+                break
+                
+            # Safety check to avoid infinite loops
+            if len(log_lines) > 100000:  # Limit to 100k lines
+                self.logger.warn("CloudWatch log retrieval hit 100k line limit")
+                break
+        
+        # Build final log string
+        try:
             log = ''.join(log_lines)
             self.logger.debug(f"retrieved log from CloudWatch: {log_group}/{log_stream} ({len(log_lines)} lines)")
             return log
-            
         except Exception as e:
             msg = traceback.format_exc()
-            failed_message = f"failed to get log from CloudWatch: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
+            failed_message = f"failed to join CloudWatch log lines: {log_group}/{log_stream}\n\nstacktrace:\n\n{msg}"
             self.logger.debug(failed_message)
             return None
 
@@ -338,37 +352,60 @@ class CodebuildResourceHelper(AWSCommonConn):
         _dstfile = f'/tmp/{build_id_suffix}.gz'
 
         # Try S3 first
+        s3_failed_message = None
+        
+        # Get S3 object
         try:
-            obj = self.s3.Object(_log_bucket,
-                                _logname)
-
-            _read = obj.get()['Body'].read()
-            self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
-            gzipfile = BytesIO(_read)
-            gzipfile = gzip.GzipFile(fileobj=gzipfile)
-            log = gzipfile.read().decode('utf-8')
-            self.output = log
-            return {"status": True}
+            obj = self.s3.Object(_log_bucket, _logname)
         except Exception as e:
             s3_error_msg = traceback.format_exc()
-            s3_failed_message = f"failed to get log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
+            s3_failed_message = f"failed to get S3 object: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
             self.logger.debug(s3_failed_message)
-            
-            # Fallback to CloudWatch Logs if available
-            if self.cloudwatch_log_group and self.cloudwatch_log_stream:
-                self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: {self.cloudwatch_log_group}/{self.cloudwatch_log_stream}")
-                log = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
-                if log:
-                    self.output = log
-                    return {"status": True}
-                else:
-                    # CloudWatch also failed
-                    return {"status": False,
-                            "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback also failed."}
+            # Fall through to CloudWatch fallback
+        else:
+            # Read from S3 object
+            try:
+                _read = obj.get()['Body'].read()
+            except Exception as e:
+                s3_error_msg = traceback.format_exc()
+                s3_failed_message = f"failed to read from S3 object: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
+                self.logger.debug(s3_failed_message)
+                # Fall through to CloudWatch fallback
             else:
-                # No CloudWatch info available
+                # Decompress and decode
+                try:
+                    gzipfile = BytesIO(_read)
+                    gzipfile = gzip.GzipFile(fileobj=gzipfile)
+                    log = gzipfile.read().decode('utf-8')
+                    self.output = log
+                    self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
+                    return {"status": True}
+                except Exception as e:
+                    s3_error_msg = traceback.format_exc()
+                    s3_failed_message = f"failed to decompress/decode S3 log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
+                    self.logger.debug(s3_failed_message)
+                    # Fall through to CloudWatch fallback
+        
+        # If we get here, S3 failed - try CloudWatch fallback
+        # Use generic message if specific error wasn't captured
+        if s3_failed_message is None:
+            s3_failed_message = f"failed to get log from S3: s3://{_log_bucket}/{_logname}"
+            
+        # Fallback to CloudWatch Logs if available
+        if self.cloudwatch_log_group and self.cloudwatch_log_stream:
+            self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: {self.cloudwatch_log_group}/{self.cloudwatch_log_stream}")
+            log = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
+            if log:
+                self.output = log
+                return {"status": True}
+            else:
+                # CloudWatch also failed
                 return {"status": False,
-                        "failed_message": s3_failed_message}
+                        "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback also failed."}
+        else:
+            # No CloudWatch info available
+            return {"status": False,
+                    "failed_message": s3_failed_message}
 
     def _set_build_summary(self):
         if self.results["status_code"] == "successful":
