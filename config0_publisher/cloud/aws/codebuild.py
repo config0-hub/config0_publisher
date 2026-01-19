@@ -90,11 +90,13 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         for build in builds:
             logs_info = build.get("logs", {})
+            cloudwatch_logs = logs_info.get("cloudWatchLogs", {})
             results[build["id"]] = {
                 "status": build["buildStatus"],
                 "logarn": logs_info.get("s3LogsArn"),
                 "cloudwatch_log_group": logs_info.get("groupName"),
-                "cloudwatch_log_stream": logs_info.get("streamName")
+                "cloudwatch_log_stream": logs_info.get("streamName"),
+                "cloudwatch_logs_enabled": cloudwatch_logs.get("status") == "ENABLED"
             }
 
         return results
@@ -107,6 +109,7 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logarn = _build["logarn"]
         self.cloudwatch_log_group = _build.get("cloudwatch_log_group")
         self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
+        self.cloudwatch_logs_enabled = _build.get("cloudwatch_logs_enabled", False)
         self.results["build_status"] = _build["status"]
         self.results["inputargs"]["logarn"] = self.logarn
 
@@ -123,6 +126,8 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.cloudwatch_log_group = _build.get("cloudwatch_log_group")
         if not self.cloudwatch_log_stream and _build.get("cloudwatch_log_stream"):
             self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
+        if not hasattr(self, 'cloudwatch_logs_enabled') or not self.cloudwatch_logs_enabled:
+            self.cloudwatch_logs_enabled = _build.get("cloudwatch_logs_enabled", False)
         
         self.logger.debug(f"codebuild status: {build_status}")
 
@@ -394,9 +399,9 @@ class CodebuildResourceHelper(AWSCommonConn):
         if s3_failed_message is None:
             s3_failed_message = f"failed to get log from S3: s3://{_log_bucket}/{_logname}"
             
-        # Fallback to CloudWatch Logs if available
-        if self.cloudwatch_log_group and self.cloudwatch_log_stream:
-            self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: log_group={self.cloudwatch_log_group}, log_stream={self.cloudwatch_log_stream}")
+        # Fallback to CloudWatch Logs if available and enabled
+        if self.cloudwatch_log_group and self.cloudwatch_log_stream and self.cloudwatch_logs_enabled:
+            self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: log_group={self.cloudwatch_log_group}, log_stream={self.cloudwatch_log_stream}, enabled={self.cloudwatch_logs_enabled}")
             log = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
             if log:
                 self.output = log
@@ -408,8 +413,11 @@ class CodebuildResourceHelper(AWSCommonConn):
                 return {"status": False,
                         "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback also failed."}
         else:
-            # No CloudWatch info available
-            self.logger.debug(f"No CloudWatch log info available (group={self.cloudwatch_log_group}, stream={self.cloudwatch_log_stream})")
+            # No CloudWatch info available or not enabled
+            if not self.cloudwatch_logs_enabled:
+                self.logger.debug(f"CloudWatch logs not enabled for this build (status=DISABLED)")
+            elif not self.cloudwatch_log_group or not self.cloudwatch_log_stream:
+                self.logger.debug(f"CloudWatch log info incomplete (group={self.cloudwatch_log_group}, stream={self.cloudwatch_log_stream})")
             return {"status": False,
                     "failed_message": s3_failed_message}
 
