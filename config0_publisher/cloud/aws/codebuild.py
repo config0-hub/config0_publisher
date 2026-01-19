@@ -287,8 +287,16 @@ class CodebuildResourceHelper(AWSCommonConn):
         """Retrieve logs from CloudWatch Logs as fallback when S3 logs are unavailable."""
         log_lines = []
         next_token = None
+        previous_token = None
+        max_time = 30  # 30 second timeout
+        t0 = int(time())
         
         while True:
+            _time_elapsed = int(time()) - t0
+            if _time_elapsed > max_time:
+                self.logger.warn(f"CloudWatch log retrieval timeout after {_time_elapsed} seconds")
+                break
+            
             # Make API call to get log events
             try:
                 if next_token:
@@ -306,8 +314,19 @@ class CodebuildResourceHelper(AWSCommonConn):
                     )
             except Exception as e:
                 msg = traceback.format_exc()
-                failed_message = f"FAILED: CloudWatch get_log_events API call failed - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
-                self.logger.warn(failed_message)
+                error_type = type(e).__name__
+                error_msg = str(e)
+                
+                # Check for specific permission errors
+                if "AccessDeniedException" in error_type or "AccessDenied" in error_msg:
+                    failed_message = f"FAILED: CloudWatch permission denied - IAM role needs 'logs:GetLogEvents' permission\n"
+                    failed_message += f"  log_group={log_group}, log_stream={log_stream}\n"
+                    failed_message += f"  Error: {error_msg}\n"
+                    failed_message += f"  Fix: Add 'logs:GetLogEvents' permission to IAM role for resource: arn:aws:logs:*:*:log-group:{log_group}:*"
+                    self.logger.warn(failed_message)
+                else:
+                    failed_message = f"FAILED: CloudWatch get_log_events API call failed - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
+                    self.logger.warn(failed_message)
                 return None
             
             # Process response
@@ -321,15 +340,36 @@ class CodebuildResourceHelper(AWSCommonConn):
                 self.logger.warn(failed_message)
                 return None
             
-            next_token = response.get('nextForwardToken')
-            # If we got the same token back, we've reached the end
-            if not next_token or (response.get('nextBackwardToken') == next_token):
+            # Get next token for pagination
+            next_forward_token = response.get('nextForwardToken')
+            next_backward_token = response.get('nextBackwardToken')
+            
+            # Break conditions:
+            # 1. No next token (reached end)
+            # 2. Same token as previous (no progress)
+            # 3. Empty events and no new token (reached end)
+            # 4. nextForwardToken equals nextBackwardToken (reached end)
+            if not next_forward_token:
+                # No more tokens, we're done
                 break
-                
-            # Safety check to avoid infinite loops
+            
+            if next_forward_token == previous_token:
+                # Same token as before, no progress - break to avoid infinite loop
+                self.logger.debug(f"CloudWatch pagination: same token returned, breaking after {_time_elapsed} seconds")
+                break
+            
+            if not events and next_forward_token == next_backward_token:
+                # Empty events and tokens match - reached end
+                break
+            
+            # Safety check to avoid excessive data
             if len(log_lines) > 100000:  # Limit to 100k lines
-                self.logger.warn("CloudWatch log retrieval hit 100k line limit")
+                self.logger.warn(f"CloudWatch log retrieval hit 100k line limit after {_time_elapsed} seconds")
                 break
+            
+            # Update tokens for next iteration
+            previous_token = next_token
+            next_token = next_forward_token
         
         # Build final log string
         try:
