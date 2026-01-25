@@ -131,9 +131,7 @@ class Lambdabuild(LambdaParams):
                                     arch="linux_amd64")
 
     def _get_prebuild_cmds(self):
-        cmds = self.tfcmds.s3_tfpkg_to_local()
-        cmds.extend(self.tfcmds.get_tf_install())
-        return cmds
+        return self.tfcmds.get_tf_install()
 
     def _get_build_cmds(self):
 
