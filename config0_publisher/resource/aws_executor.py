@@ -375,18 +375,24 @@ def aws_executor(execution_type="lambda"):
                 if hasattr(self, attr):
                     payload[attr] = getattr(self, attr)
 
-            # Try to write initiated marker to S3, but don't fail if it doesn't work
-            # This allows lambda to be invoked even if S3 permissions are missing
-            init = False
-            s3_client = boto3.client('s3')
-            try:
-                s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
-                logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
-                init = True
-            except Exception as e:
-                logger.warn(f"Failed to write initiated marker to S3 (continuing anyway): {str(e)}")
-                # Continue without S3 tracking - lambda can still be invoked
-                init = False
+            # Get user AWS credentials from OVERIDE_AWS_CREDS if available (for API calls)
+            # This ensures we use the user's AWS account credentials for S3 operations too
+            s3_client_kwargs = {}
+            if os.environ.get("OVERIDE_AWS_CREDS"):
+                from config0_publisher.serialization import b64_decode
+                user_creds = b64_decode(os.environ["OVERIDE_AWS_CREDS"])
+                if isinstance(user_creds, dict):
+                    s3_client_kwargs.update({
+                        'aws_access_key_id': user_creds.get('aws_access_key_id'),
+                        'aws_secret_access_key': user_creds.get('aws_secret_access_key'),
+                        'aws_session_token': user_creds.get('aws_session_token')
+                    })
+                    logger.debug(f"Using user AWS credentials from OVERIDE_AWS_CREDS for S3 operations")
+            
+            s3_client = boto3.client('s3', **s3_client_kwargs)
+            s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
+            logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
+            init = True
 
             # Execute based on type
             if execution_type == "lambda":
@@ -435,8 +441,22 @@ def aws_executor(execution_type="lambda"):
                 # LogType is omitted as it's not needed for Event invocations
 
                 try:
-                    # Initialize Lambda client with specific region for Lambda
-                    lambda_client = boto3.client('lambda', region_name=lambda_region)
+                    # Get user AWS credentials from OVERIDE_AWS_CREDS if available (for API calls)
+                    # This ensures we use the user's AWS account, not the SaaS account
+                    lambda_client_kwargs = {'region_name': lambda_region}
+                    if os.environ.get("OVERIDE_AWS_CREDS"):
+                        from config0_publisher.serialization import b64_decode
+                        user_creds = b64_decode(os.environ["OVERIDE_AWS_CREDS"])
+                        if isinstance(user_creds, dict):
+                            lambda_client_kwargs.update({
+                                'aws_access_key_id': user_creds.get('aws_access_key_id'),
+                                'aws_secret_access_key': user_creds.get('aws_secret_access_key'),
+                                'aws_session_token': user_creds.get('aws_session_token')
+                            })
+                            logger.debug(f"Using user AWS credentials from OVERIDE_AWS_CREDS for lambda invocation")
+                    
+                    # Initialize Lambda client with user credentials if available
+                    lambda_client = boto3.client('lambda', **lambda_client_kwargs)
                     response = lambda_client.invoke(**lambda_params)
                     status_code = response.get('StatusCode')
                     logger.debug(f"Lambda invocated with {lambda_params} status code: {status_code}")
@@ -791,8 +811,22 @@ class AWSAsyncExecutor:
         function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
         lambda_region = getattr(self, 'lambda_region', 'us-east-1')
         
-        # Initialize Lambda client
-        lambda_client = boto3.client('lambda', region_name=lambda_region)
+        # Get user AWS credentials from OVERIDE_AWS_CREDS if available (for API calls)
+        # This ensures we use the user's AWS account, not the SaaS account
+        lambda_client_kwargs = {'region_name': lambda_region}
+        if os.environ.get("OVERIDE_AWS_CREDS"):
+            from config0_publisher.serialization import b64_decode
+            user_creds = b64_decode(os.environ["OVERIDE_AWS_CREDS"])
+            if isinstance(user_creds, dict):
+                lambda_client_kwargs.update({
+                    'aws_access_key_id': user_creds.get('aws_access_key_id'),
+                    'aws_secret_access_key': user_creds.get('aws_secret_access_key'),
+                    'aws_session_token': user_creds.get('aws_session_token')
+                })
+                self.logger.debug(f"Using user AWS credentials from OVERIDE_AWS_CREDS for lambda invocation")
+        
+        # Initialize Lambda client with user credentials if available
+        lambda_client = boto3.client('lambda', **lambda_client_kwargs)
         
         # Prepare the payload
         payload = {
