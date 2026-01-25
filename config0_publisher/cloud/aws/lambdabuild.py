@@ -108,26 +108,6 @@ class LambdaResourceHelper(AWSCommonConn):
         if not env_vars.get("APP_DIR"):
             env_vars["APP_DIR"] = "var/tmp/terraform"
 
-        # For API calls, pass AWS credentials to lambda so AWS CLI can access user's S3 bucket
-        # The lambda needs these credentials to download source files from the user's S3 bucket
-        import os
-        if os.environ.get("OVERIDE_AWS_CREDS"):
-            try:
-                user_creds = b64_decode(os.environ["OVERIDE_AWS_CREDS"])
-                if isinstance(user_creds, dict):
-                    if user_creds.get("aws_access_key_id"):
-                        env_vars["AWS_ACCESS_KEY_ID"] = user_creds["aws_access_key_id"]
-                    if user_creds.get("aws_secret_access_key"):
-                        env_vars["AWS_SECRET_ACCESS_KEY"] = user_creds["aws_secret_access_key"]
-                    if user_creds.get("aws_session_token"):
-                        env_vars["AWS_SESSION_TOKEN"] = user_creds["aws_session_token"]
-                    self.logger.debug("Added AWS credentials to lambda env vars for S3 access")
-                    # Log that credentials were added (without logging the actual values)
-                    cred_keys = [k for k in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"] if k in env_vars]
-                    self.logger.debug(f"AWS credentials added to env_vars: {cred_keys}")
-            except Exception as e:
-                self.logger.warn(f"Failed to decode OVERIDE_AWS_CREDS for lambda: {e}")
-
         return env_vars
 
     def _get_timeout(self):
