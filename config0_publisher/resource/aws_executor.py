@@ -390,8 +390,15 @@ def aws_executor(execution_type="lambda"):
 
             # Execute based on type
             if execution_type == "lambda":
-                # Get Lambda function details - only use FunctionName from invocation_config
-                function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
+                # Hardcode lambda function name to config0-iac for API calls
+                # Check if caller is API via environment variable or kwargs
+                caller = os.environ.get("JIFFY_CALLER") or kwargs.get("caller")
+                if caller == "api":
+                    function_name = "config0-iac"
+                    logger.debug(f"API call detected - hardcoding lambda function name to: {function_name}")
+                else:
+                    # Get Lambda function details - only use FunctionName from invocation_config
+                    function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
                 lambda_region = getattr(self, 'lambda_region', 'us-east-1')
                 logger.debug(f"Invoking Lambda function {function_name} in region {lambda_region}")
                 
