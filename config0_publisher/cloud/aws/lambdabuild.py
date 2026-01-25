@@ -122,6 +122,9 @@ class LambdaResourceHelper(AWSCommonConn):
                     if user_creds.get("aws_session_token"):
                         env_vars["AWS_SESSION_TOKEN"] = user_creds["aws_session_token"]
                     self.logger.debug("Added AWS credentials to lambda env vars for S3 access")
+                    # Log that credentials were added (without logging the actual values)
+                    cred_keys = [k for k in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"] if k in env_vars]
+                    self.logger.debug(f"AWS credentials added to env_vars: {cred_keys}")
             except Exception as e:
                 self.logger.warn(f"Failed to decode OVERIDE_AWS_CREDS for lambda: {e}")
 
