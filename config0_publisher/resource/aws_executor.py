@@ -1182,7 +1182,16 @@ class AWSAsyncExecutor:
 
         if status_result.get("done"):
             self.clear_execution()
-            return status_result["results"]
+            # For lambda, results are in status_result["results"]
+            # For codebuild, results might not be in status_result["results"], so return status_result or result
+            if status_result.get("results") is not None:
+                return status_result["results"]
+            elif execution_type == "codebuild":
+                # For codebuild, return the status_result with status information
+                return status_result
+            else:
+                # Fallback to original result if status_result["results"] is None
+                return result
 
         if "body" in result:
             return result["body"]
