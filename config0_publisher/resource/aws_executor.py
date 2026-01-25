@@ -375,10 +375,18 @@ def aws_executor(execution_type="lambda"):
                 if hasattr(self, attr):
                     payload[attr] = getattr(self, attr)
 
+            # Try to write initiated marker to S3, but don't fail if it doesn't work
+            # This allows lambda to be invoked even if S3 permissions are missing
+            init = False
             s3_client = boto3.client('s3')
-            s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
-            logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
-            init = True
+            try:
+                s3_client.put_object(Bucket=self.output_bucket, Key=f"executions/{self.execution_id}/initiated", Body=str(int(time.time())))
+                logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
+                init = True
+            except Exception as e:
+                logger.warn(f"Failed to write initiated marker to S3 (continuing anyway): {str(e)}")
+                # Continue without S3 tracking - lambda can still be invoked
+                init = False
 
             # Execute based on type
             if execution_type == "lambda":
