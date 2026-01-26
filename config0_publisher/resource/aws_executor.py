@@ -43,15 +43,26 @@ from config0_publisher.serialization import b64_decode
 from config0_publisher.loggerly import Config0Logger
 
 
-def _get_boto_inputargs():
-    # Get user AWS credentials from OVERIDE_AWS_CREDS if available (for API calls)
-    # This ensures we use the user's AWS account credentials for S3 operations too
-
-    if os.environ.get("AWS_DEFAULT_REGION"):
+def _get_boto_inputargs(region=None):
+    """
+    Get boto3 client input arguments with optional region override
+    
+    Args:
+        region (str, optional): AWS region to use. If None, uses AWS_DEFAULT_REGION 
+                               env var or defaults to us-east-1
+    
+    Returns:
+        dict: Input arguments for boto3.client()
+    """
+    # Determine region - priority: explicit parameter > env var > default
+    if region:
+        inputargs = {'region_name': region}
+    elif os.environ.get("AWS_DEFAULT_REGION"):
         inputargs = {'region_name': os.environ.get("AWS_DEFAULT_REGION")}
     else:
         inputargs = {'region_name': "us-east-1"}
 
+    # Add user credentials from OVERIDE_AWS_CREDS if available
     if os.environ.get("OVERIDE_AWS_CREDS"):
         user_creds = b64_decode(os.environ["OVERIDE_AWS_CREDS"])
         if isinstance(user_creds, dict):
@@ -61,16 +72,27 @@ def _get_boto_inputargs():
                 'aws_session_token': user_creds.get('aws_session_token')
             })
             print(f"Using user AWS credentials from OVERIDE_AWS_CREDS for S3 operations")
-        if user_creds.get("region_name"):
-            inputargs['region_name'] = user_creds.get("region_name")
+            
+            # Allow region override from credentials if not explicitly set
+            if user_creds.get("region_name") and not region:
+                inputargs['region_name'] = user_creds.get("region_name")
 
     return inputargs
 
-def _get_boto_client(service="s3"):
-
+def _get_boto_client(service="s3", region=None):
+    """
+    Get a boto3 client with proper credential and region handling
+    
+    Args:
+        service (str): AWS service name (s3, lambda, codebuild, etc.)
+        region (str, optional): AWS region override
+    
+    Returns:
+        boto3.client: Configured boto3 client
+    """
     try:
         client = boto3.client(service,
-                              **_get_boto_inputargs())
+                              **_get_boto_inputargs(region=region))
     except Exception as e:
         print(f"WARNING: Failed to create boto3 user specified client for {service} - using default")
         client = boto3.client(service)
@@ -421,8 +443,7 @@ def aws_executor(execution_type="lambda"):
             if execution_type == "lambda":
                 # Get Lambda function details - only use FunctionName from invocation_config
                 function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
-                lambda_region = getattr(self, 'lambda_region', 'us-east-1')
-                logger.debug(f"Invoking Lambda function {function_name} in region {lambda_region}")
+                logger.debug(f"Invoking Lambda function {function_name}")
 
                 # Check if this is a pre-configured payload from Lambdabuild
                 if kwargs.get('Payload'):
@@ -469,7 +490,7 @@ def aws_executor(execution_type="lambda"):
                         'execution_id': self.execution_id,
                         'output_bucket': self.output_bucket,
                         'error': f"Lambda invocation failed with exception: {str(e)}",
-                        'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
+                        'output': f"Exception when invoking Lambda function {function_name}: {str(e)}"
                     }
 
                 # For Event invocation type, 202 Accepted is expected
@@ -482,7 +503,7 @@ def aws_executor(execution_type="lambda"):
                         'execution_id': self.execution_id,
                         'output_bucket': self.output_bucket,
                         'error': f"Lambda invocation failed with status code: {status_code}",
-                        'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
+                        'output': f"Failed to invoke Lambda function {function_name}"
                     }
                     
             elif execution_type == "codebuild":
@@ -647,7 +668,6 @@ class AWSAsyncExecutor:
         resource_type (str): Type of infrastructure resource
         resource_id (str): Identifier for the specific resource
         lambda_function_name (str): AWS Lambda function name for lambda execution
-        lambda_region (str): AWS region where Lambda function is located
         codebuild_project_name (str): AWS CodeBuild project name for codebuild execution
         output_bucket (str): S3 bucket for storing execution results
         execution_id (str): Deterministic or provided execution ID
@@ -655,7 +675,6 @@ class AWSAsyncExecutor:
     
     # Class-level defaults
     lambda_function_name = os.environ.get("LAMBDA_FUNCTION_NAME", "config0-iac")
-    lambda_region = os.environ.get("LAMBDA_REGION", "us-east-1")  # Default to us-east-1 for Lambda
     codebuild_project_name = os.environ.get("CODEBUILD_PROJECT_NAME", "config0-iac")
     
     # Maximum number of invocations to track per execution
@@ -797,7 +816,6 @@ class AWSAsyncExecutor:
         
         # Get Lambda function details
         function_name = kwargs.get('FunctionName') or getattr(self, 'lambda_function_name', 'config0-iac')
-        lambda_region = getattr(self, 'lambda_region', 'us-east-1')
 
         # Initialize Lambda client with user credentials if available
         lambda_client = _get_boto_client('lambda')
@@ -854,7 +872,7 @@ class AWSAsyncExecutor:
             result = {
                 'status': False,
                 'error': f"Lambda invocation failed with exception: {str(e)}",
-                'output': f"Exception when invoking Lambda function {function_name} in region {lambda_region}: {str(e)}"
+                'output': f"Exception when invoking Lambda function {function_name}: {str(e)}"
             }
             # Record the execution in history - not a followup
             self._record_invocation('lambda_direct', False, original_args, result)
@@ -869,7 +887,7 @@ class AWSAsyncExecutor:
             result = {
                 'status': False,
                 'error': f"Lambda invocation failed with status code: {status_code}",
-                'output': f"Failed to invoke Lambda function {function_name} in region {lambda_region}"
+                'output': f"Failed to invoke Lambda function {function_name}"
             }
             # Record the execution in history - not a followup
             self._record_invocation('lambda_direct', False, original_args, result)
