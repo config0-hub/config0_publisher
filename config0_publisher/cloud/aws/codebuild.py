@@ -59,7 +59,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logarn = None
         self.cloudwatch_log_group = None
         self.cloudwatch_log_stream = None
-        self.cloudwatch_permission_denied = False  # Track if CloudWatch permission error detected
 
         if "set_env_vars" in kwargs:
             kwargs["set_env_vars"] = self.ENV_VARS
@@ -91,13 +90,11 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         for build in builds:
             logs_info = build.get("logs", {})
-            cloudwatch_logs = logs_info.get("cloudWatchLogs", {})
             results[build["id"]] = {
                 "status": build["buildStatus"],
                 "logarn": logs_info.get("s3LogsArn"),
                 "cloudwatch_log_group": logs_info.get("groupName"),
-                "cloudwatch_log_stream": logs_info.get("streamName"),
-                "cloudwatch_logs_enabled": cloudwatch_logs.get("status") == "ENABLED"
+                "cloudwatch_log_stream": logs_info.get("streamName")
             }
 
         return results
@@ -110,7 +107,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.logarn = _build["logarn"]
         self.cloudwatch_log_group = _build.get("cloudwatch_log_group")
         self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
-        self.cloudwatch_logs_enabled = _build.get("cloudwatch_logs_enabled", False)
         self.results["build_status"] = _build["status"]
         self.results["inputargs"]["logarn"] = self.logarn
 
@@ -127,10 +123,10 @@ class CodebuildResourceHelper(AWSCommonConn):
             self.cloudwatch_log_group = _build.get("cloudwatch_log_group")
         if not self.cloudwatch_log_stream and _build.get("cloudwatch_log_stream"):
             self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
-        if not hasattr(self, 'cloudwatch_logs_enabled') or not self.cloudwatch_logs_enabled:
-            self.cloudwatch_logs_enabled = _build.get("cloudwatch_logs_enabled", False)
-        
-        self.logger.debug(f"codebuild status: {build_status}")
+
+        self.logger.debug(f"g0e"*32)
+        self.logger.debug(f"g0e - codebuild status: {build_status}")
+        self.logger.debug(f"g0e"*32)
 
         if build_status == 'IN_PROGRESS':
             return
@@ -225,8 +221,10 @@ class CodebuildResourceHelper(AWSCommonConn):
                         self.results["failed_message"] = f"Build completed with status {build_status_result} but status codes not processed"
                 
                 # Use the status set by _set_build_status_codes() or fallback to False for unknown statuses
-                status = self.results.get("status", False)
-                self.logger.debug(f"Build completed with status: {self.results.get('build_status')}, exit status: {status}")
+                status = self.results.get("status")
+                self.logger.debug(f"g0e" * 32)
+                self.logger.debug(f"g0e Build completed with status: {self.results.get('build_status')}, exit status: {status}")
+                self.logger.debug(f"g0e" * 32)
                 break
 
             # Update current time for elapsed time calculations (inside loop for accuracy)
@@ -243,69 +241,62 @@ class CodebuildResourceHelper(AWSCommonConn):
 
             # check build exceeded total build time alloted
             if _t1 > self.build_expire_at:
+                failed_message = f"build timed out: after {str(self.build_timeout)} seconds."
                 self.results["status_code"] = "timed_out"
                 self.results["status"] = False
-                failed_message = f"build timed out: after {str(self.build_timeout)} seconds."
                 self.results["failed_message"] = failed_message
                 self.logger.warn(failed_message)
                 status = False
                 break
 
         # Try to retrieve logs, but don't fail the build if logs unavailable and build succeeded
-        log_retrieved = self.wait_for_log()
+        log_results = self._wait_for_log()
         self.results["time_elapsed"] = int(time()) - self.results["run_t0"]
+
+        if not self.output:
+            self.output = log_results.get("log")
 
         if not self.output:
             # Build succeeded but logs unavailable - this is acceptable (logs are for debugging)
             if status is True:
-                self.logger.warn(f'Could not retrieve logs for build_id "{self.build_id}" but build succeeded - continuing')
                 self.output = f'Could not get log build_id "{self.build_id}" (build succeeded but logs unavailable)'
             # Build failed and logs unavailable - include in output but don't change status
             # (status already reflects build failure)
             else:
-                self.logger.warn(f'Could not retrieve logs for build_id "{self.build_id}" and build failed')
                 self.output = f'Could not get log build_id "{self.build_id}"'
-            
-            # If CloudWatch permission was denied, add note about it
-            if self.cloudwatch_permission_denied:
-                self.logger.warn("Note: CloudWatch logs unavailable due to missing IAM permissions - logs:GetLogEvents required")
 
+            self.logger.warn(self.output)
         return status
 
-    def wait_for_log(self):
+    def _wait_for_log(self):
         build_id_suffix = self.build_id.split(":")[1]
         maxtime = 30  # Reduced from 90 to 30 seconds - CloudWatch logs available immediately as fallback
         t0 = int(time())
-        cloudwatch_permission_denied = False  # Track if CloudWatch permission error detected
 
         while True:
             _time_elapsed = int(time()) - t0
 
             if _time_elapsed > maxtime:
                 self.logger.debug(f"time expired to retrieved log {_time_elapsed} seconds")
-                return False
+                return {
+                    "status":False,
+                    "failed_message": f"time expired to retrieved log {_time_elapsed} seconds"
+                }
 
-            results = self._set_log(build_id_suffix)
+            results = self._get_log_from_s3(build_id_suffix)
 
             if results.get("status") is True:
-                return True
+                return results
 
-            # Check if CloudWatch permission error was detected
-            if results.get("permission_denied") is True:
-                if not cloudwatch_permission_denied:
-                    # First time detecting permission error - log and mark to skip CloudWatch retries
-                    cloudwatch_permission_denied = True
-                    self.logger.warn("CloudWatch permission denied detected - will not retry CloudWatch fallback, but will continue checking S3 logs")
-                # Don't retry CloudWatch, but continue checking S3 logs (they might appear later)
-                # Only log S3-related errors, not CloudWatch permission errors
-                if "S3" in results.get("failed_message", "") or "s3://" in results.get("failed_message", "").lower():
-                    self.logger.debug(f"Log not yet available (attempt {int(_time_elapsed/2) + 1}): {results.get('failed_message', '')[:100]}")
-            else:
-                # Other errors - keep retrying (S3 logs might appear, CloudWatch might recover)
-                if results.get("status") is False and results.get("failed_message"):
-                    self.logger.debug(f"Log not yet available (attempt {int(_time_elapsed/2) + 1}): {results.get('failed_message', '')[:100]}")
+            if results.get("status") is False and results.get("failed_message"):
+                self.logger.debug(f"Log not yet available (attempt {int(_time_elapsed/2) + 1}): {results.get('failed_message', '')[:100]}")
 
             sleep(2)
+
+        if self.cloudwatch_log_group and self.cloudwatch_log_stream:
+            results = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
+
+        return results
 
     def _get_log_from_cloudwatch(self, log_group, log_stream):
         """Retrieve logs from CloudWatch Logs as fallback when S3 logs are unavailable."""
@@ -349,12 +340,20 @@ class CodebuildResourceHelper(AWSCommonConn):
                     failed_message += f"  Fix: Add 'logs:GetLogEvents' permission to IAM role for resource: arn:aws:logs:*:*:log-group:{log_group}:*"
                     self.logger.warn(failed_message)
                     # Return special indicator for permission errors so caller can distinguish from other failures
-                    return {"error": "permission_denied", "message": failed_message}
+                    return {
+                        "status":False,
+                        "log": failed_message,
+                        "failed_message": failed_message
+                    }
                 else:
                     failed_message = f"FAILED: CloudWatch get_log_events API call failed - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
                     self.logger.warn(failed_message)
-                    return None
-            
+                    return {
+                        "status":False,
+                        "log": failed_message,
+                        "failed_message": failed_message
+                    }
+
             # Process response
             try:
                 events = response.get('events', [])
@@ -364,8 +363,12 @@ class CodebuildResourceHelper(AWSCommonConn):
                 msg = traceback.format_exc()
                 failed_message = f"FAILED: Error processing CloudWatch log events - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
                 self.logger.warn(failed_message)
-                return None
-            
+                return {
+                    "status": False,
+                    "log": failed_message,
+                    "failed_message": failed_message
+                }
+
             # Get next token for pagination
             next_forward_token = response.get('nextForwardToken')
             next_backward_token = response.get('nextBackwardToken')
@@ -404,16 +407,27 @@ class CodebuildResourceHelper(AWSCommonConn):
                 self.logger.debug_highlight(f"SUCCESS: Retrieved {len(log_lines)} log lines from CloudWatch - log_group={log_group}, log_stream={log_stream}")
             else:
                 self.logger.warn(f"WARNING: CloudWatch log stream exists but contains no log events - log_group={log_group}, log_stream={log_stream}")
-            return log
+            return {
+                "status": True,
+                "log": log
+            }
         except Exception as e:
             msg = traceback.format_exc()
             failed_message = f"FAILED: Error joining CloudWatch log lines - log_group={log_group}, log_stream={log_stream}\n\nstacktrace:\n\n{msg}"
             self.logger.warn(failed_message)
-            return None
+            return {
+                "status": False,
+                "log": failed_message,
+                "failed_message": failed_message
+            }
 
-    def _set_log(self, build_id_suffix):
+    def _get_log_from_s3(self, build_id_suffix):
+
         if self.output:
-            return {"status": True}
+            return {
+                "status": True,
+                "log": self.output
+            }
 
         if self.logarn:
             _log_elements = self.logarn.split("/codebuild/logs/")
@@ -425,85 +439,48 @@ class CodebuildResourceHelper(AWSCommonConn):
 
         _dstfile = f'/tmp/{build_id_suffix}.gz'
 
-        # Try S3 first
-        s3_failed_message = None
-        
+        s3_failed_message = "failed to retrieve S3 log"
+
         # Get S3 object
         try:
             obj = self.s3.Object(_log_bucket, _logname)
         except Exception as e:
+            obj = None
             s3_error_msg = traceback.format_exc()
             s3_failed_message = f"failed to get S3 object: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
             self.logger.debug(s3_failed_message)
-            # Fall through to CloudWatch fallback
-        else:
-            # Read from S3 object
+
+        if obj:
             try:
                 _read = obj.get()['Body'].read()
             except Exception as e:
+                _read = None
                 s3_error_msg = traceback.format_exc()
                 s3_failed_message = f"failed to read from S3 object: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
                 self.logger.debug(s3_failed_message)
                 # Fall through to CloudWatch fallback
-            else:
-                # Decompress and decode
-                try:
-                    gzipfile = BytesIO(_read)
-                    gzipfile = gzip.GzipFile(fileobj=gzipfile)
-                    log = gzipfile.read().decode('utf-8')
-                    self.output = log
-                    self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
-                    return {"status": True}
-                except Exception as e:
-                    s3_error_msg = traceback.format_exc()
-                    s3_failed_message = f"failed to decompress/decode S3 log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
-                    self.logger.debug(s3_failed_message)
-                    # Fall through to CloudWatch fallback
-        
-        # If we get here, S3 failed - try CloudWatch fallback
-        # Use generic message if specific error wasn't captured
-        if s3_failed_message is None:
-            s3_failed_message = f"failed to get log from S3: s3://{_log_bucket}/{_logname}"
-            
-        # Fallback to CloudWatch Logs if available and enabled (skip if permission was denied previously)
-        if (self.cloudwatch_log_group and self.cloudwatch_log_stream and 
-            self.cloudwatch_logs_enabled and not self.cloudwatch_permission_denied):
-            self.logger.debug(f"S3 log unavailable, attempting CloudWatch fallback: log_group={self.cloudwatch_log_group}, log_stream={self.cloudwatch_log_stream}, enabled={self.cloudwatch_logs_enabled}")
-            log_result = self._get_log_from_cloudwatch(self.cloudwatch_log_group, self.cloudwatch_log_stream)
-            
-            # Check if log_result is a string (success) or dict (error indicator)
-            if isinstance(log_result, str) and log_result:
-                # Successfully retrieved logs
-                self.output = log_result
-                self.logger.debug_highlight(f"SUCCESS: Retrieved logs from CloudWatch fallback for build {build_id_suffix}")
-                return {"status": True}
-            elif isinstance(log_result, dict) and log_result.get("error") == "permission_denied":
-                # Permission error - mark it and return special status so caller can handle appropriately
-                self.cloudwatch_permission_denied = True
-                self.logger.warn(f"FAILED: CloudWatch fallback failed due to permission error for build {build_id_suffix}")
-                return {"status": False,
-                        "permission_denied": True,
-                        "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback failed: {log_result.get('message', 'Permission denied')}"}
-            else:
-                # CloudWatch failed for other reasons (not permission)
-                self.logger.warn(f"FAILED: CloudWatch fallback also failed for build {build_id_suffix}")
-                return {"status": False,
-                        "permission_denied": False,
-                        "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback also failed."}
-        elif self.cloudwatch_permission_denied:
-            # CloudWatch permission was denied previously - skip CloudWatch fallback
-            self.logger.debug("Skipping CloudWatch fallback - permission denied on previous attempt")
-            return {"status": False,
-                    "permission_denied": True,
-                    "failed_message": f"{s3_failed_message}\n\nCloudWatch fallback skipped due to permission error."}
-        else:
-            # No CloudWatch info available or not enabled
-            if not self.cloudwatch_logs_enabled:
-                self.logger.debug(f"CloudWatch logs not enabled for this build (status=DISABLED)")
-            elif not self.cloudwatch_log_group or not self.cloudwatch_log_stream:
-                self.logger.debug(f"CloudWatch log info incomplete (group={self.cloudwatch_log_group}, stream={self.cloudwatch_log_stream})")
-            return {"status": False,
-                    "failed_message": s3_failed_message}
+
+        if _read:
+            # Decompress and decode
+            try:
+                gzipfile = BytesIO(_read)
+                gzipfile = gzip.GzipFile(fileobj=gzipfile)
+                log = gzipfile.read().decode('utf-8')
+                self.logger.debug(f"retrieved log: s3://{_log_bucket}/{_logname}")
+                return {
+                    "status": True,
+                    "log": log
+                }
+            except Exception as e:
+                s3_error_msg = traceback.format_exc()
+                s3_failed_message = f"failed to decompress/decode S3 log: s3://{_log_bucket}/{_logname}\n\nstacktrace:\n\n{s3_error_msg}"
+                self.logger.debug(s3_failed_message)
+
+        return {
+            "status": False,
+            "log": s3_failed_message,
+            "failed_message": s3_failed_message
+        }
 
     def _set_build_summary(self):
         if self.results["status_code"] == "successful":
@@ -645,15 +622,11 @@ class CodebuildResourceHelper(AWSCommonConn):
         self.clean_output()
         if self.output:
             self.results["output"] = self._concat_log()
-
         return self.results
 
     def run(self, sparse_env_vars=True):
-
         self.trigger_build(sparse_env_vars=sparse_env_vars)
         self._retrieve()
-
         if not self.results.get("status"):
             exit(9)
-
         return self.results
