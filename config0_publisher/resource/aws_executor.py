@@ -1183,12 +1183,15 @@ class AWSAsyncExecutor:
         if status_result.get("done"):
             self.clear_execution()
             # For lambda, results are in status_result["results"]
-            # For codebuild, results might not be in status_result["results"], so return status_result or result
+            # For codebuild in sync mode, always return the direct execution result
+            # (status_result is from S3 async check and has different structure)
             if status_result.get("results") is not None:
                 return status_result["results"]
             elif execution_type == "codebuild":
-                # For codebuild, return the status_result with status information
-                return status_result
+                # For codebuild sync mode, return the actual execution result, not status_result
+                # status_result has wrong structure (execution_id, initiated, done, status dict)
+                # but caller expects (status, build_id, build_status, exitcode, etc.)
+                return result
             else:
                 # Fallback to original result if status_result["results"] is None
                 return result
