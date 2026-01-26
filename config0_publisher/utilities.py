@@ -288,21 +288,20 @@ def generate_random_path(basedir, folder_depth=1, folder_length=16, createdir=Fa
 
 # dup 34523532452t33t
 def get_values_frm_json(json_file=None):
-
     if not json_file:
         return
 
     if not os.path.exists(json_file):
-        print(f"WARN: json {json_file} does not exists")
+        print(f"g0e: WARN: json {json_file} does not exists")
         return
 
     try:
         with open(json_file) as json_file:
             values = json.load(json_file)
-        print(f"Successfully retrieved values from {json_file}")
+        print(f"g0e - Successfully retrieved values from {json_file}")
     except:
         values = None
-        print(f"ERROR: could not retrieved from json file {json_file}")
+        print(f"g0e - ERROR: could not retrieved from json file {json_file}")
 
     return values
 
