@@ -91,9 +91,9 @@ class TFCmdOnAWS(TFAppHelper):
         # ref 4353253452354
         cmds.extend([
             { "s3_tfpkg_to_local - echo bucket": 'echo "remote bucket s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip"' },
-            { "s3_tfpkg_to_local - aws copy source": f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip {self.stateful_dir}/src.$STATEFUL_ID.zip --quiet || echo "Source zip file not found in S3 (may have been deleted)"' },
+            { "s3_tfpkg_to_local - aws copy source": f'aws s3 cp s3://$REMOTE_STATEFUL_BUCKET/$STATEFUL_ID/state/src.$STATEFUL_ID.zip {self.stateful_dir}/src.$STATEFUL_ID.zip --quiet' },
             { "s3_tfpkg_to_local - clean src dir": f'rm -rf {self.stateful_dir}/run > /dev/null 2>&1 || echo "stateful already removed"' },
-            { "s3_tfpkg_to_local - unzip src files": f'if [ -f {self.stateful_dir}/src.$STATEFUL_ID.zip ]; then unzip -o {self.stateful_dir}/src.$STATEFUL_ID.zip -d {self.stateful_dir}/run; else echo "Source zip file not found, skipping extraction"; fi' },
+            { "s3_tfpkg_to_local - unzip src files": f'unzip -o {self.stateful_dir}/src.$STATEFUL_ID.zip -d {self.stateful_dir}/run' },
             { "s3_tfpkg_to_local - remove download file": f'rm -rf {self.stateful_dir}/src.$STATEFUL_ID.zip' }
         ])
 
