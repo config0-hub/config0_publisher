@@ -319,6 +319,12 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
                 self.logger.warn(f"config0_phases_json_file not set - cannot write phases file. CONFIG0_PHASES_JSON_FILE env var: {os.environ.get('CONFIG0_PHASES_JSON_FILE')}")
 
+            # debug777
+            self.logger.debug(f"g0e" * 32)
+            self.logger.json(results)
+            self.logger.debug(f"g0e" * 32)
+            raise Exception("g0e -----")
+
             if results.get("done") or results.get("status") is False:
                 try:
                     build_id = results["status"]["build_id"]
@@ -336,7 +342,9 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                     executor.clear_execution()
 
                 if results.get("output"):
+                    print("----- CodeBuild Output Logs -----")
                     print(results["output"])
+                    print("----------------------------------")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
@@ -355,9 +363,9 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             # Sync mode: retrieve build results directly
             # This not async mode which is not recommended as it is long running
             # process where file descriptors may not be held open
-            if results.get("build_id"):
-                codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
-                results = codebuild_helper.results
+            # TODO: assume build_id is always there
+            codebuild_helper.retrieve(build_id=results["build_id"], sparse_env_vars=True)
+            results = codebuild_helper.results
 
         # Process output logs
         if results.get("output"):
