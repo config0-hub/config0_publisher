@@ -323,7 +323,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             self.logger.debug(f"g0e" * 32)
             self.logger.json(results)
             self.logger.debug(f"g0e" * 32)
-            raise Exception("g0e -----")
+            #raise Exception("g0e -----")
 
             if results.get("done") or results.get("status") is False:
                 try:
