@@ -107,9 +107,8 @@ class ResourceCmdHelper(ResourcePhases):
         self._set_build_timeout()
         self._set_aws_region()
 
-        # ref 34532453245
         self.final_output = None
-        
+
     def _set_execution_id(self,**kwargs):
 
         self.execution_id = os.environ.get("EXECUTION_ID")
@@ -1208,20 +1207,24 @@ class ResourceCmdHelper(ResourcePhases):
 
         output = self.clean_output(output)
         self.final_output = output
-        self.append_log(self.final_output)
 
         if "output" in results:
             del results["output"]
 
-        # ref 34532453245
-        if local_log:
-            try:
-                self._write_local_log()
-            except:
-                self.logger.debug("could not write local log")
+        ######################################
+        # debug777
+        ######################################
+        #self.append_log(self.final_output)
 
-        # testtest456
-        print(self.final_output)
+        ## ref 34532453245
+        #if local_log:
+        #    try:
+        #        self._write_local_log()
+        #    except:
+        #        self.logger.debug("could not write local log")
+
+        #print(self.final_output)
+        ######################################
 
     def eval_failure(self, results, method):
 

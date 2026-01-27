@@ -124,10 +124,6 @@ class CodebuildResourceHelper(AWSCommonConn):
         if not self.cloudwatch_log_stream and _build.get("cloudwatch_log_stream"):
             self.cloudwatch_log_stream = _build.get("cloudwatch_log_stream")
 
-        self.logger.debug(f"g0e"*32)
-        self.logger.debug(f"g0e - codebuild status: {build_status}")
-        self.logger.debug(f"g0e"*32)
-
         if build_status == 'IN_PROGRESS':
             return
 
