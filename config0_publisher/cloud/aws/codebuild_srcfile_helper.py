@@ -161,7 +161,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         
         # get with provided b64 hash
         if self.buildspec_hash:
-            self.logger.info("Using buildspec from buildspec_hash")
+            self.logger.debug("Using buildspec from buildspec_hash")
             buildspec_content = b64_decode(self.buildspec_hash)
         else:
             # get repo file and read contents
@@ -170,7 +170,7 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 "src",
                 self.buildspec_file
             )
-            self.logger.info(f"Reading buildspec from file: {buildspec_file}")
+            self.logger.debug(f"Reading buildspec from file: {buildspec_file}")
             with open(buildspec_file, "r") as file:
                 buildspec_content = file.read()
 
@@ -350,11 +350,11 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 # Ensure init or in_progress is set for exit code 135 (phase2complete)
                 if not results.get("init") and not results.get("in_progress"):
                     results["init"] = True
-                self.logger.info(f"Writing phases file with init=True for exit code 135. phases file: {self.config0_phases_json_file}")
+                self.logger.debug(f"Writing phases file with init=True for exit code 135. phases file: {self.config0_phases_json_file}")
                 self.write_phases_to_json_file(results)
-                self.logger.info(f"Phases file written successfully. Results keys: {list(results.keys())}")
+                self.logger.debug(f"Phases file written successfully. Results keys: {list(results.keys())}")
             else:
-                self.logger.warn(f"Not writing phases file - phases={results.get('phases')}, done={results.get('done')}")
+                self.logger.debug(f"Not writing phases file - phases={results.get('phases')}, done={results.get('done')}")
         else:
             # Sync mode: retrieve build results directly
             # This not async mode which is not recommended as it is long running
@@ -366,9 +366,8 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         # Process output logs
         # debug777
         if results.get("output"):
-            self.append_log("h0e ----- CodeBuild Output Logs -----")
-            self.append_log(results["output"])
-            self.append_log("h0e ----------------------------------")
+            self.append_log(
+                f'h0e ----- CodeBuild Output Logs -----\n{results["output"]}\nh0e ----------------------------------')
             del results["output"]
 
         # Check final status

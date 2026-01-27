@@ -218,9 +218,7 @@ class CodebuildResourceHelper(AWSCommonConn):
                 
                 # Use the status set by _set_build_status_codes() or fallback to False for unknown statuses
                 status = self.results.get("status")
-                self.logger.debug(f"g0e" * 32)
-                self.logger.debug(f"g0e Build completed with status: {self.results.get('build_status')}, exit status: {status}")
-                self.logger.debug(f"g0e" * 32)
+                self.logger.debug_highlight(f"g0e Build completed with status: {self.results.get('build_status')}, exit status: {status}")
                 break
 
             # Update current time for elapsed time calculations (inside loop for accuracy)
@@ -569,7 +567,7 @@ class CodebuildResourceHelper(AWSCommonConn):
     def get_trigger_inputargs(self, sparse_env_vars=True):
 
         timeout = max(1, int(self.build_timeout/60))
-        self.logger.debug_highlight(f"running job on codebuild project {self.project_name}")
+        self.logger.debug(f"running job on codebuild project {self.project_name}")
         env_vars_codebuild_format = self._env_vars_to_codebuild_format(sparse=sparse_env_vars)
         inputargs = {"projectName": self.project_name,
                      "environmentVariablesOverride": env_vars_codebuild_format,
