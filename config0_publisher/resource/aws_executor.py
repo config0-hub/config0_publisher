@@ -609,13 +609,14 @@ def aws_executor(execution_type="lambda"):
                         s3_client,
                         self.output_bucket,
                         initiated_key,
-                        str(int(time.time()))
+                        str(int(time.time()),
+                        content_type = 'text/plain')
                     )
 
                     print(self.output_bucket)
                     print(initiated_key)
                     print(build_id)
-                    raise Exception("debug777")
+                    #raise Exception("debug777")
 
                     init = True
             else:
