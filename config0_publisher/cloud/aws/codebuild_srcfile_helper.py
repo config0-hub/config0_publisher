@@ -320,11 +320,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             if not hasattr(self, "config0_phases_json_file") or not self.config0_phases_json_file:
                 self.logger.warn(f"config0_phases_json_file not set - cannot write phases file. CONFIG0_PHASES_JSON_FILE env var: {os.environ.get('CONFIG0_PHASES_JSON_FILE')}")
 
-            # debug777
-            self.logger.debug(f"g0e" * 32)
-            self.logger.json(results)
-            self.logger.debug(f"g0e" * 32)
-
             if results.get("done") or results.get("status") is False:
                 try:
                     build_id = results["status"]["build_id"]
@@ -342,10 +337,10 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                     executor.clear_execution()
 
                 # debug777
-                if results.get("output"):
-                    print("g0e ----- CodeBuild Output Logs -----")
-                    print(results["output"])
-                    print("g0e ----------------------------------")
+                #if results.get("output"):
+                #    print("g0e ----- CodeBuild Output Logs -----")
+                #    print(results["output"])
+                #    print("g0e ----------------------------------")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
@@ -369,8 +364,11 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             results = codebuild_helper.results
 
         # Process output logs
+        # debug777
         if results.get("output"):
+            self.append_log("h0e ----- CodeBuild Output Logs -----")
             self.append_log(results["output"])
+            self.append_log("h0e ----------------------------------")
             del results["output"]
 
         # Check final status
