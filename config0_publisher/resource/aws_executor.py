@@ -399,7 +399,7 @@ def aws_executor(execution_type="lambda"):
 
             # debug777
             self.logger.json(existing_run)
-            raise Exception('debug777')
+            #raise Exception('debug777')
 
             # ref 5634623
             if existing_run.get("done"):
@@ -583,14 +583,12 @@ def aws_executor(execution_type="lambda"):
 
                 if not build_id:
                     logger.error("Failed to start CodeBuild project")
-
                     # Clean up initiated marker
                     _s3_delete_object(
                         s3_client,
                         self.output_bucket,
                         f"executions/{self.execution_id}/initiated"
                     )
-
                     return {
                         'init': init,
                         'status': False,
@@ -599,19 +597,15 @@ def aws_executor(execution_type="lambda"):
                         'error': "Failed to start CodeBuild project",
                         'output': f"Failed to start CodeBuild project {project_name}"
                     }
-
-                # Add build ID to payload
-                payload['build_id'] = build_id
-
-                _s3_put_object(
-                    s3_client,
-                    self.output_bucket,
-                    f"executions/{self.execution_id}/initiated",
-                    str(int(time.time()))
-                )
-
-                init = True
-
+                else:  # Add build ID to payload
+                    payload['build_id'] = build_id
+                    _s3_put_object(
+                        s3_client,
+                        self.output_bucket,
+                        f"executions/{self.execution_id}/initiated",
+                        str(int(time.time()))
+                    )
+                    init = True
             else:
                 self.clear_execution()
                 raise ValueError(f"Unsupported execution_type: {execution_type}")
