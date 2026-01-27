@@ -292,11 +292,12 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
         self._tar_upload_s3()
 
         # Get CodeBuild invocation config via pre_trigger
-        self.logger.debug(f"trigger new codebuild ...")
         inputargs = codebuild_helper.pre_trigger(sparse_env_vars=False)
 
         # Determine async_mode - check if EXECUTION_ID is set (indicates async tracking)
         async_mode = bool(os.environ.get("EXECUTION_ID"))
+
+        self.logger.debug(f"trigger new codebuild ...")
 
         # Use the unified execute method
         results = executor.execute(

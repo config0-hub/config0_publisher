@@ -397,6 +397,10 @@ def aws_executor(execution_type="lambda"):
             build_expire_at = int(time.time()) + int(max_execution_time)
             existing_run = self.check_execution_status(execution_type)
 
+            # debug777
+            self.logger.json(existing_run)
+            raise Exception('debug777')
+
             # ref 5634623
             if existing_run.get("done"):
                 logger.debug("existing run is done, clearing execution")
