@@ -139,6 +139,10 @@ class CodebuildResourceHelper(AWSCommonConn):
                 "FAULT"]
 
         if build_status in done:
+            self.logger.debug(f"g0e" * 32)
+            self.logger.debug(f"g0e - codebuild status: {build_status}")
+            self.logger.debug(f"g0e" * 32)
+            raise Exception("debug777")
             return build_status
 
     def _set_build_status_codes(self):
