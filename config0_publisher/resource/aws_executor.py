@@ -34,6 +34,8 @@ import logging
 import time
 import hashlib
 
+from botocore.exceptions import ClientError
+
 # Configure logging to suppress boto3/botocore debug messages
 logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('boto3').setLevel(logging.WARNING)
@@ -122,8 +124,8 @@ def _s3_put_object(s3_client, bucket, key, body, content_type=None):
     Put an object to S3, handling errors gracefully
     """
     if not bucket or not key:
-        return False
-    
+        raise ValueError("S3 bucket or key is missing")
+
     try:
         s3_client.put_object(
             Bucket=bucket,
@@ -149,9 +151,17 @@ def _s3_get_object(s3_client, bucket, key):
         content_type = response.get('ContentType', '')
         content = response['Body'].read()
 
+        # Be tolerant: parse as JSON when body looks like JSON regardless of ContentType
+        stripped = content.strip()
+        if stripped.startswith(b'{') or stripped.startswith(b'['):
+            try:
+                return json.loads(content.decode('utf-8'))
+            except (ValueError, TypeError):
+                pass
+
         if content_type == 'application/json':
             return json.loads(content.decode('utf-8'))  # Parse JSON
-        
+
         if content_type in ['text/plain', 'application/octet-stream']:
             decoded = content.decode('utf-8').strip()
             
@@ -166,7 +176,13 @@ def _s3_get_object(s3_client, bucket, key):
         
         # For other content types, return raw bytes
         return content
-    
+
+    except ClientError as e:
+        if e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+            return None
+        print(f'    ----- _s3_get_object s3://{bucket}/{key}')
+        print(f"    ----- Error fetching object: {e}")
+        return False
     except Exception as e:
         print(f'    ----- _s3_get_object s3://{bucket}/{key}')
         print(f"    ----- Error fetching object: {e}")
@@ -261,19 +277,20 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
 
     # Check for initiated marker
     initiated_key = f"executions/{execution_id}/initiated"
-    result["t0"] = int(_s3_get_object(s3_client, output_bucket, initiated_key))
-    if result.get("t0"):
+    t0_raw = _s3_get_object(s3_client, output_bucket, initiated_key)
+    if t0_raw is not None:
+        result["t0"] = int(t0_raw)
         result["initiated"] = True
-    else:
-        del result["t0"]
 
     if not result.get("initiated"):
         return result
 
     expire_at_key = f"executions/{execution_id}/expire_at"
-    expire_at = int(_s3_get_object(s3_client, output_bucket, expire_at_key))
-    if int(time.time()) > expire_at:
-        result["expired"] = True
+    expire_at_raw = _s3_get_object(s3_client, output_bucket, expire_at_key)
+    if expire_at_raw is not None:
+        expire_at = int(expire_at_raw)
+        if int(time.time()) > expire_at:
+            result["expired"] = True
 
     if result.get("expired"):
         return result
@@ -285,11 +302,10 @@ def get_execution_status(execution_type, execution_id=None, output_bucket=None):
 
     # Check for done marker
     done_key = f"executions/{execution_id}/done"
-    result["t1"] = int(_s3_get_object(s3_client, output_bucket, done_key))
-    if result.get("t1"):
+    t1_raw = _s3_get_object(s3_client, output_bucket, done_key)
+    if t1_raw is not None:
+        result["t1"] = int(t1_raw)
         result["done"] = True
-    else:
-        del result["t1"]
 
     result_key = f"executions/{execution_id}/result.json"
 
@@ -444,7 +460,12 @@ def aws_executor(execution_type="lambda"):
                 s3_client,
                 self.output_bucket,
                 status_key,
-                str(int(time.time())))
+                json.dumps({
+                    "build_status": "IN_PROGRESS",
+                    "timestamp": int(time.time())
+                }),
+                content_type='application/json'
+            )
 
             logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
             init = True
@@ -517,6 +538,14 @@ def aws_executor(execution_type="lambda"):
                     }
                     
             elif execution_type == "codebuild":
+                # Write initiated marker before start_build so execution is tracked even if later S3 writes fail
+                _s3_put_object(
+                    s3_client,
+                    self.output_bucket,
+                    initiated_key,
+                    str(int(time.time())),
+                    content_type='text/plain'
+                )
                 # Start with all the original parameters from the Codebuild class
                 build_params = dict(kwargs)
                 
@@ -609,8 +638,8 @@ def aws_executor(execution_type="lambda"):
                         s3_client,
                         self.output_bucket,
                         initiated_key,
-                        str(int(time.time()),
-                        content_type = 'text/plain')
+                        str(int(time.time())),
+                        content_type='text/plain'
                     )
 
                     print(self.output_bucket)
@@ -649,7 +678,7 @@ def aws_executor(execution_type="lambda"):
 
             _s3_put_object(s3_client,
                            self.output_bucket,
-                           expired_key,
+                           expire_at_key,
                            str(build_expire_at),
                            content_type='text/plain')
 
