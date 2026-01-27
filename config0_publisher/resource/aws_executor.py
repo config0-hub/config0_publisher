@@ -612,8 +612,8 @@ def aws_executor(execution_type="lambda"):
                         str(int(time.time()))
                     )
 
-                    print(response)
-                    print(response.keys())
+                    print(self.output_bucket)
+                    print(initiated_key)
                     print(build_id)
                     raise Exception("debug777")
 
