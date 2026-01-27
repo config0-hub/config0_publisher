@@ -587,11 +587,6 @@ def aws_executor(execution_type="lambda"):
                 build = response.get('build', {})
                 build_id = build.get('id')
 
-                print(response)
-                print(response.keys())
-                print(build_id)
-                raise Exception("debug777")
-
                 if not build_id:
                     logger.error("Failed to start CodeBuild project")
                     # Clean up initiated marker
@@ -616,6 +611,12 @@ def aws_executor(execution_type="lambda"):
                         initiated_key,
                         str(int(time.time()))
                     )
+
+                    print(response)
+                    print(response.keys())
+                    print(build_id)
+                    raise Exception("debug777")
+
                     init = True
             else:
                 self.clear_execution()
