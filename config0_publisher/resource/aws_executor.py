@@ -359,8 +359,10 @@ def aws_executor(execution_type="lambda"):
             method = kwargs.get('method') or getattr(self, 'method', 'unknown')
 
             initiated_key = f"executions/{self.execution_id}/initiated"
-            print(initiated_key)
-            raise Exception("debug777")
+            status_key = f"executions/{self.execution_id}/status.json"
+            result_key = f"executions/{self.execution_id}/result.json"
+            done_key = f"executions/{self.execution_id}/done"
+            expire_at_key = f"executions/{self.execution_id}/expire_at"
 
             # Get timeout settings from build environment variables or environment
             build_env_vars = kwargs.get('build_env_vars') or getattr(self, 'build_env_vars', {})
@@ -441,7 +443,7 @@ def aws_executor(execution_type="lambda"):
             _s3_put_object(
                 s3_client,
                 self.output_bucket,
-                f"executions/{self.execution_id}/status.json",
+                status_key,
                 str(int(time.time())))
 
             logger.debug(f"initiated execution {self.execution_id}/initiated in bucket {self.output_bucket}")
@@ -585,13 +587,18 @@ def aws_executor(execution_type="lambda"):
                 build = response.get('build', {})
                 build_id = build.get('id')
 
+                print(response)
+                print(response.keys())
+                print(build_id)
+                raise Exception("debug777")
+
                 if not build_id:
                     logger.error("Failed to start CodeBuild project")
                     # Clean up initiated marker
                     _s3_delete_object(
                         s3_client,
                         self.output_bucket,
-                        f"executions/{self.execution_id}/initiated"
+                        initiated_key
                     )
                     return {
                         'init': init,
@@ -606,7 +613,7 @@ def aws_executor(execution_type="lambda"):
                     _s3_put_object(
                         s3_client,
                         self.output_bucket,
-                        f"executions/{self.execution_id}/initiated",
+                        initiated_key,
                         str(int(time.time()))
                     )
                     init = True
@@ -620,10 +627,10 @@ def aws_executor(execution_type="lambda"):
                 'execution_id': self.execution_id,
                 'output_bucket': self.output_bucket,
                 'execution_type': execution_type,
-                'initiated_key': f"executions/{self.execution_id}/initiated",
-                'result_key': f"executions/{self.execution_id}/result.json",
-                'done_key': f"executions/{self.execution_id}/done",
-                'status_key': f"executions/{self.execution_id}/status.json",
+                'initiated_key': initiated_key,
+                'result_key': result_key,
+                'done_key': done_key,
+                'status_key': status_key,
                 'build_expire_at': build_expire_at,
                 'phases': True
             }
@@ -634,13 +641,13 @@ def aws_executor(execution_type="lambda"):
 
             _s3_put_object(s3_client,
                            self.output_bucket,
-                           f"executions/{self.execution_id}/status.json",
+                           status_key,
                            json.dumps(result),
                            content_type='application/json')
 
             _s3_put_object(s3_client,
                            self.output_bucket,
-                           f"executions/{self.execution_id}/expire_at",
+                           expired_key,
                            str(build_expire_at),
                            content_type='text/plain')
 
