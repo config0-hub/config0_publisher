@@ -419,9 +419,8 @@ def aws_executor(execution_type="lambda"):
             build_expire_at = int(time.time()) + int(max_execution_time)
             existing_run = self.check_execution_status(execution_type)
 
-            # debug777
-            self.logger.json(existing_run)
-            #raise Exception('debug777')
+            if os.environ.get("JIFFY_ENHANCED_LOG"):
+                self.logger.json(existing_run)
 
             # ref 5634623
             if existing_run.get("done"):
@@ -641,12 +640,6 @@ def aws_executor(execution_type="lambda"):
                         str(int(time.time())),
                         content_type='text/plain'
                     )
-
-                    print(self.output_bucket)
-                    print(initiated_key)
-                    print(build_id)
-                    #raise Exception("debug777")
-
                     init = True
             else:
                 self.clear_execution()

@@ -324,7 +324,6 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
             self.logger.debug(f"g0e" * 32)
             self.logger.json(results)
             self.logger.debug(f"g0e" * 32)
-            #raise Exception("g0e -----")
 
             if results.get("done") or results.get("status") is False:
                 try:
@@ -342,10 +341,11 @@ class CodebuildSrcFileHelper(ResourceCmdHelper):
                 if results.get("status") is False:
                     executor.clear_execution()
 
+                # debug777
                 if results.get("output"):
-                    print("----- CodeBuild Output Logs -----")
+                    print("g0e ----- CodeBuild Output Logs -----")
                     print(results["output"])
-                    print("----------------------------------")
+                    print("g0e ----------------------------------")
 
                 # Delete phases file when done (cleanup)
                 self.delete_phases_to_json_file()
