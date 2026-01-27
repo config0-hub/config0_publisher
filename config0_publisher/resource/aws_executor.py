@@ -357,7 +357,11 @@ def aws_executor(execution_type="lambda"):
             resource_type = getattr(self, 'resource_type', 'unknown')
             resource_id = getattr(self, 'resource_id', 'unknown')
             method = kwargs.get('method') or getattr(self, 'method', 'unknown')
-            
+
+            initiated_key = f"executions/{self.execution_id}/initiated"
+            print(initiated_key)
+            raise Exception("debug777")
+
             # Get timeout settings from build environment variables or environment
             build_env_vars = kwargs.get('build_env_vars') or getattr(self, 'build_env_vars', {})
             max_execution_time = None
