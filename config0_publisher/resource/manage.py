@@ -1214,16 +1214,16 @@ class ResourceCmdHelper(ResourcePhases):
         ######################################
         # debug777
         ######################################
-        #self.append_log(self.final_output)
+        self.append_log(self.final_output)
 
-        ## ref 34532453245
-        #if local_log:
-        #    try:
-        #        self._write_local_log()
-        #    except:
-        #        self.logger.debug("could not write local log")
+        # ref 34532453245
+        if local_log:
+            try:
+                self._write_local_log()
+            except:
+                self.logger.debug("could not write local log")
 
-        #print(self.final_output)
+        print(self.final_output)
         ######################################
 
     def eval_failure(self, results, method):
